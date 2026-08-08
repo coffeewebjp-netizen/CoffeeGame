@@ -1,0 +1,23 @@
+{
+  "name": "CoffeeGame.Input.EditModeTests",
+  "rootNamespace": "CoffeeGame.Input.Tests",
+  "references": [
+    "CoffeeGame.Input",
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "noEngineReferences": false
+}

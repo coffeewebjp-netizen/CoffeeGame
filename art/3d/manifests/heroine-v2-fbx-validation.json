@@ -1,0 +1,35 @@
+{
+  "asset": "heroine-v2",
+  "sourceFbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/heroine-v2.fbx",
+  "importer": "4.5.10 LTS",
+  "meshObjects": 3,
+  "meshObjectNames": [
+    "HeroineBody",
+    "HeroineKatana",
+    "HeroineSheath"
+  ],
+  "vertices": 29518,
+  "materials": 18,
+  "armatures": 1,
+  "bones": 20,
+  "actions": 15,
+  "actionNames": [
+    "AirSlash",
+    "Defeated",
+    "Fall",
+    "Hurt",
+    "Idle",
+    "Jump",
+    "Land",
+    "MagicCharge",
+    "MagicRelease",
+    "Plunge",
+    "Run",
+    "SpinCharge",
+    "SpinRelease",
+    "Sword",
+    "Walk"
+  ],
+  "missingRequiredActions": [],
+  "passed": true
+}

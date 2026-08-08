@@ -1,0 +1,21 @@
+{
+  "name": "CoffeeGame.Domain.EditModeTests",
+  "rootNamespace": "CoffeeGame.Domain.Tests",
+  "references": [
+    "CoffeeGame.Domain"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "noEngineReferences": false
+}

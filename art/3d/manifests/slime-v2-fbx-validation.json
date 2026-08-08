@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "source": {
+    "objects": 8,
+    "meshObjects": 7,
+    "vertices": 2070,
+    "triangles": 4112,
+    "materials": 4,
+    "armatures": 1,
+    "bones": 2,
+    "actions": 6,
+    "actionNames": [
+      "Attack",
+      "Defeated",
+      "Hurt",
+      "Idle",
+      "Move",
+      "Windup"
+    ]
+  },
+  "fbxReimport": {
+    "objects": 8,
+    "meshObjects": 7,
+    "vertices": 2070,
+    "triangles": 4112,
+    "materials": 4,
+    "armatures": 1,
+    "bones": 2,
+    "actions": 6,
+    "actionNames": [
+      "Attack",
+      "Defeated",
+      "Hurt",
+      "Idle",
+      "Move",
+      "Windup"
+    ]
+  },
+  "missingActions": [],
+  "outsideNormalQA": {
+    "sourceNegativeMeshes": [],
+    "fbxNegativeMeshes": [],
+    "backfaceCullSafe": true
+  }
+}

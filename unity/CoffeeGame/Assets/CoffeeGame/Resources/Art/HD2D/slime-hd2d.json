@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "characterId": "slime",
+  "directional": false,
+  "fallbackSpritePath": "Art/Slime/slime-sprite",
+  "pixelsPerUnit": 500.0,
+  "pivotX": 0.5,
+  "pivotY": 0.09375,
+  "visualScale": 1.0,
+  "sortingBase": 1000,
+  "depthSortingStepsPerUnit": 32.0,
+  "shadowWidth": 0.76,
+  "shadowDepth": 0.34,
+  "shadowOpacity": 0.23,
+  "shadowYOffset": -0.035,
+  "requiredActions": ["Idle", "Walk", "Run", "AttackWindup", "Attack", "Hurt", "Defeated"],
+  "clips": [
+    {
+      "action": "Idle", "framesPerSecond": 4.0, "loop": true, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_idle", "Art/HD2D/Slime/Frames/slime_squash", "Art/HD2D/Slime/Frames/slime_idle"] }
+    },
+    {
+      "action": "Walk", "framesPerSecond": 6.5, "loop": true, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_idle", "Art/HD2D/Slime/Frames/slime_hop"] }
+    },
+    {
+      "action": "Run", "framesPerSecond": 9.0, "loop": true, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_idle", "Art/HD2D/Slime/Frames/slime_hop"] }
+    },
+    {
+      "action": "AttackWindup", "framesPerSecond": 7.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_squash", "Art/HD2D/Slime/Frames/slime_windup"] }
+    },
+    {
+      "action": "Attack", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_windup", "Art/HD2D/Slime/Frames/slime_hop", "Art/HD2D/Slime/Frames/slime_idle"] }
+    },
+    {
+      "action": "Hurt", "framesPerSecond": 9.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_hurt"] }
+    },
+    {
+      "action": "Defeated", "framesPerSecond": 6.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Slime/Frames/slime_defeated"] }
+    }
+  ]
+}

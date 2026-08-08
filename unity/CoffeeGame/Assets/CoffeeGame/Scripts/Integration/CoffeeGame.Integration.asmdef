@@ -1,0 +1,6 @@
+{
+  "name": "CoffeeGame.Integration",
+  "rootNamespace": "CoffeeGame.Integration",
+  "references": [],
+  "autoReferenced": true
+}

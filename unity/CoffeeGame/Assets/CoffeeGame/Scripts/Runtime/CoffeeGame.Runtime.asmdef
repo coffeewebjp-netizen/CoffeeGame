@@ -1,0 +1,10 @@
+{
+  "name": "CoffeeGame.Runtime",
+  "rootNamespace": "CoffeeGame",
+  "references": [
+    "CoffeeGame.Domain",
+    "CoffeeGame.Input",
+    "CoffeeGame.Integration"
+  ],
+  "autoReferenced": true
+}

@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "assetId": "slime-v1",
+  "displayName": "Cyan Slime",
+  "generator": "tools/blender/generate_slime.py",
+  "blenderVersion": "4.5.10 LTS",
+  "source": "art/3d/source/slime-v1.blend",
+  "unityFbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Slime/slime-v1.fbx",
+  "preview": "art/3d/previews/slime-v1.png",
+  "orientation": {
+    "unityForward": "+Z",
+    "unityUp": "+Y",
+    "origin": "ground center"
+  },
+  "dimensionsMeters": {
+    "width": 0.75,
+    "depth": 0.63,
+    "height": 0.55
+  },
+  "rig": {
+    "type": "Generic",
+    "rootBone": "Root",
+    "deformBone": "Body"
+  },
+  "clips": [
+    {
+      "name": "Idle",
+      "startFrame": 1,
+      "endFrame": 31,
+      "fps": 30,
+      "loop": true,
+      "inPlace": true
+    },
+    {
+      "name": "Move",
+      "startFrame": 1,
+      "endFrame": 17,
+      "fps": 30,
+      "loop": true,
+      "inPlace": true
+    },
+    {
+      "name": "Windup",
+      "startFrame": 1,
+      "endFrame": 20,
+      "fps": 30,
+      "loop": false,
+      "inPlace": true
+    },
+    {
+      "name": "Attack",
+      "startFrame": 1,
+      "endFrame": 16,
+      "fps": 30,
+      "loop": false,
+      "inPlace": true
+    },
+    {
+      "name": "Hurt",
+      "startFrame": 1,
+      "endFrame": 12,
+      "fps": 30,
+      "loop": false,
+      "inPlace": true
+    },
+    {
+      "name": "Defeated",
+      "startFrame": 1,
+      "endFrame": 28,
+      "fps": 30,
+      "loop": false,
+      "inPlace": true
+    }
+  ],
+  "sourceCounts": {
+    "objects": 8,
+    "meshObjects": 7,
+    "vertices": 546,
+    "polygons": 624,
+    "materials": 4,
+    "armatures": 1,
+    "bones": 2,
+    "actions": 6,
+    "actionNames": [
+      "Attack",
+      "Defeated",
+      "Hurt",
+      "Idle",
+      "Move",
+      "Windup"
+    ]
+  },
+  "files": {
+    "blendBytes": 607957,
+    "fbxBytes": 184508,
+    "previewBytes": 709817
+  }
+}

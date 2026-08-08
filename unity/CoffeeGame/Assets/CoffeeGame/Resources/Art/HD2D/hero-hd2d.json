@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "characterId": "heroine",
+  "directional": true,
+  "fallbackSpritePath": "Art/Hero/hero-sprite",
+  "pixelsPerUnit": 540.0,
+  "pivotX": 0.5,
+  "pivotY": 0.0625,
+  "visualScale": 1.0,
+  "sortingBase": 1000,
+  "depthSortingStepsPerUnit": 32.0,
+  "shadowWidth": 0.66,
+  "shadowDepth": 0.28,
+  "shadowOpacity": 0.24,
+  "shadowYOffset": -0.035,
+  "requiredActions": ["Idle", "Walk", "Run", "Jump", "Fall", "Land", "Sword", "AirSlash", "Plunge", "SpinCharge", "SpinRelease", "MagicCharge", "MagicRelease", "Hurt", "Defeated"],
+  "clips": [
+    {
+      "action": "Idle", "framesPerSecond": 2.4, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_right"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up"] }
+    },
+    {
+      "action": "Walk", "framesPerSecond": 6.0, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down", "Art/HD2D/Hero/Frames/hero_walk_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_right", "Art/HD2D/Hero/Frames/hero_walk_right"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up", "Art/HD2D/Hero/Frames/hero_walk_up"] }
+    },
+    {
+      "action": "Run", "framesPerSecond": 9.0, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down", "Art/HD2D/Hero/Frames/hero_run_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_right", "Art/HD2D/Hero/Frames/hero_run_right"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up", "Art/HD2D/Hero/Frames/hero_run_up"] }
+    },
+    {
+      "action": "Jump", "framesPerSecond": 7.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down", "Art/HD2D/Hero/Frames/hero_jump_down"] }
+    },
+    {
+      "action": "Fall", "framesPerSecond": 5.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_fall_down"] }
+    },
+    {
+      "action": "Land", "framesPerSecond": 8.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_land_down"] }
+    },
+    {
+      "action": "Sword", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_right"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] }
+    },
+    {
+      "action": "AirSlash", "framesPerSecond": 10.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_right"] }
+    },
+    {
+      "action": "Plunge", "framesPerSecond": 8.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_plunge_down"], "usePivotOverride": true, "pivotX": 0.5, "pivotY": 0.36 }
+    },
+    {
+      "action": "SpinCharge", "framesPerSecond": 6.0, "loop": true, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_spincharge_down"] }
+    },
+    {
+      "action": "SpinRelease", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_spin_down"] }
+    },
+    {
+      "action": "MagicCharge", "framesPerSecond": 5.0, "loop": true, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down"] }
+    },
+    {
+      "action": "MagicRelease", "framesPerSecond": 9.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down"] }
+    },
+    {
+      "action": "Hurt", "framesPerSecond": 9.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_hurt_down"] }
+    },
+    {
+      "action": "Defeated", "framesPerSecond": 6.0, "loop": false, "holdLastFrame": true,
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_defeated_down"] }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+*.blend binary
+*.fbx binary
+*.mp3 binary
+*.png binary
+

@@ -1,0 +1,49 @@
+# Windows / editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+
+# Local scratch and validation copies
+/Temp/
+/TempUnity*/
+
+# Unity generated state
+/unity/CoffeeGame/[Ll]ibrary/
+/unity/CoffeeGame/[Tt]emp/
+/unity/CoffeeGame/[Oo]bj/
+/unity/CoffeeGame/[Ll]ogs/
+/unity/CoffeeGame/[Uu]ser[Ss]ettings/
+/unity/CoffeeGame/[Mm]emoryCaptures/
+/unity/CoffeeGame/[Rr]ecordings/
+/unity/CoffeeGame/[Bb]uilds/
+/unity/CoffeeGame/.utmp/
+
+# Unity/IDE generated project files
+*.csproj
+*.sln
+*.slnx
+*.unityproj
+*.tmp
+*.rsp
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity crash and local diagnostic output
+sysinfo.txt
+crashlytics-build.properties
+
+# Python / Blender local caches and backups
+__pycache__/
+*.py[cod]
+*.blend1
+*.blend2
+

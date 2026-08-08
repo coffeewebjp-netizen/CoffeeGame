@@ -1,0 +1,80 @@
+{
+  "asset": "heroine-v1",
+  "status": "provisional-game-ready-blockout",
+  "generator": "tools/blender/generate_hero.py",
+  "reference": "art/3d/reference/hero-turnaround-v1.png",
+  "source": "art/3d/source/heroine-v1.blend",
+  "fbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/heroine-v1.fbx",
+  "preview": "art/3d/previews/heroine-v1.png",
+  "units": "meters",
+  "heightMeters": 1.62,
+  "sourceAxes": {
+    "up": "+Z",
+    "forward": "-Y"
+  },
+  "unityAxes": {
+    "up": "+Y",
+    "forward": "+Z"
+  },
+  "origin": "ground-center",
+  "counts": {
+    "objects": 94,
+    "meshObjects": 93,
+    "vertices": 3966,
+    "armatures": 1,
+    "bones": 20,
+    "actions": 15
+  },
+  "actions": [
+    "AirSlash",
+    "Defeated",
+    "Fall",
+    "Hurt",
+    "Idle",
+    "Jump",
+    "Land",
+    "MagicCharge",
+    "MagicRelease",
+    "Plunge",
+    "Run",
+    "SpinCharge",
+    "SpinRelease",
+    "Sword",
+    "Walk"
+  ],
+  "requiredActions": [
+    "Idle",
+    "Walk",
+    "Run",
+    "Jump",
+    "Fall",
+    "Land",
+    "Sword",
+    "AirSlash",
+    "Plunge",
+    "SpinCharge",
+    "SpinRelease",
+    "MagicCharge",
+    "MagicRelease",
+    "Hurt",
+    "Defeated"
+  ],
+  "separateProps": [
+    "KatanaBlade",
+    "KatanaGrip",
+    "KatanaGuard",
+    "Sheath"
+  ],
+  "validation": {
+    "reopened": true,
+    "blendReadable": true,
+    "fbxExists": true,
+    "previewExists": true,
+    "meshObjectCount": 93,
+    "armatureCount": 1,
+    "boneCount": 20,
+    "actionCount": 15,
+    "missingRequiredActions": [],
+    "passed": true
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 3,
+  "asset": "heroine-v4",
+  "status": "slender-anime-production-candidate",
+  "generator": "tools/blender/generate_hero_v4.py",
+  "reference": "art/3d/reference/hero-turnaround-v1.png",
+  "unityV3Comparison": "art/3d/previews/unity-combat-v3-steam-desktop.png",
+  "source": "art/3d/source/heroine-v4.blend",
+  "fbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/heroine-v4.fbx",
+  "previews": {
+    "front": "art/3d/previews/heroine-v4-front.png",
+    "gameCamera": "art/3d/previews/heroine-v4-game-camera.png"
+  },
+  "fbxValidationReport": "art/3d/manifests/heroine-v4-fbx-validation.json",
+  "heightMetersIncludingAhoge": 1.675,
+  "visualProportionHeads": 6.7,
+  "sourceAxes": {
+    "up": "+Z",
+    "forward": "-Y"
+  },
+  "unityAxes": {
+    "up": "+Y",
+    "forward": "+Z"
+  },
+  "origin": "ground-center",
+  "runtimeMeshes": [
+    "HeroineBody",
+    "HeroineKatana",
+    "HeroineSheath"
+  ],
+  "boneContract": {
+    "count": 20,
+    "compatibleWith": "heroine-v1/v2/v3 bone names"
+  },
+  "requiredActions": [
+    "Idle",
+    "Walk",
+    "Run",
+    "Jump",
+    "Fall",
+    "Land",
+    "Sword",
+    "AirSlash",
+    "Plunge",
+    "SpinCharge",
+    "SpinRelease",
+    "MagicCharge",
+    "MagicRelease",
+    "Hurt",
+    "Defeated"
+  ],
+  "counts": {
+    "objects": 4,
+    "meshObjects": 3,
+    "vertices": 20006,
+    "triangles": 38704,
+    "materials": 22,
+    "armatures": 1,
+    "bones": 20,
+    "actions": 15,
+    "actionNames": [
+      "AirSlash",
+      "Defeated",
+      "Fall",
+      "Hurt",
+      "Idle",
+      "Jump",
+      "Land",
+      "MagicCharge",
+      "MagicRelease",
+      "Plunge",
+      "Run",
+      "SpinCharge",
+      "SpinRelease",
+      "Sword",
+      "Walk"
+    ]
+  },
+  "materialPalette": {
+    "CG_Hero_Boot_Rubber_URP": {
+      "baseColor": "#0D1118",
+      "role": "boot-rubber",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Eye_Amber_URP": {
+      "baseColor": "#FF8B18",
+      "role": "iris",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Eye_GoldHighlight_URP": {
+      "baseColor": "#FFD95A",
+      "role": "iris-highlight",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Face_Ink_URP": {
+      "baseColor": "#1E1420",
+      "role": "face-ink",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Hair_BlueShadow_URP": {
+      "baseColor": "#3282BD",
+      "role": "hair-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Hair_Highlight_URP": {
+      "baseColor": "#B5EEFF",
+      "role": "hair-highlight",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Hair_SkyCyan_URP": {
+      "baseColor": "#77D8FF",
+      "role": "hair-main",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Haori_Crimson_URP": {
+      "baseColor": "#CF3657",
+      "role": "haori-main",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Haori_Highlight_URP": {
+      "baseColor": "#E95772",
+      "role": "haori-highlight",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Haori_InnerWine_URP": {
+      "baseColor": "#741D35",
+      "role": "haori-inner",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Katana_Fittings_URP": {
+      "baseColor": "#263849",
+      "role": "metal-dark",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Katana_Steel_URP": {
+      "baseColor": "#B3D8E8",
+      "role": "blade",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Katana_Wrap_Rose_URP": {
+      "baseColor": "#9E3456",
+      "role": "handle-wrap",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Lip_MutedRose_URP": {
+      "baseColor": "#B75F68",
+      "role": "lip",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Obi_Glove_Black_URP": {
+      "baseColor": "#171C25",
+      "role": "black-cloth",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Skin_Peach_URP": {
+      "baseColor": "#FFD8CB",
+      "role": "skin",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Skin_Shadow_URP": {
+      "baseColor": "#D98C82",
+      "role": "skin-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Skirt_Apricot_URP": {
+      "baseColor": "#F3A15F",
+      "role": "skirt-main",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Skirt_Highlight_URP": {
+      "baseColor": "#FFC47D",
+      "role": "skirt-highlight",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Skirt_PleatShadow_URP": {
+      "baseColor": "#B85B36",
+      "role": "skirt-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Top_FoldShadow_URP": {
+      "baseColor": "#AAB8C7",
+      "role": "top-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "CG_Hero_Top_WarmWhite_URP": {
+      "baseColor": "#FFF8ED",
+      "role": "top",
+      "shader": "Universal Render Pipeline/Lit"
+    }
+  },
+  "androidBudget": {
+    "triangleMaximum": 40000,
+    "runtimeMeshMaximum": 3
+  },
+  "validation": {
+    "reopened": true,
+    "fbxReimportPassed": true,
+    "outsideNormalQAPassed": true,
+    "missingRequiredActions": [],
+    "report": "art/3d/manifests/heroine-v4-fbx-validation.json"
+  }
+}

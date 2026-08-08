@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf3ef8ab785d3f545b5ef907f6536417, type: 3}
+  m_Name: FirstCombatTuning
+  m_EditorClassIdentifier: CoffeeGame.Domain::CoffeeGame.Domain.CombatTuning
+  playerMaxHealth: 24
+  playerMaxMagic: 12
+  playerMaxStamina: 100
+  staminaPerSwordHit: 25
+  walkSpeed: 1.55
+  runSpeed: 2.45
+  runHoldDuration: 0.65
+  jumpVelocity: 4.8
+  gravity: 11.8
+  airControl: 0.72
+  swordDamage: 3
+  swordRange: 0.78
+  swordCooldown: 0.34
+  airSlashDamage: 4
+  airSlashRange: 0.94
+  plungeDamage: 8
+  plungeRadius: 1.18
+  plungeSpeed: 7.6
+  plungeLandingLag: 0.48
+  specialDamage: 12
+  specialRange: 1.42
+  specialChargeDuration: 0.8
+  specialStaminaCost: 100
+  magicDamage: 5
+  magicCost: 4
+  magicChargeDuration: 0.65
+  magicProjectileSpeed: 4.4
+  magicMpRegenPerSecond: 0.45
+  slimeMaxHealth: 12
+  slimeDamage: 2
+  slimeSpeed: 0.68
+  slimeAttackRange: 1.6
+  slimeAttackInterval: 2.4
+  slimeAttackWindup: 0.55
+  slimeRewardExperience: 1
+  slimeRewardGold: 1
+  slimeRewardJelly: 1
+  goalKills: 5

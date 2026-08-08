@@ -1,0 +1,14 @@
+{
+  "name": "CoffeeGame.Editor",
+  "rootNamespace": "CoffeeGame.Editor",
+  "references": [
+    "CoffeeGame.Domain",
+    "CoffeeGame.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}
+

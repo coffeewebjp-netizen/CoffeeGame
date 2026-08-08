@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10151b" />
+  <title>CoffeeGAME - Slime Combat Slice</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">COFFEEGAME / FIRST PLAYABLE SLICE</p>
+        <h1>少女とスライム</h1>
+      </div>
+      <div class="topbar-actions">
+        <div class="audio-controls" aria-label="サウンド設定">
+          <button id="bgmToggleButton" class="audio-toggle" type="button" aria-pressed="false">♪ BGM待機</button>
+          <label class="volume-control">音量
+            <input id="bgmVolume" type="range" min="0" max="1" step="0.05" value="0.35" aria-label="BGM音量" />
+          </label>
+          <button id="sfxToggleButton" class="audio-toggle" type="button" aria-pressed="true">✦ SFX待機</button>
+          <label class="volume-control">効果音
+            <input id="sfxVolume" type="range" min="0" max="1" step="0.05" value="0.55" aria-label="効果音量" />
+          </label>
+          <details class="mobile-audio-settings">
+            <summary>音量</summary>
+            <div class="mobile-audio-popover">
+              <label class="mobile-volume-control">BGM
+                <input id="bgmVolumeMobile" type="range" min="0" max="1" step="0.05" value="0.35" aria-label="モバイルBGM音量" />
+              </label>
+              <label class="mobile-volume-control">効果音
+                <input id="sfxVolumeMobile" type="range" min="0" max="1" step="0.05" value="0.55" aria-label="モバイル効果音量" />
+              </label>
+            </div>
+          </details>
+          <span id="bgmStatus" class="audio-status" aria-live="polite">戦闘開始で再生</span>
+        </div>
+        <div class="prototype-badge">操作感の検証用</div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="game-card" aria-label="ゲーム画面">
+        <div class="canvas-shell">
+          <canvas id="game" width="960" height="540" tabindex="0" aria-label="スライム戦闘"></canvas>
+          <div id="startOverlay" class="start-overlay">
+            <div>
+              <p>説明と調整数値を確認してから開始できます。Steam Controllerは A / Start で開始。</p>
+              <button id="startButton" class="primary-button" type="button">戦闘を始める</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultOverlay" class="result-overlay" role="dialog" aria-modal="true" aria-live="assertive" aria-labelledby="resultTitle" hidden>
+          <div class="result-card">
+            <p id="resultKicker" class="eyebrow">TRIAL COMPLETE</p>
+            <h2 id="resultTitle">最初の討伐完了</h2>
+            <p id="resultSummary"></p>
+            <button id="retryButton" class="primary-button" type="button">もう一度試す（A / Start）</button>
+          </div>
+        </div>
+
+        <div class="status-strip" aria-label="戦闘ステータス">
+          <span>Lv <strong id="levelStatus">1</strong></span>
+          <span>HP <strong id="hpStatus">24 / 24</strong></span>
+          <span>EXP <strong id="expStatus">0 / 3</strong></span>
+          <span>ST <strong id="staminaStatus">0 / 100</strong></span>
+          <span>MP <strong id="mpStatus">12 / 12</strong></span>
+          <span>敵HP <strong id="enemyHpStatus">12 / 12</strong></span>
+          <span class="controller-status-cell">INPUT <strong id="controllerCompactStatus">未検出</strong></span>
+        </div>
+
+        <div class="control-deck" aria-label="ゲーム操作">
+          <div class="move-control">
+            <span class="control-label">移動</span>
+            <div class="dpad" aria-label="方向ボタン">
+              <button class="dpad-button up" type="button" data-move="up" aria-label="上へ移動">▲</button>
+              <button class="dpad-button left" type="button" data-move="left" aria-label="左へ移動">◀</button>
+              <div class="dpad-center" aria-hidden="true"></div>
+              <button class="dpad-button right" type="button" data-move="right" aria-label="右へ移動">▶</button>
+              <button class="dpad-button down" type="button" data-move="down" aria-label="下へ移動">▼</button>
+            </div>
+          </div>
+
+          <div class="action-control">
+            <span class="control-label">アクション</span>
+            <div class="action-buttons">
+              <button id="jumpButton" class="action-button jump" type="button" data-action="jump">
+                <strong>ジャンプ</strong>
+                <small>A / Space</small>
+              </button>
+              <button id="attackButton" class="action-button attack" type="button" data-action="attack">
+                <strong>剣</strong>
+                <small>通常攻撃</small>
+              </button>
+              <button id="specialButton" class="action-button special" type="button" data-action="special">
+                <strong>回転斬り</strong>
+                <small id="specialCostLabel">ST 100</small>
+              </button>
+              <button id="magicButton" class="action-button magic" type="button" data-action="magic">
+                <strong>氷魔法</strong>
+                <small id="magicCostLabel">MP 4</small>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyboard-hint">
+          <span>移動 WASD / 矢印</span>
+          <span id="jumpBindingHint">ジャンプ Space</span>
+          <span id="attackBindingHint">剣 F / 左クリック</span>
+          <span id="specialBindingHint">回転斬り Q / 右クリック</span>
+          <span id="magicBindingHint">氷魔法 E</span>
+          <span id="confirmBindingHint">開始 / リトライ Enter / R</span>
+          <span id="gamepadBindingHint">PAD 左Stick・Aジャンプ・RT剣・X回転斬り・Y氷魔法</span>
+        </div>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel heroine-panel">
+          <img src="assets/hero-sprite.png" alt="水色の髪と赤い羽織の剣士" />
+          <div>
+            <p class="eyebrow">MAIN CHARACTER</p>
+            <h2>名もなき少女</h2>
+            <p>刀・ジャンプ斬り・急降下突き・回転斬り・氷魔法を使う近接型。名前と正式設定は後で決めます。</p>
+          </div>
+        </section>
+
+        <section class="panel objective-panel">
+          <div class="panel-heading">
+            <h2>今回の目標</h2>
+            <span id="goalBadge">0 / 5</span>
+          </div>
+          <p>スライムを5体倒し、3体目のレベルアップまでを確認する。</p>
+          <div class="reward-row">
+            <span>EXP <strong id="expStat">0 / 3</strong></span>
+            <span>Gold <strong id="goldStat">0</strong></span>
+            <span>ゼリー <strong id="jellyStat">0</strong></span>
+          </div>
+        </section>
+
+        <section class="panel feedback-panel">
+          <h2>今回見るところ</h2>
+          <ol>
+            <li>剣を押した瞬間の反応</li>
+            <li>スライムの硬さ</li>
+            <li>回転斬りのチャージ時間</li>
+            <li>氷魔法にMPを使う価値</li>
+            <li>報酬が増える嬉しさ</li>
+          </ol>
+          <p id="eventLog" class="event-log" aria-live="polite">スライムが現れた。</p>
+        </section>
+
+        <section class="panel controller-panel">
+          <div class="panel-heading">
+            <h2>Steam Controller</h2>
+            <span id="controllerBadge" class="controller-badge">未検出</span>
+          </div>
+          <p id="controllerName" class="controller-name">ページを選択し、コントローラーのボタンを一度押してください。</p>
+          <div class="controller-map" aria-label="現在のコントローラー割り当て">
+            <span><b>左パッド / Stick</b> 移動</span>
+            <span><b id="controllerJumpMap">A</b> ジャンプ</span>
+            <span><b id="controllerAttackMap">RT</b> 剣</span>
+            <span><b id="controllerSpecialMap">X</b> 回転斬り</span>
+            <span><b id="controllerMagicMap">Y</b> 氷魔法</span>
+            <span><b id="controllerConfirmMap">A / Start</b> 開始・リトライ</span>
+          </div>
+          <p id="controllerLastInput" class="controller-last-input" aria-live="polite">入力待ち</p>
+          <details id="inputBindingPanel" class="input-binding-panel">
+            <summary>ボタン配置を変更</summary>
+            <p>変更する欄を押してから、割り当てたいボタンまたはキーを入力します。Escかパネルを閉じるとキャンセルできます。</p>
+            <div class="binding-grid">
+              <span class="binding-heading">操作</span><span class="binding-heading">PAD</span><span class="binding-heading">KEY / Legacy</span>
+              <b>ジャンプ</b>
+              <button type="button" data-bind-device="gamepad" data-bind-action="jump">A</button>
+              <button type="button" data-bind-device="keyboard" data-bind-action="jump">Space</button>
+              <b>剣</b>
+              <button type="button" data-bind-device="gamepad" data-bind-action="attack">RT</button>
+              <button type="button" data-bind-device="keyboard" data-bind-action="attack">F</button>
+              <b>回転斬り</b>
+              <button type="button" data-bind-device="gamepad" data-bind-action="special">X</button>
+              <button type="button" data-bind-device="keyboard" data-bind-action="special">Q</button>
+              <b>氷魔法</b>
+              <button type="button" data-bind-device="gamepad" data-bind-action="magic">Y</button>
+              <button type="button" data-bind-device="keyboard" data-bind-action="magic">E</button>
+              <b>決定</b>
+              <button type="button" data-bind-device="gamepad" data-bind-action="confirm">A / Start</button>
+              <button type="button" data-bind-device="keyboard" data-bind-action="confirm">Enter / R</button>
+            </div>
+            <p id="rebindStatus" class="rebind-status" aria-live="polite">現在は初期配置です。</p>
+            <button id="resetBindingsButton" class="reset-bindings-button" type="button">配置を初期状態へ戻す</button>
+          </details>
+        </section>
+
+        <details id="tuningPanel" class="panel tuning-panel">
+          <summary>操作しながら数値を調整</summary>
+          <div class="tuning-grid">
+            <label>歩く速さ<input type="number" min="60" max="300" step="5" data-config="playerWalkSpeed" /></label>
+            <label>走る速さ<input type="number" min="80" max="400" step="5" data-config="playerRunSpeed" /></label>
+            <label>走り切替秒<input type="number" min="0.1" max="2" step="0.05" data-config="runHoldTime" /></label>
+            <label>剣ダメージ<input type="number" min="1" max="20" step="1" data-config="swordDamage" /></label>
+            <label>剣の間隔<input type="number" min="0.1" max="1" step="0.01" data-config="swordCooldown" /></label>
+            <label>ジャンプ初速<input type="number" min="240" max="760" step="10" data-config="jumpVelocity" /></label>
+            <label>空中斬りダメージ<input type="number" min="1" max="30" step="1" data-config="airSlashDamage" /></label>
+            <label>急降下ダメージ<input type="number" min="1" max="50" step="1" data-config="plungeDamage" /></label>
+            <label>着地硬直秒<input type="number" min="0.1" max="1.5" step="0.01" data-config="plungeLandingLag" /></label>
+            <label>命中時ST<input type="number" min="1" max="100" step="1" data-config="staminaPerHit" /></label>
+            <label>必殺ダメージ<input type="number" min="1" max="50" step="1" data-config="specialDamage" /></label>
+            <label>必殺ST消費<input type="number" min="1" max="100" step="1" data-config="specialCost" /></label>
+            <label>回転斬りチャージ秒<input type="number" min="0.1" max="3" step="0.05" data-config="specialChargeTime" /></label>
+            <label>魔法ダメージ<input type="number" min="1" max="30" step="1" data-config="magicDamage" /></label>
+            <label>魔法MP消費<input type="number" min="1" max="30" step="1" data-config="magicCost" /></label>
+            <label>氷魔法チャージ秒<input type="number" min="0.1" max="3" step="0.05" data-config="magicChargeTime" /></label>
+            <label>MP回復/秒<input type="number" min="0" max="10" step="0.1" data-config="mpRegen" /></label>
+            <label>スライムHP<input type="number" min="1" max="100" step="1" data-config="slimeHp" /></label>
+            <label>敵攻撃力<input type="number" min="1" max="20" step="1" data-config="slimeDamage" /></label>
+            <label>敵攻撃間隔<input type="number" min="0.6" max="6" step="0.1" data-config="slimeAttackInterval" /></label>
+            <label>Lv2必要EXP<input type="number" min="1" max="20" step="1" data-config="firstLevelExp" /></label>
+            <label>試作の討伐数<input type="number" min="1" max="30" step="1" data-config="goalKills" /></label>
+          </div>
+          <p class="tuning-note">調整中は戦闘を一時停止します。敵のHP・攻撃力・攻撃間隔は「敵だけ再生成」後に反映されます。</p>
+          <div class="tuning-actions">
+            <button id="respawnEnemyButton" type="button">敵だけ再生成</button>
+            <button id="resetTuningButton" type="button">初期値へ戻す</button>
+          </div>
+        </details>
+
+        <a class="legacy-link" href="legacy-prototype.html">旧プロトタイプを開く</a>
+      </aside>
+    </main>
+  </div>
+
+  <audio id="bgmAudio" src="assets/Rituals_of_the_Jade_Valley.mp3" preload="metadata" loop></audio>
+  <script src="game.js" defer></script>
+</body>
+</html>

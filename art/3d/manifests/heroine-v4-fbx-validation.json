@@ -1,0 +1,164 @@
+{
+  "asset": "heroine-v4",
+  "passed": true,
+  "checks": {
+    "sourceMeshContract": true,
+    "sourceRigContract": true,
+    "sourceActionContract": true,
+    "sourceAndroidBudget": true,
+    "sourceOutsideNormals": true,
+    "fbxMeshContract": true,
+    "fbxRigContract": true,
+    "fbxActionContract": true,
+    "fbxOutsideNormals": true,
+    "previewsExist": true
+  },
+  "source": {
+    "objects": 4,
+    "meshObjects": 3,
+    "meshNames": [
+      "HeroineBody",
+      "HeroineKatana",
+      "HeroineSheath"
+    ],
+    "vertices": 20006,
+    "triangles": 38704,
+    "materials": 22,
+    "armatures": 1,
+    "bones": 20,
+    "actions": 15,
+    "actionNames": [
+      "AirSlash",
+      "Defeated",
+      "Fall",
+      "Hurt",
+      "Idle",
+      "Jump",
+      "Land",
+      "MagicCharge",
+      "MagicRelease",
+      "Plunge",
+      "Run",
+      "SpinCharge",
+      "SpinRelease",
+      "Sword",
+      "Walk"
+    ]
+  },
+  "fbxReimport": {
+    "objects": 4,
+    "meshObjects": 3,
+    "meshNames": [
+      "HeroineBody",
+      "HeroineKatana",
+      "HeroineSheath"
+    ],
+    "vertices": 20006,
+    "triangles": 38704,
+    "materials": 22,
+    "armatures": 1,
+    "bones": 20,
+    "actions": 15,
+    "actionNames": [
+      "AirSlash",
+      "Defeated",
+      "Fall",
+      "Hurt",
+      "Idle",
+      "Jump",
+      "Land",
+      "MagicCharge",
+      "MagicRelease",
+      "Plunge",
+      "Run",
+      "SpinCharge",
+      "SpinRelease",
+      "Sword",
+      "Walk"
+    ]
+  },
+  "missingActions": {
+    "source": [],
+    "fbx": []
+  },
+  "outsideNormalQA": {
+    "source": {
+      "objects": [
+        {
+          "name": "HeroineBody",
+          "determinant": 1.0,
+          "componentCount": 96,
+          "closedComponentCount": 81,
+          "negativeClosedComponentCount": 0,
+          "minimumClosedVolume": 9.265477274311898e-09
+        },
+        {
+          "name": "HeroineSheath",
+          "determinant": 1.0,
+          "componentCount": 2,
+          "closedComponentCount": 2,
+          "negativeClosedComponentCount": 0,
+          "minimumClosedVolume": 6.963701131705115e-05
+        },
+        {
+          "name": "HeroineKatana",
+          "determinant": 1.0,
+          "componentCount": 8,
+          "closedComponentCount": 3,
+          "negativeClosedComponentCount": 0,
+          "minimumClosedVolume": 1.0233999257517712e-05
+        }
+      ],
+      "negativeClosedMeshes": [],
+      "backfaceCullSafe": true
+    },
+    "fbxReimport": {
+      "objects": [
+        {
+          "name": "HeroineKatana",
+          "determinant": 1.0,
+          "componentCount": 8,
+          "closedComponentCount": 3,
+          "negativeClosedComponentCount": 0,
+          "minimumClosedVolume": 1.023527385039338e-05
+        },
+        {
+          "name": "HeroineBody",
+          "determinant": 1.0,
+          "componentCount": 96,
+          "closedComponentCount": 81,
+          "negativeClosedComponentCount": 0,
+          "minimumClosedVolume": 1.0145773406596508e-08
+        },
+        {
+          "name": "HeroineSheath",
+          "determinant": 1.0,
+          "componentCount": 2,
+          "closedComponentCount": 2,
+          "negativeClosedComponentCount": 0,
+          "minimumClosedVolume": 6.963801433812486e-05
+        }
+      ],
+      "negativeClosedMeshes": [],
+      "backfaceCullSafe": true
+    }
+  },
+  "previews": [
+    {
+      "path": "art/3d/previews/heroine-v4-front.png",
+      "size": [
+        900,
+        1200
+      ],
+      "bytes": 1012649
+    },
+    {
+      "path": "art/3d/previews/heroine-v4-game-camera.png",
+      "size": [
+        1100,
+        900
+      ],
+      "bytes": 928519
+    }
+  ]
+}
