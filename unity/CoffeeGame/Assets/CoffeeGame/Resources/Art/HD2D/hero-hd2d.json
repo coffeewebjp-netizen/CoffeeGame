@@ -29,31 +29,39 @@
     },
     {
       "action": "Run", "framesPerSecond": 7.5, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down_a_v2", "Art/HD2D/Hero/Frames/hero_run_down_b_v2"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right_a_v2", "Art/HD2D/Hero/Frames/hero_run_right_b_v2"] },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up_a_v2", "Art/HD2D/Hero/Frames/hero_run_up_b_v2"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down_a_v2", "Art/HD2D/Hero/Frames/hero_run_down_b_v2"], "pixelsPerUnit": 505.0 },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right_a_v2", "Art/HD2D/Hero/Frames/hero_run_right_b_v2"], "pixelsPerUnit": 376.0 },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up_a_v2", "Art/HD2D/Hero/Frames/hero_run_up_b_v2"], "pixelsPerUnit": 506.0 }
     },
     {
       "action": "Jump", "framesPerSecond": 7.0, "loop": false, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down", "Art/HD2D/Hero/Frames/hero_jump_down"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down", "Art/HD2D/Hero/Frames/hero_jump_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_right", "Art/HD2D/Hero/Frames/hero_jump_right_v2"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up", "Art/HD2D/Hero/Frames/hero_jump_up_v2"] }
     },
     {
       "action": "Fall", "framesPerSecond": 5.0, "loop": false, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_fall_down"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_fall_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_fall_right_v2"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_fall_up_v2"] }
     },
     {
       "action": "Land", "framesPerSecond": 8.0, "loop": false, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_land_down"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_land_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_land_right_v2"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_land_up_v2"] }
     },
     {
       "action": "Sword", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
       "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] },
       "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_right_long_v2"], "authoredFacingRight": true },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] }
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_up_v2"] }
     },
     {
       "action": "AirSlash", "framesPerSecond": 10.0, "loop": false, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_right"], "useHorizontalFacing": true, "authoredFacingRight": true }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_down_v2"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_right"], "authoredFacingRight": true },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_up_v2"] }
     },
     {
       "action": "Plunge", "framesPerSecond": 8.0, "loop": false, "holdLastFrame": true,

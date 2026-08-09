@@ -16,7 +16,7 @@ $contracts = @(
         Unity = Join-Path $manifestRoot "Hero\Frames"
         Width = 768
         Height = 768
-        Count = 34
+        Count = 43
         Manifest = Join-Path $manifestRoot "hero-hd2d.json"
         RequiredActions = 15
     },

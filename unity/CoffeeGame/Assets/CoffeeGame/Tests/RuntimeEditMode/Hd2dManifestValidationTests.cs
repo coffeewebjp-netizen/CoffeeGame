@@ -118,6 +118,54 @@ namespace CoffeeGame.Presentation.Tests
             AssertAlternatingPair(run.up.resourcePaths);
         }
 
+        [Test]
+        public void HeroRun_NormalizesDirectionSpecificSourceScale()
+        {
+            Assert.That(
+                Hd2dSpriteManifestLoader.TryLoad(
+                    "Art/HD2D/hero-hd2d",
+                    out Hd2dSpriteManifest manifest,
+                    out string error),
+                Is.True,
+                error);
+
+            Hd2dSpriteClipDefinition run = FindClip(manifest, "Run");
+
+            Assert.That(run.down.pixelsPerUnit, Is.EqualTo(505f));
+            Assert.That(run.side.pixelsPerUnit, Is.EqualTo(376f));
+            Assert.That(run.up.pixelsPerUnit, Is.EqualTo(506f));
+        }
+
+        [TestCase("Jump", "hero_jump_down", "hero_jump_right_v2", "hero_jump_up_v2")]
+        [TestCase("Fall", "hero_fall_down", "hero_fall_right_v2", "hero_fall_up_v2")]
+        [TestCase("Land", "hero_land_down", "hero_land_right_v2", "hero_land_up_v2")]
+        [TestCase("Sword", "hero_sword_down", "hero_sword_right_long_v2", "hero_sword_up_v2")]
+        [TestCase("AirSlash", "hero_airslash_down_v2", "hero_airslash_right", "hero_airslash_up_v2")]
+        public void HeroDirectionalActions_UseDistinctViewSpecificArt(
+            string action,
+            string expectedDown,
+            string expectedSide,
+            string expectedUp)
+        {
+            Assert.That(
+                Hd2dSpriteManifestLoader.TryLoad(
+                    "Art/HD2D/hero-hd2d",
+                    out Hd2dSpriteManifest manifest,
+                    out string error),
+                Is.True,
+                error);
+
+            Hd2dSpriteClipDefinition clip = FindClip(manifest, action);
+
+            Assert.That(clip.all, Is.Null, $"{action} must not reuse one view for every direction.");
+            Assert.That(clip.down.resourcePaths[^1], Does.EndWith(expectedDown));
+            Assert.That(clip.side.resourcePaths[^1], Does.EndWith(expectedSide));
+            Assert.That(clip.up.resourcePaths[^1], Does.EndWith(expectedUp));
+            Assert.That(clip.down.resourcePaths[^1], Is.Not.EqualTo(clip.side.resourcePaths[^1]));
+            Assert.That(clip.side.resourcePaths[^1], Is.Not.EqualTo(clip.up.resourcePaths[^1]));
+            Assert.That(clip.up.resourcePaths[^1], Is.Not.EqualTo(clip.down.resourcePaths[^1]));
+        }
+
         private static void AssertAlternatingPair(string[] resourcePaths)
         {
             Assert.That(resourcePaths, Has.Length.EqualTo(2));
