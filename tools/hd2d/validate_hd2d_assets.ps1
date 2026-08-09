@@ -16,9 +16,19 @@ $contracts = @(
         Unity = Join-Path $manifestRoot "Hero\Frames"
         Width = 768
         Height = 768
-        Count = 43
+        Count = 49
         Manifest = Join-Path $manifestRoot "hero-hd2d.json"
         RequiredActions = 15
+        GroundY = 720
+        GroundTolerance = 2
+        GroundedFrames = @(
+            "hero_run_down_a_v3.png",
+            "hero_run_down_b_v3.png",
+            "hero_run_right_a_v3.png",
+            "hero_run_right_b_v3.png",
+            "hero_run_up_a_v3.png",
+            "hero_run_up_b_v3.png"
+        )
     },
     @{
         Name = "Slime"
@@ -64,6 +74,30 @@ foreach ($contract in $contracts) {
         }
         finally {
             $bitmap.Dispose()
+        }
+    }
+
+    if ($contract.ContainsKey("GroundedFrames")) {
+        foreach ($frameName in $contract.GroundedFrames) {
+            $framePath = Join-Path $contract.Art $frameName
+            $bitmap = [System.Drawing.Bitmap]::FromFile($framePath)
+            try {
+                $maxOpaqueY = -1
+                for ($y = 0; $y -lt $bitmap.Height; $y++) {
+                    for ($x = 0; $x -lt $bitmap.Width; $x++) {
+                        if ($bitmap.GetPixel($x, $y).A -gt 16) {
+                            $maxOpaqueY = $y
+                        }
+                    }
+                }
+
+                $contactDelta = [Math]::Abs($maxOpaqueY - $contract.GroundY)
+                Assert-Condition ($contactDelta -le $contract.GroundTolerance) `
+                    "$($contract.Name) grounded frame misses y=$($contract.GroundY): $frameName ends at y=$maxOpaqueY."
+            }
+            finally {
+                $bitmap.Dispose()
+            }
         }
     }
 

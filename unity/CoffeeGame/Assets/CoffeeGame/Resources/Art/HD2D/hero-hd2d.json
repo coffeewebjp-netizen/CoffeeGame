@@ -29,9 +29,9 @@
     },
     {
       "action": "Run", "framesPerSecond": 7.5, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down_a_v2", "Art/HD2D/Hero/Frames/hero_run_down_b_v2"], "pixelsPerUnit": 505.0 },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right_a_v2", "Art/HD2D/Hero/Frames/hero_run_right_b_v2"], "pixelsPerUnit": 376.0 },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up_a_v2", "Art/HD2D/Hero/Frames/hero_run_up_b_v2"], "pixelsPerUnit": 506.0 }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down_a_v3", "Art/HD2D/Hero/Frames/hero_run_down_b_v3"], "pixelsPerUnit": 516.0 },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right_a_v3", "Art/HD2D/Hero/Frames/hero_run_right_b_v3"], "pixelsPerUnit": 460.0 },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up_a_v3", "Art/HD2D/Hero/Frames/hero_run_up_b_v3"], "pixelsPerUnit": 530.0 }
     },
     {
       "action": "Jump", "framesPerSecond": 7.0, "loop": false, "holdLastFrame": true,

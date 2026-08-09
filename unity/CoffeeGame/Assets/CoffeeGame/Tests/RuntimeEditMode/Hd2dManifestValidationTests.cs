@@ -110,12 +110,12 @@ namespace CoffeeGame.Presentation.Tests
             Hd2dSpriteClipDefinition walk = FindClip(manifest, "Walk");
             Hd2dSpriteClipDefinition run = FindClip(manifest, "Run");
 
-            AssertAlternatingPair(walk.down.resourcePaths);
-            AssertAlternatingPair(walk.side.resourcePaths);
-            AssertAlternatingPair(walk.up.resourcePaths);
-            AssertAlternatingPair(run.down.resourcePaths);
-            AssertAlternatingPair(run.side.resourcePaths);
-            AssertAlternatingPair(run.up.resourcePaths);
+            AssertAlternatingPair(walk.down.resourcePaths, "v2");
+            AssertAlternatingPair(walk.side.resourcePaths, "v2");
+            AssertAlternatingPair(walk.up.resourcePaths, "v2");
+            AssertAlternatingPair(run.down.resourcePaths, "v3");
+            AssertAlternatingPair(run.side.resourcePaths, "v3");
+            AssertAlternatingPair(run.up.resourcePaths, "v3");
         }
 
         [Test]
@@ -131,9 +131,9 @@ namespace CoffeeGame.Presentation.Tests
 
             Hd2dSpriteClipDefinition run = FindClip(manifest, "Run");
 
-            Assert.That(run.down.pixelsPerUnit, Is.EqualTo(505f));
-            Assert.That(run.side.pixelsPerUnit, Is.EqualTo(376f));
-            Assert.That(run.up.pixelsPerUnit, Is.EqualTo(506f));
+            Assert.That(run.down.pixelsPerUnit, Is.EqualTo(516f));
+            Assert.That(run.side.pixelsPerUnit, Is.EqualTo(460f));
+            Assert.That(run.up.pixelsPerUnit, Is.EqualTo(530f));
         }
 
         [TestCase("Jump", "hero_jump_down", "hero_jump_right_v2", "hero_jump_up_v2")]
@@ -166,12 +166,12 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(clip.up.resourcePaths[^1], Is.Not.EqualTo(clip.down.resourcePaths[^1]));
         }
 
-        private static void AssertAlternatingPair(string[] resourcePaths)
+        private static void AssertAlternatingPair(string[] resourcePaths, string version)
         {
             Assert.That(resourcePaths, Has.Length.EqualTo(2));
             Assert.That(resourcePaths[0], Is.Not.EqualTo(resourcePaths[1]));
-            Assert.That(resourcePaths[0], Does.EndWith("_a_v2"));
-            Assert.That(resourcePaths[1], Does.EndWith("_b_v2"));
+            Assert.That(resourcePaths[0], Does.EndWith($"_a_{version}"));
+            Assert.That(resourcePaths[1], Does.EndWith($"_b_{version}"));
         }
 
         private static Hd2dSpriteClipDefinition FindClip(
