@@ -131,9 +131,9 @@ namespace CoffeeGame.Presentation.Tests
 
             Hd2dSpriteClipDefinition run = FindClip(manifest, "Run");
 
-            Assert.That(run.down.pixelsPerUnit, Is.EqualTo(516f));
-            Assert.That(run.side.pixelsPerUnit, Is.EqualTo(460f));
-            Assert.That(run.up.pixelsPerUnit, Is.EqualTo(530f));
+            Assert.That(run.down.pixelsPerUnit, Is.EqualTo(644f));
+            Assert.That(run.side.pixelsPerUnit, Is.EqualTo(482f));
+            Assert.That(run.up.pixelsPerUnit, Is.EqualTo(507f));
         }
 
         [TestCase("Jump", "hero_jump_down", "hero_jump_right_v2", "hero_jump_up_v2")]
