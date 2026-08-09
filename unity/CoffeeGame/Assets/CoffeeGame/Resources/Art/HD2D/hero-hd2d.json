@@ -48,12 +48,12 @@
     {
       "action": "Sword", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
       "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_right"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_right"], "authoredFacingRight": true },
       "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] }
     },
     {
       "action": "AirSlash", "framesPerSecond": 10.0, "loop": false, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_right"] }
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_airslash_right"], "useHorizontalFacing": true, "authoredFacingRight": true }
     },
     {
       "action": "Plunge", "framesPerSecond": 8.0, "loop": false, "holdLastFrame": true,

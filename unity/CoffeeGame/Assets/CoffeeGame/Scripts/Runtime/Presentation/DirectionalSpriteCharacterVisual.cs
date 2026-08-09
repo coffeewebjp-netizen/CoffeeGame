@@ -15,18 +15,28 @@ namespace CoffeeGame.Presentation
     {
         private sealed class RuntimeClip
         {
-            public RuntimeClip(Sprite[] frames, float framesPerSecond, bool loop, bool holdLastFrame)
+            public RuntimeClip(
+                Sprite[] frames,
+                float framesPerSecond,
+                bool loop,
+                bool holdLastFrame,
+                bool usesHorizontalFacing,
+                bool authoredFacingRight)
             {
                 Frames = frames;
                 FramesPerSecond = Mathf.Max(0.01f, framesPerSecond);
                 Loop = loop;
                 HoldLastFrame = holdLastFrame;
+                UsesHorizontalFacing = usesHorizontalFacing;
+                AuthoredFacingRight = authoredFacingRight;
             }
 
             public Sprite[] Frames { get; }
             public float FramesPerSecond { get; }
             public bool Loop { get; }
             public bool HoldLastFrame { get; }
+            public bool UsesHorizontalFacing { get; }
+            public bool AuthoredFacingRight { get; }
         }
 
         private readonly Dictionary<int, RuntimeClip> clips = new Dictionary<int, RuntimeClip>();
@@ -54,6 +64,7 @@ namespace CoffeeGame.Presentation
         private float actionElapsed;
         private float actionDuration;
         private bool actionPlaying;
+        private bool horizontalFacingFlip;
         private bool actionCompletionPending;
         private int completionHoldFrames;
         private bool defeated;
@@ -164,6 +175,7 @@ namespace CoffeeGame.Presentation
             completionHoldFrames = 0;
             actionElapsed = 0f;
             actionDuration = 0f;
+            horizontalFacingFlip = false;
             locomotion = CharacterAction.Idle;
             activeState = CharacterAction.Idle;
             locomotionSpeed = 1f;
@@ -199,29 +211,25 @@ namespace CoffeeGame.Presentation
             cameraRight = cameraRight.sqrMagnitude > 0.001f ? cameraRight.normalized : Vector3.right;
             float forwardAmount = Vector3.Dot(planarDirection, cameraForward);
             float sideAmount = Vector3.Dot(planarDirection, cameraRight);
-            bool flip = Hd2dFacingPolicy.ResolveHorizontalFlip(
+            horizontalFacingFlip = Hd2dFacingPolicy.ResolveHorizontalFlip(
                 sideAmount,
-                spriteRenderer.flipX);
+                horizontalFacingFlip);
             if (manifest.directional)
             {
                 nextFacing = Hd2dFacingPolicy.ResolveDirection(
                     forwardAmount,
                     sideAmount,
                     facing);
-                if (nextFacing != Hd2dFacingDirection.Side)
-                {
-                    // Front/back art should not mirror as a side-facing pose.
-                    flip = false;
-                }
             }
 
             bool directionChanged = nextFacing != facing;
             facing = nextFacing;
-            spriteRenderer.flipX = flip;
             if (directionChanged)
             {
                 SelectClip(activeState, true);
+                return;
             }
+            ApplyClipHorizontalFacing();
         }
 
         public void SetLocomotion(CharacterAction action, float normalizedSpeed)
@@ -457,6 +465,7 @@ namespace CoffeeGame.Presentation
 
             activeState = state;
             activeClip = ResolveClip(state, facing);
+            ApplyClipHorizontalFacing();
             frameClock = 0f;
             if (activeClip == null || activeClip.Frames.Length == 0)
             {
@@ -491,7 +500,7 @@ namespace CoffeeGame.Presentation
             }
             if (fallbackSprite != null)
             {
-                return new RuntimeClip(new[] { fallbackSprite }, 1f, true, true);
+                return new RuntimeClip(new[] { fallbackSprite }, 1f, true, true, false, false);
             }
             return null;
         }
@@ -633,11 +642,20 @@ namespace CoffeeGame.Presentation
                 return false;
             }
 
+            bool directionSpecificSideStrip = direction == Hd2dFacingDirection.Side &&
+                definition.side != null && ReferenceEquals(strip, definition.side);
+            // Non-directional actors historically mirror every clip so their
+            // attacks can still point left/right. Directional "all" strips are
+            // neutral unless the manifest marks them as horizontal.
+            bool usesHorizontalFacing = !manifest.directional ||
+                strip.useHorizontalFacing || directionSpecificSideStrip;
             loadedClips[ClipKey(action, direction)] = new RuntimeClip(
                 frames,
                 definition.framesPerSecond,
                 definition.loop,
-                definition.holdLastFrame);
+                definition.holdLastFrame,
+                usesHorizontalFacing,
+                usesHorizontalFacing && strip.authoredFacingRight);
             error = string.Empty;
             return true;
         }
@@ -1052,6 +1070,28 @@ namespace CoffeeGame.Presentation
                     "_Color",
                     new Color(0.015f, 0.025f, 0.04f, alpha));
             }
+        }
+
+        private void ApplyClipHorizontalFacing()
+        {
+            if (spriteRenderer == null)
+            {
+                return;
+            }
+
+            if (activeClip == null || !activeClip.UsesHorizontalFacing)
+            {
+                spriteRenderer.flipX = false;
+                return;
+            }
+
+            // The billboard reverses its local horizontal axis. Locomotion side
+            // art is authored image-left, while the sword and air-slash source
+            // art is image-right, so those clips need the inverse mirror without
+            // changing the actor's gameplay-facing direction.
+            spriteRenderer.flipX = activeClip.AuthoredFacingRight
+                ? !horizontalFacingFlip
+                : horizontalFacingFlip;
         }
 
         private void ApplyActionPose()

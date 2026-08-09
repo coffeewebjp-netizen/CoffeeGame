@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using UnityEngine;
 
 namespace CoffeeGame.Presentation.Tests
 {
@@ -101,6 +102,64 @@ namespace CoffeeGame.Presentation.Tests
                 cameraRightAmount,
                 Is.GreaterThan(0.999f),
                 "The rendered side pose must point in the same screen-horizontal direction as movement.");
+        }
+
+        [TestCase(CharacterAction.Sword, 1f, false, true)]
+        [TestCase(CharacterAction.Sword, -1f, true, false)]
+        [TestCase(CharacterAction.AirSlash, 1f, false, true)]
+        [TestCase(CharacterAction.AirSlash, -1f, true, false)]
+        public void HeroRightAuthoredAttackArt_PointsAlongGameplayFacing(
+            CharacterAction action,
+            float cameraRightAmount,
+            bool expectedLocomotionFlip,
+            bool expectedAttackFlip)
+        {
+            var cameraObject = new GameObject("Facing test camera");
+            var actorObject = new GameObject("Facing test actor");
+            var visualObject = new GameObject("Facing test visual");
+            visualObject.transform.SetParent(actorObject.transform, false);
+
+            try
+            {
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.transform.rotation = Quaternion.LookRotation(
+                    new Vector3(0f, -4.97f, 8.85f));
+                var visual = visualObject.AddComponent<DirectionalSpriteCharacterVisual>();
+
+                Assert.That(
+                    visual.TryInitialize("Art/HD2D/hero-hd2d", null, 1f, camera),
+                    Is.True);
+
+                Vector3 gameplayFacing = camera.transform.right * cameraRightAmount;
+                visual.SetFacing(gameplayFacing);
+                Assert.That(
+                    visual.Renderer.flipX,
+                    Is.EqualTo(expectedLocomotionFlip),
+                    "Locomotion art must retain its image-left authoring contract.");
+
+                visual.PlayAction(action, 0.34f);
+
+                Assert.That(visual.CurrentAction, Is.EqualTo(action));
+                Assert.That(
+                    visual.Renderer.flipX,
+                    Is.EqualTo(expectedAttackFlip),
+                    $"{action} art is authored image-right and must invert the locomotion mirror.");
+
+                Vector3 localAttackDirection = visual.Renderer.flipX
+                    ? Vector3.left
+                    : Vector3.right;
+                Vector3 worldAttackDirection = CameraFacingBillboard.ResolveRotation(
+                    camera.transform.forward) * localAttackDirection;
+                Assert.That(
+                    Vector3.Dot(worldAttackDirection, gameplayFacing.normalized),
+                    Is.GreaterThan(0.999f),
+                    "The rendered attack must point along the same direction used by combat targeting.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(actorObject);
+                Object.DestroyImmediate(cameraObject);
+            }
         }
 
         [TestCase(CharacterAction.Jump, CharacterAction.Fall)]

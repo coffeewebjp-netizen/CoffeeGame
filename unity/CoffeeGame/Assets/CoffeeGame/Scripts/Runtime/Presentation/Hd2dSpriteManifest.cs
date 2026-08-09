@@ -324,6 +324,12 @@ namespace CoffeeGame.Presentation
         public bool usePivotOverride;
         public float pivotX = -1f;
         public float pivotY = -1f;
+        // Set for an "all" strip that is still a horizontal side pose. A
+        // direction-specific side strip is horizontal implicitly.
+        public bool useHorizontalFacing;
+        // The existing HD-2D convention is image-left. Individual strips can
+        // override it when their source art is authored image-right.
+        public bool authoredFacingRight;
         public int columns = 1;
         public int rows = 1;
         public int rowFromTop;
