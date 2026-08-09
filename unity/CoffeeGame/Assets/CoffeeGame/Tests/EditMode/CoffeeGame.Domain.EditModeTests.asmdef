@@ -2,7 +2,8 @@
   "name": "CoffeeGame.Domain.EditModeTests",
   "rootNamespace": "CoffeeGame.Domain.Tests",
   "references": [
-    "CoffeeGame.Domain"
+    "CoffeeGame.Domain",
+    "CoffeeGame.Runtime"
   ],
   "includePlatforms": [
     "Editor"

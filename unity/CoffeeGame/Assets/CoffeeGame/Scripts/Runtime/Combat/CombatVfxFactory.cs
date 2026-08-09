@@ -33,6 +33,53 @@ namespace CoffeeGame.Combat
             effect.AddComponent<FadeLineEffect>().Initialize(line, lifetime, material);
         }
 
+        public static void SpawnSwordArc(
+            Vector3 center,
+            Vector3 facing,
+            float radius,
+            Color color,
+            float lifetime = 0.3f)
+        {
+            Vector3 planarFacing = Vector3.ProjectOnPlane(facing, Vector3.up);
+            if (radius <= 0f || planarFacing.sqrMagnitude <= 0.001f)
+            {
+                return;
+            }
+
+            planarFacing.Normalize();
+            float facingAngle = Mathf.Atan2(planarFacing.z, planarFacing.x);
+            float halfAngle = CombatArcPolicy.FrontArcHalfAngleDegrees * Mathf.Deg2Rad;
+            const int segments = 24;
+            const float innerRadius = 0.16f;
+
+            var effect = new GameObject("Sword hit arc VFX");
+            effect.transform.position = center + Vector3.up * 0.48f;
+            var line = effect.AddComponent<LineRenderer>();
+            line.loop = true;
+            line.useWorldSpace = false;
+            line.positionCount = (segments + 1) * 2;
+            line.widthMultiplier = 0.075f;
+            line.startColor = color;
+            line.endColor = color;
+
+            for (int i = 0; i <= segments; i++)
+            {
+                float t = i / (float)segments;
+                float angle = facingAngle - halfAngle + t * halfAngle * 2f;
+                Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                line.SetPosition(i, direction * radius);
+                line.SetPosition((segments + 1) * 2 - 1 - i, direction * innerRadius);
+            }
+
+            Material material = RuntimeMaterialFactory.CreateUnlit("Sword hit arc material", color);
+            if (material != null)
+            {
+                line.material = material;
+            }
+
+            effect.AddComponent<SwordArcEffect>().Initialize(line, lifetime, material);
+        }
+
         private sealed class FadeLineEffect : MonoBehaviour
         {
             private LineRenderer line;
@@ -55,6 +102,46 @@ namespace CoffeeGame.Combat
                 transform.localScale = Vector3.one * Mathf.Lerp(0.1f, 1f, t);
                 Color color = line.startColor;
                 color.a = 1f - t;
+                line.startColor = color;
+                line.endColor = color;
+                if (t >= 1f)
+                {
+                    Destroy(gameObject);
+                }
+            }
+
+            private void OnDestroy()
+            {
+                if (ownedMaterial != null)
+                {
+                    Destroy(ownedMaterial);
+                    ownedMaterial = null;
+                }
+            }
+        }
+
+        private sealed class SwordArcEffect : MonoBehaviour
+        {
+            private LineRenderer line;
+            private float lifetime;
+            private float elapsed;
+            private Material ownedMaterial;
+
+            public void Initialize(LineRenderer target, float duration, Material material)
+            {
+                line = target;
+                ownedMaterial = material;
+                lifetime = Mathf.Max(0.05f, duration);
+                transform.localScale = Vector3.one * 0.72f;
+            }
+
+            private void Update()
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / lifetime);
+                transform.localScale = Vector3.one * Mathf.Lerp(0.72f, 1f, Mathf.SmoothStep(0f, 1f, t));
+                Color color = line.startColor;
+                color.a = Mathf.Lerp(0.92f, 0f, t);
                 line.startColor = color;
                 line.endColor = color;
                 if (t >= 1f)

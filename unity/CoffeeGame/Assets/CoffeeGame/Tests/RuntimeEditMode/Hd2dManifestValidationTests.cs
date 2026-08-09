@@ -96,6 +96,44 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(manifest.IsUsable(out string reason), Is.True, reason);
         }
 
+        [Test]
+        public void HeroLocomotion_UsesStableAuthoredPoseUntilMoreCycleFramesExist()
+        {
+            Assert.That(
+                Hd2dSpriteManifestLoader.TryLoad(
+                    "Art/HD2D/hero-hd2d",
+                    out Hd2dSpriteManifest manifest,
+                    out string error),
+                Is.True,
+                error);
+
+            Hd2dSpriteClipDefinition walk = FindClip(manifest, "Walk");
+            Hd2dSpriteClipDefinition run = FindClip(manifest, "Run");
+
+            Assert.That(walk.down.resourcePaths, Has.Length.EqualTo(1));
+            Assert.That(walk.side.resourcePaths, Has.Length.EqualTo(1));
+            Assert.That(walk.up.resourcePaths, Has.Length.EqualTo(1));
+            Assert.That(run.down.resourcePaths, Has.Length.EqualTo(1));
+            Assert.That(run.side.resourcePaths, Has.Length.EqualTo(1));
+            Assert.That(run.up.resourcePaths, Has.Length.EqualTo(1));
+        }
+
+        private static Hd2dSpriteClipDefinition FindClip(
+            Hd2dSpriteManifest manifest,
+            string action)
+        {
+            foreach (Hd2dSpriteClipDefinition clip in manifest.clips)
+            {
+                if (clip != null && string.Equals(clip.action, action, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return clip;
+                }
+            }
+
+            Assert.Fail($"Missing hero {action} clip.");
+            return null;
+        }
+
         private static Hd2dSpriteManifest CreateManifest(
             bool directional,
             Hd2dSpriteClipDefinition clip)

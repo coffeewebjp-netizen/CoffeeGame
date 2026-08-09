@@ -1159,9 +1159,14 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            float frequency = activeState == CharacterAction.Run ? 13f : 8f;
+            float frequency = activeState == CharacterAction.Run ? 7.5f : 5.5f;
             float amplitude = activeState == CharacterAction.Run ? 0.025f : 0.014f;
-            float stride = Mathf.Abs(Mathf.Sin(Time.time * frequency));
+            // Locomotion currently has one authored pose per direction. The
+            // previous idle/walk and walk/run alternation jumped between two
+            // very different full-body illustrations, which read as a broken
+            // gait. Until a true multi-frame cycle is authored, use the stable
+            // locomotion pose and a smooth procedural stride cue instead.
+            float stride = 0.5f - 0.5f * Mathf.Cos(Time.time * frequency * Mathf.PI * 2f);
             spriteTransform.localPosition = baseSpritePosition + Vector3.up * (stride * amplitude);
             spriteTransform.localScale = new Vector3(
                 1f + stride * amplitude * 0.4f,

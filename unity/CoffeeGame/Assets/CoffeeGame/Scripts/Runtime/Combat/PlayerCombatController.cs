@@ -147,6 +147,12 @@ namespace CoffeeGame.Combat
             attackCooldown = tuning.SwordCooldown;
             visual?.PlayAction(airborne ? CharacterAction.AirSlash : CharacterAction.Sword, tuning.SwordCooldown);
             audioDirector?.Play(CombatSound.SwordSwing, 0.72f);
+            CombatVfxFactory.SpawnSwordArc(
+                transform.position,
+                motor.Facing,
+                range,
+                new Color(0.78f, 0.94f, 1f),
+                tuning.SwordCooldown);
 
             int hitCount = DamageTargets(range, damage, false, true);
             if (hitCount > 0)
@@ -249,7 +255,7 @@ namespace CoffeeGame.Combat
                 }
 
                 Vector3 direction = Vector3.ProjectOnPlane(target.transform.position - transform.position, Vector3.up);
-                if (!fullCircle && frontArc && direction.sqrMagnitude > 0.001f && Vector3.Dot(motor.Facing, direction.normalized) < 0.12f)
+                if (!fullCircle && frontArc && !CombatArcPolicy.Contains(motor.Facing, direction))
                 {
                     continue;
                 }

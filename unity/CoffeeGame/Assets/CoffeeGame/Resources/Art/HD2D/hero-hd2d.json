@@ -23,15 +23,15 @@
     },
     {
       "action": "Walk", "framesPerSecond": 6.0, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down", "Art/HD2D/Hero/Frames/hero_walk_down"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_right", "Art/HD2D/Hero/Frames/hero_walk_right"] },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up", "Art/HD2D/Hero/Frames/hero_walk_up"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_right"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up"] }
     },
     {
       "action": "Run", "framesPerSecond": 9.0, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down", "Art/HD2D/Hero/Frames/hero_run_down"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_right", "Art/HD2D/Hero/Frames/hero_run_right"] },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up", "Art/HD2D/Hero/Frames/hero_run_up"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up"] }
     },
     {
       "action": "Jump", "framesPerSecond": 7.0, "loop": false, "holdLastFrame": true,
