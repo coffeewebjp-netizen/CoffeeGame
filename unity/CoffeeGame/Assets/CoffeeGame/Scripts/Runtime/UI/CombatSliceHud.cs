@@ -281,7 +281,7 @@ namespace CoffeeGame.UI
 
             bool previousEnabled = GUI.enabled;
             GUI.enabled = !input.IsRebinding;
-            if (AcceptPointerCommand(GUI.Button(
+            if (AcceptSettingsPointerCommand(GUI.Button(
                     new Rect(panel.xMax - 138f, panel.y + 8f, 126f, 25f),
                     showInputSettings ? "設定を閉じる" : "ボタン設定",
                     buttonStyle)))
@@ -580,12 +580,20 @@ namespace CoffeeGame.UI
                 return false;
             }
 
-            // IMGUI uses Unity's legacy mouse path and is not filtered by the
-            // Input System binding mask. Keep pointer selection available on the
-            // startup chooser, but after a mode is chosen only Keyboard/Mouse may
-            // execute pointer UI commands. Controller modes remain truly exclusive.
+            // Gameplay bindings remain profile-exclusive. Pointer interaction is
+            // allowed in menu contexts so a controller profile can still be
+            // configured or recovered from the on-screen settings UI.
             return input.SelectedInputMode == InputMode.KeyboardMouse ||
-                   input.SelectedInputMode == InputMode.Unselected;
+                   input.SelectedInputMode == InputMode.Unselected ||
+                   input.Context == GameInputContext.UI ||
+                   input.Context == GameInputContext.InputSelection;
+        }
+
+        private static bool AcceptSettingsPointerCommand(bool wasClicked)
+        {
+            // The settings entry is an explicit recovery path even while Battle
+            // uses an exclusive controller binding profile.
+            return wasClicked;
         }
 
         private static void DrawBar(Rect rect, float normalized, Color fillColor, string label)

@@ -102,6 +102,44 @@ namespace CoffeeGame.Input.Tests
                 "A fresh stick movement after neutral must navigate settings.");
         }
 
+        [Test]
+        public void ControllerProfile_KeepsKeyboardSettingsRecoveryAvailable()
+        {
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader);
+            reader.EnableBattle();
+            TickReader(reader);
+
+            Press(keyboard.tabKey);
+
+            Assert.That(reader.SettingsPressed, Is.True,
+                "Tab must remain available when View/Select cannot open settings.");
+        }
+
+        [Test]
+        public void ControllerProfile_KeepsKeyboardMenuRecoveryAvailable()
+        {
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader);
+            reader.EnableUI();
+            TickReader(reader);
+
+            Press(keyboard.downArrowKey);
+            Assert.That(reader.Navigate.y, Is.LessThan(-0.5f));
+            Release(keyboard.downArrowKey);
+            TickReader(reader);
+
+            Press(keyboard.enterKey);
+            Assert.That(reader.ConfirmPressed, Is.True);
+            Release(keyboard.enterKey);
+            TickReader(reader);
+
+            Press(keyboard.escapeKey);
+            Assert.That(reader.CancelPressed, Is.True);
+        }
+
         private static void TickReader(GameInputReader reader)
         {
             reader.RefreshContextSwitchReleaseGate();

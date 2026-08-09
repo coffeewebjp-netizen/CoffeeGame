@@ -55,7 +55,11 @@ namespace CoffeeGame.Presentation
             {
                 return previousFlip;
             }
-            return cameraRightAmount < 0f;
+            // CameraFacingBillboard points the sprite's local forward back toward
+            // the camera, which also reverses its local right axis. Mirror the
+            // texture for camera-right movement so the visible pose still points
+            // in the movement direction.
+            return cameraRightAmount > 0f;
         }
     }
 }

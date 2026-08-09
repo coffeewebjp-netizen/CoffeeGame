@@ -13,11 +13,13 @@ namespace CoffeeGame.Presentation
         private CharacterAction locomotion = CharacterAction.Idle;
         private Vector3 baseLocalScale;
         private Color baseColor = Color.white;
+        private Camera facingCamera;
 
         public SpriteRenderer Renderer => spriteRenderer;
 
         public void Initialize(Sprite sprite, float scale, Camera cameraToFace)
         {
+            facingCamera = cameraToFace;
             if (spriteRenderer == null)
             {
                 spriteRenderer = GetComponent<SpriteRenderer>();
@@ -62,12 +64,22 @@ namespace CoffeeGame.Presentation
 
         public void SetFacing(Vector3 worldDirection)
         {
-            if (spriteRenderer == null || Mathf.Abs(worldDirection.x) < 0.05f)
+            if (spriteRenderer == null || worldDirection.sqrMagnitude < 0.0025f)
             {
                 return;
             }
 
-            spriteRenderer.flipX = worldDirection.x < 0f;
+            Vector3 planarDirection = Vector3.ProjectOnPlane(worldDirection, Vector3.up).normalized;
+            Vector3 cameraRight = facingCamera != null
+                ? Vector3.ProjectOnPlane(facingCamera.transform.right, Vector3.up)
+                : Vector3.right;
+            cameraRight = cameraRight.sqrMagnitude > 0.001f
+                ? cameraRight.normalized
+                : Vector3.right;
+            float sideAmount = Vector3.Dot(planarDirection, cameraRight);
+            spriteRenderer.flipX = Hd2dFacingPolicy.ResolveHorizontalFlip(
+                sideAmount,
+                spriteRenderer.flipX);
         }
 
         public void SetLocomotion(CharacterAction action, float normalizedSpeed)

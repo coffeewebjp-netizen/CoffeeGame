@@ -7,13 +7,13 @@ namespace CoffeeGame.Presentation.Tests
         [Test]
         public void ResolveHorizontalFlip_PointsLeftWhenTargetIsCameraLeft()
         {
-            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(-0.7f, false), Is.True);
+            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(-0.7f, true), Is.False);
         }
 
         [Test]
         public void ResolveHorizontalFlip_PointsRightWhenTargetIsCameraRight()
         {
-            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(0.7f, true), Is.False);
+            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(0.7f, false), Is.True);
         }
 
         [TestCase(0.02f, true)]
@@ -53,6 +53,49 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(
                 Hd2dFacingPolicy.ResolveDirection(0.72f, 1f, Hd2dFacingDirection.Up),
                 Is.EqualTo(Hd2dFacingDirection.Up));
+        }
+
+        [TestCase(0f, 0f, 1f)]
+        [TestCase(1f, 0f, 0f)]
+        [TestCase(0.4f, 0.8f, 0.6f)]
+        public void BillboardRotation_FacesSpriteFrontTowardCamera(
+            float x,
+            float y,
+            float z)
+        {
+            var cameraForward = new UnityEngine.Vector3(x, y, z);
+            UnityEngine.Quaternion rotation = CameraFacingBillboard.ResolveRotation(cameraForward);
+            UnityEngine.Vector3 billboardForward = rotation * UnityEngine.Vector3.forward;
+            var planarCameraForward = new UnityEngine.Vector3(x, 0f, z).normalized;
+
+            Assert.That(
+                UnityEngine.Vector3.Dot(billboardForward, planarCameraForward),
+                Is.LessThan(-0.999f),
+                "The sprite front must point back toward the camera, not away from it.");
+        }
+
+        [TestCase(1f, true)]
+        [TestCase(-1f, false)]
+        public void BillboardAndFlip_PointSidePoseAlongCameraRelativeMovement(
+            float cameraRightAmount,
+            bool expectedFlip)
+        {
+            UnityEngine.Quaternion rotation = CameraFacingBillboard.ResolveRotation(
+                UnityEngine.Vector3.forward);
+            bool flip = Hd2dFacingPolicy.ResolveHorizontalFlip(
+                cameraRightAmount,
+                !expectedFlip);
+            UnityEngine.Vector3 localPoseDirection = flip
+                ? UnityEngine.Vector3.left
+                : UnityEngine.Vector3.right;
+            UnityEngine.Vector3 worldPoseDirection = rotation * localPoseDirection;
+
+            Assert.That(flip, Is.EqualTo(expectedFlip));
+            Assert.That(
+                UnityEngine.Vector3.Dot(worldPoseDirection, UnityEngine.Vector3.right) *
+                cameraRightAmount,
+                Is.GreaterThan(0.999f),
+                "The rendered side pose must point in the same camera-relative direction as movement.");
         }
 
         [TestCase(CharacterAction.Jump, CharacterAction.Fall)]

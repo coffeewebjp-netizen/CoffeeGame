@@ -51,8 +51,10 @@ CoffeeGAME opens an input-mode chooser on every launch. The saved mode only
 positions the initial cursor; it is never activated automatically. Choose one of:
 
 - **Keyboard / Mouse**: accepts the keyboard/mouse group only.
-- **Controller / Gamepad**: accepts native Gamepad paths only. This cannot be
-  selected until Unity detects at least one Gamepad.
+- **Controller / Gamepad**: battle actions accept native Gamepad paths only. This
+  cannot be selected until Unity detects at least one Gamepad. Menu recovery
+  remains available through Tab, arrows/WASD, Enter, Escape, and the on-screen
+  button-settings UI so an unavailable View/Select mapping cannot lock the user out.
 - **Steam Desktop compatibility**: an explicit fallback for a Steam Desktop
   Layout which converts controller input into keyboard/mouse events. It is never
   selected merely because no Gamepad was found.
@@ -64,11 +66,13 @@ Keyboard/mouse combat bindings are currently fixed; interactive rebinding is
 available only for the Controller/Gamepad and Steam Desktop compatibility modes.
 
 The settings screen can be completed without a mouse: View/Select opens it,
-Up/Down chooses a row, South confirms, and East cancels or closes it. When a row
-is chosen, the screen waits until the confirm button is released before accepting
-the next press, so South is not accidentally rebound to itself. Capture times out
-after ten seconds. East, Start, View, D-pad, and stick axes are reserved for menu
-or movement and cannot be assigned to an attack.
+Up/Down chooses a row, South confirms, and East cancels or closes it. Tab,
+arrows/WASD, Enter, and Escape provide the equivalent recovery path even while
+Controller/Gamepad is selected. When a row is chosen, the screen waits until the
+confirm button is released before accepting the next press, so South is not
+accidentally rebound to itself. Capture times out after ten seconds. East, Start,
+View, D-pad, and stick axes are reserved for menu or movement and cannot be
+assigned to an attack.
 
 Every Battle/UI map transition also waits for the button that caused the transition
 to be released. A held Start cannot immediately pause after starting or immediately

@@ -24,15 +24,22 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            Vector3 forward = targetCamera.transform.forward;
+            transform.rotation = ResolveRotation(targetCamera.transform.forward);
+        }
+
+        public static Quaternion ResolveRotation(Vector3 cameraForward)
+        {
+            Vector3 forward = cameraForward;
             forward.y = 0f;
             if (forward.sqrMagnitude < 0.001f)
             {
                 forward = Vector3.forward;
             }
 
-            transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+            // Face the sprite's front toward the camera. Using cameraForward
+            // directly shows the back of a two-sided sprite and mirrors its
+            // horizontal facing relative to movement.
+            return Quaternion.LookRotation(-forward.normalized, Vector3.up);
         }
     }
 }
-

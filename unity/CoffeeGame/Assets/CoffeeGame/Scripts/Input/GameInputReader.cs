@@ -932,15 +932,14 @@ namespace CoffeeGame.Input
             _uiMap = _actions.AddActionMap("UI");
             _navigate = _uiMap.AddAction("Navigate", InputActionType.Value);
             _navigate.expectedControlType = "Vector2";
-            AddMovementBindings(_navigate);
+            AddNavigationBindings(_navigate);
             _confirm = _uiMap.AddAction("Confirm", InputActionType.Button);
-            _confirm.AddBinding("<Keyboard>/enter", groups: KeyboardGroup);
-            _confirm.AddBinding("<Keyboard>/enter", groups: SteamDesktopGroup);
+            _confirm.AddBinding("<Keyboard>/enter", groups: MenuFallbackGroups);
             _confirm.AddBinding("<Gamepad>/buttonSouth", groups: GamepadGroup);
             _confirm.AddBinding("<Gamepad>/start", groups: GamepadGroup);
             _cancel = _uiMap.AddAction("Cancel", InputActionType.Button);
             _cancel.expectedControlType = "Button";
-            _cancel.AddBinding("<Keyboard>/escape", groups: KeyboardGroup);
+            _cancel.AddBinding("<Keyboard>/escape", groups: MenuFallbackGroups);
             _cancel.AddBinding("<Keyboard>/space", groups: SteamDesktopGroup);
             _cancel.AddBinding("<Gamepad>/buttonEast", groups: GamepadGroup);
             _uiSettings = AddSettingsButton(_uiMap);
@@ -970,10 +969,33 @@ namespace CoffeeGame.Input
         {
             InputAction action = map.AddAction("InputSettings", InputActionType.Button);
             action.expectedControlType = "Button";
-            action.AddBinding("<Keyboard>/tab", groups: KeyboardGroup);
-            action.AddBinding("<Keyboard>/tab", groups: SteamDesktopGroup);
+            action.AddBinding("<Keyboard>/tab", groups: MenuFallbackGroups);
             action.AddBinding("<Gamepad>/select", groups: GamepadGroup);
             return action;
+        }
+
+        private const string MenuFallbackGroups =
+            KeyboardGroup + ";" + GamepadGroup + ";" + SteamDesktopGroup;
+
+        private static void AddNavigationBindings(InputAction action)
+        {
+            var wasd = action.AddCompositeBinding("2DVector");
+            action.ChangeBinding(wasd.bindingIndex).WithGroups(MenuFallbackGroups);
+            wasd
+                .With("Up", "<Keyboard>/w", groups: MenuFallbackGroups)
+                .With("Down", "<Keyboard>/s", groups: MenuFallbackGroups)
+                .With("Left", "<Keyboard>/a", groups: MenuFallbackGroups)
+                .With("Right", "<Keyboard>/d", groups: MenuFallbackGroups);
+
+            var arrows = action.AddCompositeBinding("2DVector");
+            action.ChangeBinding(arrows.bindingIndex).WithGroups(MenuFallbackGroups);
+            arrows
+                .With("Up", "<Keyboard>/upArrow", groups: MenuFallbackGroups)
+                .With("Down", "<Keyboard>/downArrow", groups: MenuFallbackGroups)
+                .With("Left", "<Keyboard>/leftArrow", groups: MenuFallbackGroups)
+                .With("Right", "<Keyboard>/rightArrow", groups: MenuFallbackGroups);
+            action.AddBinding("<Gamepad>/leftStick", groups: GamepadGroup);
+            action.AddBinding("<Gamepad>/dpad", groups: GamepadGroup);
         }
 
         private static void AddMovementBindings(InputAction action)
