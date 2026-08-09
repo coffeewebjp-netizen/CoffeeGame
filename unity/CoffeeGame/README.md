@@ -66,13 +66,13 @@ Keyboard/mouse combat bindings are currently fixed; interactive rebinding is
 available only for the Controller/Gamepad and Steam Desktop compatibility modes.
 
 The settings screen can be completed without a mouse: View/Select opens it,
-Up/Down chooses a row, South confirms, and East cancels or closes it. Tab,
+Up/Down chooses a row, South confirms, and East normally cancels or closes it. Tab,
 arrows/WASD, Enter, and Escape provide the equivalent recovery path even while
 Controller/Gamepad is selected. When a row is chosen, the screen waits until the
 confirm button is released before accepting the next press, so South is not
-accidentally rebound to itself. Capture times out after ten seconds. East, Start,
-View, D-pad, and stick axes are reserved for menu or movement and cannot be
-assigned to an attack.
+accidentally rebound to itself. Capture times out after ten seconds. During an
+active battle-action rebind, East/B is a valid target; Start/View and movement
+controls remain reserved for menu or movement.
 
 Every Battle/UI map transition also waits for the button that caused the transition
 to be released. A held Start cannot immediately pause after starting or immediately
@@ -90,9 +90,11 @@ The **Steam Desktop compatibility profile** matches the original Steam Controlle
 desktop mapping (A=Enter, B=Space, X=PageUp, Y=PageDown, RT=Mouse Left,
 sticks=arrow keys and Menu=Tab). Desktop overrides are stored independently as versioned
 `semantic -> keyboard/mouse path` data. The binding screen captures non-reserved
-keyboard keys and mouse buttons, swaps duplicates, waits for release, and keeps
-the same ten-second timeout. Existing Keyboard combat keys remain reserved so a
-desktop override cannot make two combat actions fire at once.
+keyboard keys and mouse buttons; B/Space is valid during an active battle-action
+rebind even though it remains the normal UI cancel key outside capture. It swaps
+duplicates, waits for release, and keeps the same ten-second timeout. Existing
+Keyboard combat keys remain reserved so a desktop override cannot make two combat
+actions fire at once.
 
 The diagnostic panel separately shows all detected Gamepad slots, controller-like
 HID devices which cannot be rebound, and the most recent raw button path. A Steam

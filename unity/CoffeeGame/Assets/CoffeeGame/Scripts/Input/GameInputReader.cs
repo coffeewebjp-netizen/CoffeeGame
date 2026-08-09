@@ -1251,7 +1251,7 @@ namespace CoffeeGame.Input
 
             if (SelectedInputMode == InputMode.SteamDesktopCompatibility)
             {
-                return "Steam Desktop互換を使用中: A=Jump/決定、B=設定画面の取消、X=回転斬り、Y=氷魔法、RT=刀、Stick=移動。Steamの特殊操作はゲームへ届く前に処理されるため、アプリ側では停止できません。";
+                return "Steam Desktop互換を使用中: A=Jump/決定、B=設定画面の取消（戦闘へ再割当可）、X=回転斬り、Y=氷魔法、RT=刀、Stick=移動。Steamの特殊操作はゲームへ届く前に処理されるため、アプリ側では停止できません。";
             }
 
             if (!HasConnectedGamepad)
@@ -1389,13 +1389,12 @@ namespace CoffeeGame.Input
                     .WithControlsHavingToMatchPath("<Gamepad>")
                     .WithControlsExcluding("<Mouse>")
                     .WithControlsExcluding("<Pointer>")
-                    .WithControlsExcluding("<Gamepad>/buttonEast")
                     .WithControlsExcluding("<Gamepad>/start")
                     .WithControlsExcluding("<Gamepad>/select")
                     .WithControlsExcluding("<Gamepad>/dpad")
                     .WithControlsExcluding("<Gamepad>/leftStick")
                     .WithControlsExcluding("<Gamepad>/rightStick");
-                LastRebindMessage = $"{GetSemanticDisplayName(_rebindSemantic)}: 次に使うGamepadボタンを押してください（East/B・Escで取消）。";
+                LastRebindMessage = $"{GetSemanticDisplayName(_rebindSemantic)}: 次に使うGamepadボタンを押してください（Start/View・Escで取消）。";
             }
             else if (BindingBelongsToGroup(targetBinding, SteamDesktopGroup))
             {
@@ -1404,7 +1403,6 @@ namespace CoffeeGame.Input
                     .WithControlsExcluding("<Joystick>")
                     .WithControlsExcluding("<Keyboard>/escape")
                     .WithControlsExcluding("<Keyboard>/tab")
-                    .WithControlsExcluding("<Keyboard>/space")
                     .WithControlsExcluding("<Keyboard>/w")
                     .WithControlsExcluding("<Keyboard>/a")
                     .WithControlsExcluding("<Keyboard>/s")
@@ -1419,7 +1417,7 @@ namespace CoffeeGame.Input
                     .WithControlsExcluding("<Pointer>/position")
                     .WithControlsExcluding("<Pointer>/delta")
                     .WithControlsExcluding("<Mouse>/scroll");
-                LastRebindMessage = $"{GetSemanticDisplayName(_rebindSemantic)}: Steam Controllerのボタンを押してください（B/Space・Escで取消）。Keyboard/Mouseへ変換された実入力を保存します。";
+                LastRebindMessage = $"{GetSemanticDisplayName(_rebindSemantic)}: Steam Controllerのボタンを押してください（Escで取消）。Keyboard/Mouseへ変換された実入力を保存します。";
             }
             else
             {
@@ -1452,7 +1450,7 @@ namespace CoffeeGame.Input
                 accepted = false;
                 LastRebindMessage = _rebindBindingGroup == SteamDesktopGroup
                     ? "その入力はSteam Desktop互換の攻撃ボタンに使えません。Enter/PageUp/PageDownなどの非予約キー、またはMouseボタンを選んでください。"
-                    : "その入力は攻撃ボタンに使えません。Face South/West/North、肩、トリガー、Stick Pressから選んでください。";
+                    : "その入力は攻撃ボタンに使えません。Face South/East/West/North、肩、トリガー、Stick Pressから選んでください。";
             }
 
             string swappedSemanticName = string.Empty;
@@ -1563,16 +1561,14 @@ namespace CoffeeGame.Input
         private bool IsRebindCancelPressed()
         {
             if (Keyboard.current != null &&
-                (Keyboard.current.escapeKey.wasPressedThisFrame ||
-                 (_rebindBindingGroup == SteamDesktopGroup && Keyboard.current.spaceKey.wasPressedThisFrame)))
+                Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 return true;
             }
 
             foreach (Gamepad gamepad in Gamepad.all)
             {
-                if (gamepad.buttonEast.wasPressedThisFrame ||
-                    gamepad.startButton.wasPressedThisFrame ||
+                if (gamepad.startButton.wasPressedThisFrame ||
                     gamepad.selectButton.wasPressedThisFrame)
                 {
                     return true;

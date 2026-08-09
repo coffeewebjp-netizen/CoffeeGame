@@ -381,7 +381,7 @@ namespace CoffeeGame.UI
             GUI.enabled = input.IsRebinding;
             if (AcceptPointerCommand(GUI.Button(
                     new Rect(panel.x + 14f, panel.y + 370f, panel.width - 28f, 27f),
-                    "再割当を取り消す（B/Space・East・Esc）",
+                    "再割当を取り消す（Start/View・Esc）",
                     buttonStyle)))
             {
                 input.CancelInteractiveRebind();
@@ -391,9 +391,9 @@ namespace CoffeeGame.UI
             string operationHelp = input.SelectedInputMode switch
             {
                 InputMode.SteamDesktopCompatibility =>
-                    "Steam Desktop互換: Stick/矢印で選択、A/Enterで決定、B/Spaceで取消。A=Enter、X=PageUp、Y=PageDown、RT=Mouse Leftとして届く実際のcontrol pathを保存します。",
+                    "Steam Desktop互換: B/Spaceは通常の取消、再割当待機中は戦闘ボタンとして選択可。Escで再割当を取り消します。変換後の実control pathを保存します。",
                 InputMode.ControllerGamepad =>
-                    "操作: ↑↓で選択 / South位置で決定 / East位置で取消。物理ABXYの文字ではなく、Unityへ届いた実際のcontrol pathを表示・保存します。",
+                    "操作: ↑↓で選択 / South位置で決定 / East位置で通常取消。再割当待機中はEastも戦闘ボタンに選択可。Start/View・Escで再割当を取り消します。",
                 _ =>
                     "キーボード／マウスの基本配置は現在固定です。変更したい場合は『入力方式を選び直す』からGamepadまたはSteam Desktop互換を選択してください。"
             };

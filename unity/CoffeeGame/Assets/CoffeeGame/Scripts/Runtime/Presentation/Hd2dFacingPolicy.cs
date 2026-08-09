@@ -55,11 +55,11 @@ namespace CoffeeGame.Presentation
             {
                 return previousFlip;
             }
-            // CameraFacingBillboard points the sprite's local forward back toward
-            // the camera, which also reverses its local right axis. Mirror the
-            // texture for camera-right movement so the visible pose still points
-            // in the movement direction.
-            return cameraRightAmount > 0f;
+            // The supplied HD-2D side frames (for example hero_idle_right) are
+            // authored facing texture-local left. CameraFacingBillboard maps that
+            // local-left pose to camera-right, so only camera-left movement needs
+            // a horizontal mirror.
+            return cameraRightAmount < 0f;
         }
     }
 }

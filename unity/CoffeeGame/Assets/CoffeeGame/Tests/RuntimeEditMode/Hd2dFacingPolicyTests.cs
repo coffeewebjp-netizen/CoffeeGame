@@ -5,15 +5,15 @@ namespace CoffeeGame.Presentation.Tests
     public sealed class Hd2dFacingPolicyTests
     {
         [Test]
-        public void ResolveHorizontalFlip_PointsLeftWhenTargetIsCameraLeft()
+        public void ResolveHorizontalFlip_MirrorsLeftFacingSideArtForCameraLeftMovement()
         {
-            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(-0.7f, true), Is.False);
+            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(-0.7f, false), Is.True);
         }
 
         [Test]
-        public void ResolveHorizontalFlip_PointsRightWhenTargetIsCameraRight()
+        public void ResolveHorizontalFlip_LeavesLeftFacingSideArtUnmirroredForCameraRightMovement()
         {
-            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(0.7f, false), Is.True);
+            Assert.That(Hd2dFacingPolicy.ResolveHorizontalFlip(0.7f, true), Is.False);
         }
 
         [TestCase(0.02f, true)]
@@ -74,28 +74,33 @@ namespace CoffeeGame.Presentation.Tests
                 "The sprite front must point back toward the camera, not away from it.");
         }
 
-        [TestCase(1f, true)]
-        [TestCase(-1f, false)]
-        public void BillboardAndFlip_PointSidePoseAlongCameraRelativeMovement(
+        [TestCase(1f, false)]
+        [TestCase(-1f, true)]
+        public void RuntimeCameraBillboardAndLeftFacingSideArt_PointAlongCameraRelativeMovement(
             float cameraRightAmount,
             bool expectedFlip)
         {
+            // CombatSliceBootstrap places the camera at (0, 5.75, -8.85) and
+            // looks at (0, 0.78, 0), giving this actual camera-forward vector.
             UnityEngine.Quaternion rotation = CameraFacingBillboard.ResolveRotation(
-                UnityEngine.Vector3.forward);
+                new UnityEngine.Vector3(0f, -4.97f, 8.85f));
             bool flip = Hd2dFacingPolicy.ResolveHorizontalFlip(
                 cameraRightAmount,
                 !expectedFlip);
+            // hero_*_right frames visibly face image-left, so that is their
+            // texture-local natural pose. flipX mirrors it to local right.
             UnityEngine.Vector3 localPoseDirection = flip
-                ? UnityEngine.Vector3.left
-                : UnityEngine.Vector3.right;
+                ? UnityEngine.Vector3.right
+                : UnityEngine.Vector3.left;
             UnityEngine.Vector3 worldPoseDirection = rotation * localPoseDirection;
+            UnityEngine.Vector3 planarCameraRight = UnityEngine.Vector3.right;
 
             Assert.That(flip, Is.EqualTo(expectedFlip));
             Assert.That(
-                UnityEngine.Vector3.Dot(worldPoseDirection, UnityEngine.Vector3.right) *
+                UnityEngine.Vector3.Dot(worldPoseDirection, planarCameraRight) *
                 cameraRightAmount,
                 Is.GreaterThan(0.999f),
-                "The rendered side pose must point in the same camera-relative direction as movement.");
+                "The rendered side pose must point in the same screen-horizontal direction as movement.");
         }
 
         [TestCase(CharacterAction.Jump, CharacterAction.Fall)]

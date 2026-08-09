@@ -5,6 +5,8 @@ namespace CoffeeGame.Input.Tests
     public sealed class GamepadBindingPolicyTests
     {
         [TestCase("<Gamepad>/buttonSouth")]
+        [TestCase("<Gamepad>/buttonEast")]
+        [TestCase("<XInputControllerWindows>/buttonEast")]
         [TestCase("<Gamepad>/buttonWest")]
         [TestCase("<Gamepad>/buttonNorth")]
         [TestCase("<Gamepad>/rightTrigger")]
@@ -14,7 +16,6 @@ namespace CoffeeGame.Input.Tests
             Assert.That(GamepadBindingPolicy.IsBindableGamepadPath(path), Is.True);
         }
 
-        [TestCase("<Gamepad>/buttonEast")]
         [TestCase("<Gamepad>/start")]
         [TestCase("<Gamepad>/select")]
         [TestCase("<Gamepad>/startButton")]

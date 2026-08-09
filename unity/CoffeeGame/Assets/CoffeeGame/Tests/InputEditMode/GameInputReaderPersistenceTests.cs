@@ -98,6 +98,22 @@ namespace CoffeeGame.Input.Tests
         }
 
         [Test]
+        public void Load_AcceptsEastFaceButtonFromVirtualXInputLayout()
+        {
+            GameInputReader reader = CreateReader("east-face", out firstObject);
+            const string json =
+                "{\"version\":2,\"bindings\":[" +
+                "{\"semantic\":\"Jump\",\"path\":\"<XInputControllerWindows>/buttonEast\"}]}";
+
+            reader.LoadBindingOverridesFromJson(json);
+
+            int jumpIndex = reader.GetBindingIndexForGroup(GameInputSemantic.Jump, GameInputReader.GamepadBindingGroup);
+            Assert.That(
+                reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Jump, jumpIndex),
+                Is.EqualTo("<XInputControllerWindows>/buttonEast"));
+        }
+
+        [Test]
         public void SteamDesktopSave_RestoresSeparatelyFromGamepadProfile()
         {
             GameInputReader first = CreateReader("desktop-first", out firstObject);
@@ -146,6 +162,24 @@ namespace CoffeeGame.Input.Tests
             Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Jump, jumpIndex), Is.EqualTo("<Keyboard>/home"));
             Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Sword, swordIndex), Is.EqualTo("<Mouse>/leftButton"));
             Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Special, specialIndex), Is.EqualTo("<Keyboard>/pageUp"));
+        }
+
+        [Test]
+        public void SteamDesktopLoad_AcceptsSpaceEmittedBySteamB()
+        {
+            GameInputReader reader = CreateReader("desktop-space", out firstObject);
+            const string json =
+                "{\"version\":1,\"bindings\":[" +
+                "{\"semantic\":\"Jump\",\"path\":\"<Keyboard>/space\"}]}";
+
+            reader.LoadSteamDesktopBindingOverridesFromJson(json);
+
+            int jumpIndex = reader.GetBindingIndexForGroup(
+                GameInputSemantic.Jump,
+                GameInputReader.SteamDesktopBindingGroup);
+            Assert.That(
+                reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Jump, jumpIndex),
+                Is.EqualTo("<Keyboard>/space"));
         }
 
         private static GameInputReader CreateReader(string name, out GameObject gameObject)

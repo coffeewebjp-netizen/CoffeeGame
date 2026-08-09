@@ -5,6 +5,7 @@ namespace CoffeeGame.Input.Tests
     public sealed class SteamDesktopBindingPolicyTests
     {
         [TestCase("<Keyboard>/enter")]
+        [TestCase("<Keyboard>/space")]
         [TestCase("<Keyboard>/pageUp")]
         [TestCase("<Keyboard>/pageDown")]
         [TestCase("<Keyboard>/home")]
@@ -15,7 +16,6 @@ namespace CoffeeGame.Input.Tests
             Assert.That(SteamDesktopBindingPolicy.IsBindableDesktopPath(path), Is.True);
         }
 
-        [TestCase("<Keyboard>/space")]
         [TestCase("<Keyboard>/escape")]
         [TestCase("<Keyboard>/tab")]
         [TestCase("<Keyboard>/upArrow")]

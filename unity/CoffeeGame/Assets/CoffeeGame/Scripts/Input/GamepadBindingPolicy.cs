@@ -5,8 +5,9 @@ namespace CoffeeGame.Input
 {
     /// <summary>
     /// Defines the gamepad controls accepted by the in-game binding screen.
-    /// East/B is deliberately reserved as cancel, while Start/View are kept for
-    /// menu control. Movement controls are never accepted as attack bindings.
+    /// Face buttons, shoulders, triggers and stick presses can be used for battle
+    /// actions. Start/View stay reserved for menu control, while East/B remains a
+    /// UI cancel only when the UI action map is active.
     /// </summary>
     public static class GamepadBindingPolicy
     {
@@ -14,6 +15,7 @@ namespace CoffeeGame.Input
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "buttonSouth",
+                "buttonEast",
                 "buttonWest",
                 "buttonNorth",
                 "leftShoulder",
@@ -27,7 +29,6 @@ namespace CoffeeGame.Input
         private static readonly HashSet<string> ReservedCancelControlNames =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "buttonEast",
                 "start",
                 "startButton",
                 "select",

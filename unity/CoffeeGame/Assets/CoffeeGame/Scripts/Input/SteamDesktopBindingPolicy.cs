@@ -6,8 +6,10 @@ namespace CoffeeGame.Input
     /// <summary>
     /// Validation rules for the keyboard/mouse events emitted by the Steam
     /// Controller desktop layout when no virtual Gamepad/XInput device exists.
-    /// Navigation, menu and the original keyboard combat keys remain reserved so
-    /// a desktop-profile override cannot make two actions fire at once.
+    /// Navigation, menu and the original desktop-profile combat keys remain
+    /// reserved so an override cannot make two battle actions fire at once.
+    /// Space is intentionally bindable because the documented Steam Desktop
+    /// profile emits it for B; the UI action map still treats Space as cancel.
     /// </summary>
     public static class SteamDesktopBindingPolicy
     {
@@ -16,7 +18,6 @@ namespace CoffeeGame.Input
             {
                 "escape",
                 "tab",
-                "space",
                 "w",
                 "a",
                 "s",
