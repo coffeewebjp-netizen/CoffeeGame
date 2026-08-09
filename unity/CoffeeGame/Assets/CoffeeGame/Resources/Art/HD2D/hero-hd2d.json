@@ -22,16 +22,16 @@
       "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up"] }
     },
     {
-      "action": "Walk", "framesPerSecond": 6.0, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_right"] },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up"] }
+      "action": "Walk", "framesPerSecond": 5.0, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down_a_v2", "Art/HD2D/Hero/Frames/hero_walk_down_b_v2"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_right_a_v2", "Art/HD2D/Hero/Frames/hero_walk_right_b_v2"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up_a_v2", "Art/HD2D/Hero/Frames/hero_walk_up_b_v2"] }
     },
     {
-      "action": "Run", "framesPerSecond": 9.0, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right"] },
-      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up"] }
+      "action": "Run", "framesPerSecond": 7.5, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_down_a_v2", "Art/HD2D/Hero/Frames/hero_run_down_b_v2"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_right_a_v2", "Art/HD2D/Hero/Frames/hero_run_right_b_v2"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_run_up_a_v2", "Art/HD2D/Hero/Frames/hero_run_up_b_v2"] }
     },
     {
       "action": "Jump", "framesPerSecond": 7.0, "loop": false, "holdLastFrame": true,
@@ -48,7 +48,7 @@
     {
       "action": "Sword", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
       "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_right"], "authoredFacingRight": true },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_right_long_v2"], "authoredFacingRight": true },
       "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_sword_down"] }
     },
     {

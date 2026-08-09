@@ -147,7 +147,7 @@ namespace CoffeeGame.Combat
             attackCooldown = tuning.SwordCooldown;
             visual?.PlayAction(airborne ? CharacterAction.AirSlash : CharacterAction.Sword, tuning.SwordCooldown);
             audioDirector?.Play(CombatSound.SwordSwing, 0.72f);
-            CombatVfxFactory.SpawnSwordArc(
+            CombatVfxFactory.SpawnSwordSlash(
                 transform.position,
                 motor.Facing,
                 range,

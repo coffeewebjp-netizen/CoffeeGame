@@ -97,7 +97,7 @@ namespace CoffeeGame.Presentation.Tests
         }
 
         [Test]
-        public void HeroLocomotion_UsesStableAuthoredPoseUntilMoreCycleFramesExist()
+        public void HeroLocomotion_AlternatesFeetInEveryDirection()
         {
             Assert.That(
                 Hd2dSpriteManifestLoader.TryLoad(
@@ -110,12 +110,20 @@ namespace CoffeeGame.Presentation.Tests
             Hd2dSpriteClipDefinition walk = FindClip(manifest, "Walk");
             Hd2dSpriteClipDefinition run = FindClip(manifest, "Run");
 
-            Assert.That(walk.down.resourcePaths, Has.Length.EqualTo(1));
-            Assert.That(walk.side.resourcePaths, Has.Length.EqualTo(1));
-            Assert.That(walk.up.resourcePaths, Has.Length.EqualTo(1));
-            Assert.That(run.down.resourcePaths, Has.Length.EqualTo(1));
-            Assert.That(run.side.resourcePaths, Has.Length.EqualTo(1));
-            Assert.That(run.up.resourcePaths, Has.Length.EqualTo(1));
+            AssertAlternatingPair(walk.down.resourcePaths);
+            AssertAlternatingPair(walk.side.resourcePaths);
+            AssertAlternatingPair(walk.up.resourcePaths);
+            AssertAlternatingPair(run.down.resourcePaths);
+            AssertAlternatingPair(run.side.resourcePaths);
+            AssertAlternatingPair(run.up.resourcePaths);
+        }
+
+        private static void AssertAlternatingPair(string[] resourcePaths)
+        {
+            Assert.That(resourcePaths, Has.Length.EqualTo(2));
+            Assert.That(resourcePaths[0], Is.Not.EqualTo(resourcePaths[1]));
+            Assert.That(resourcePaths[0], Does.EndWith("_a_v2"));
+            Assert.That(resourcePaths[1], Does.EndWith("_b_v2"));
         }
 
         private static Hd2dSpriteClipDefinition FindClip(
