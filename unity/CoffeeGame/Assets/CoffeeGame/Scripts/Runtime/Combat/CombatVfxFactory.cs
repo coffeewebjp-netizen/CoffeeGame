@@ -6,6 +6,31 @@ namespace CoffeeGame.Combat
 {
     public static class CombatVfxFactory
     {
+        public static GameObject SpawnIaiCinematic(Vector3 center, Vector3 facing, float radius)
+        {
+            var effect = new GameObject("Iaijutsu cinematic VFX");
+            effect.AddComponent<IaiCinematicEffect>().Initialize(center, facing, radius);
+            return effect;
+        }
+
+        public static GameObject SpawnMagicCharge(Transform anchor, float lifetime)
+        {
+            var effect = new GameObject("Magic charge aura VFX");
+            effect.AddComponent<MagicChargeAuraEffect>().Initialize(anchor, lifetime);
+            return effect;
+        }
+
+        public static void SpawnMagicRelease(Vector3 center, Vector3 facing)
+        {
+            SpawnRing(center, 0.48f, new Color(0.48f, 0.92f, 1f), 0.22f);
+            SpawnSwordSlash(
+                center,
+                facing,
+                0.64f,
+                new Color(0.56f, 0.94f, 1f),
+                0.2f);
+        }
+
         public static void SpawnRing(Vector3 center, float radius, Color color, float lifetime = 0.3f)
         {
             var effect = new GameObject("Combat ring VFX");

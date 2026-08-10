@@ -4,7 +4,9 @@
   "references": [
     "CoffeeGame.Domain",
     "CoffeeGame.Input",
-    "CoffeeGame.Integration"
+    "CoffeeGame.Integration",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
   ],
   "autoReferenced": true
 }

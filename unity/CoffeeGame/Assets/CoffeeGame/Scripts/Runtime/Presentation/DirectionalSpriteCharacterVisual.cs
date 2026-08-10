@@ -1111,12 +1111,25 @@ namespace CoffeeGame.Presentation
                     spriteTransform.localRotation = Quaternion.Euler(0f, 0f, -5f * pulse);
                     break;
                 case CharacterAction.SpinCharge:
-                case CharacterAction.MagicCharge:
                     spriteTransform.localScale = Vector3.one * (1f + 0.035f * Mathf.Sin(actionElapsed * 24f));
                     break;
+                case CharacterAction.MagicCharge:
+                    spriteTransform.localPosition = baseSpritePosition + Vector3.up * (0.012f * pulse);
+                    spriteTransform.localScale = Vector3.one * (1f + 0.012f * pulse);
+                    break;
                 case CharacterAction.SpinRelease:
-                    spriteTransform.localRotation = Quaternion.Euler(0f, 0f, normalized * -360f);
-                    spriteTransform.localScale = Vector3.one * (1f + 0.055f * pulse);
+                    float iaiDirection = spriteRenderer.flipX ? -1f : 1f;
+                    spriteTransform.localPosition = baseSpritePosition +
+                        Vector3.right * (iaiDirection * 0.045f * pulse);
+                    spriteTransform.localRotation = Quaternion.Euler(0f, 0f, iaiDirection * -3.5f * pulse);
+                    spriteTransform.localScale = new Vector3(1f + 0.025f * pulse, 1f - 0.018f * pulse, 1f);
+                    break;
+                case CharacterAction.MagicRelease:
+                    float magicDirection = spriteRenderer.flipX ? 1f : -1f;
+                    spriteTransform.localPosition = baseSpritePosition +
+                        Vector3.right * (magicDirection * 0.035f * pulse);
+                    spriteTransform.localRotation = Quaternion.Euler(0f, 0f, magicDirection * 2.8f * pulse);
+                    spriteTransform.localScale = Vector3.one * (1f + 0.018f * pulse);
                     break;
                 case CharacterAction.Hurt:
                     spriteTransform.localPosition = baseSpritePosition +

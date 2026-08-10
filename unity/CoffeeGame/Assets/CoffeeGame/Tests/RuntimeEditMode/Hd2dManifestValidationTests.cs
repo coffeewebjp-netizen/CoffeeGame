@@ -136,6 +136,31 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(run.up.pixelsPerUnit, Is.EqualTo(507f));
         }
 
+        [Test]
+        public void HeroMagic_UsesSafeChargeFramingAndDistinctReleaseFrame()
+        {
+            Assert.That(
+                Hd2dSpriteManifestLoader.TryLoad(
+                    "Art/HD2D/hero-hd2d",
+                    out Hd2dSpriteManifest manifest,
+                    out string error),
+                Is.True,
+                error);
+
+            Hd2dSpriteClipDefinition charge = FindClip(manifest, "MagicCharge");
+            Hd2dSpriteClipDefinition release = FindClip(manifest, "MagicRelease");
+
+            Assert.That(charge.all.pixelsPerUnit, Is.GreaterThan(manifest.pixelsPerUnit));
+            Assert.That(charge.all.usePivotOverride, Is.True);
+            Assert.That(release.all, Is.Null);
+            Assert.That(release.down.resourcePaths, Has.Length.EqualTo(2));
+            Assert.That(release.side.resourcePaths, Has.Length.EqualTo(2));
+            Assert.That(release.up.resourcePaths, Has.Length.EqualTo(2));
+            Assert.That(release.down.resourcePaths[^1], Does.EndWith("hero_magic_release_v2"));
+            Assert.That(release.side.resourcePaths[^1], Does.EndWith("hero_magic_release_v2"));
+            Assert.That(release.up.resourcePaths[^1], Does.EndWith("hero_magic_release_v2"));
+        }
+
         [TestCase("Jump", "hero_jump_down", "hero_jump_right_v2", "hero_jump_up_v2")]
         [TestCase("Fall", "hero_fall_down", "hero_fall_right_v2", "hero_fall_up_v2")]
         [TestCase("Land", "hero_land_down", "hero_land_right_v2", "hero_land_up_v2")]

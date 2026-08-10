@@ -42,7 +42,7 @@ Default controls:
 | Move | WASD / arrows | Left stick / D-pad | Stick -> arrows |
 | Jump | Space | South face button | A -> Enter |
 | Sword | F | Right trigger | RT -> Mouse Left |
-| Spin slash | Q | West face button | X -> PageUp |
+| Iai slash | Q | West face button | X -> PageUp |
 | Ice magic | E | North face button | Y -> PageDown |
 | Pause / confirm | Escape / Enter | Start / South face button | Steam/Back -> Escape / A -> Enter |
 | Open button settings | Tab | View / Select | Menu -> Tab |

@@ -83,9 +83,29 @@ namespace CoffeeGame.Combat
                 if (material != null)
                 {
                     visualMaterial = material;
-                    renderer.material = visualMaterial;
+                    renderer.sharedMaterial = visualMaterial;
                 }
             }
+
+            var trail = gameObject.AddComponent<TrailRenderer>();
+            trail.time = 0.18f;
+            trail.minVertexDistance = 0.025f;
+            trail.startWidth = 0.13f;
+            trail.endWidth = 0.012f;
+            trail.numCapVertices = 3;
+            trail.startColor = new Color(0.72f, 0.97f, 1f, 0.88f);
+            trail.endColor = new Color(0.28f, 0.72f, 1f, 0f);
+            if (visualMaterial != null)
+            {
+                trail.sharedMaterial = visualMaterial;
+            }
+
+            Light glow = gameObject.AddComponent<Light>();
+            glow.type = LightType.Point;
+            glow.color = new Color(0.35f, 0.82f, 1f);
+            glow.intensity = 1.25f;
+            glow.range = 1.35f;
+            glow.shadows = LightShadows.None;
         }
 
         private void OnDestroy()

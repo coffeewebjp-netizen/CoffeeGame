@@ -293,7 +293,7 @@ namespace CoffeeGame.UI
             GUI.Label(new Rect(panel.x + 12f, panel.y + 36f, panel.width - 24f, 34f), $"選択中: {input.ActiveControllerProfileName} / {input.ConnectedControllersSummary}", smallStyle);
             GUI.Label(new Rect(panel.x + 12f, panel.y + 70f, panel.width - 24f, 34f), $"直近の実ボタン: {input.LastRawButtonDiagnostic}", smallStyle);
             GUI.Label(new Rect(panel.x + 12f, panel.y + 105f, panel.width - 24f, 42f),
-                $"Jump {input.GetActiveControllerBindingDescription(GameInputSemantic.Jump)}\nSword {input.GetActiveControllerBindingDescription(GameInputSemantic.Sword)}  |  Spin {input.GetActiveControllerBindingDescription(GameInputSemantic.Special)}  |  Ice {input.GetActiveControllerBindingDescription(GameInputSemantic.Magic)}",
+                $"Jump {input.GetActiveControllerBindingDescription(GameInputSemantic.Jump)}\nSword {input.GetActiveControllerBindingDescription(GameInputSemantic.Sword)}  |  Iai {input.GetActiveControllerBindingDescription(GameInputSemantic.Special)}  |  Ice {input.GetActiveControllerBindingDescription(GameInputSemantic.Magic)}",
                 smallStyle);
         }
 
@@ -316,7 +316,7 @@ namespace CoffeeGame.UI
             GUI.Label(new Rect(rect.x + 18f, rect.y + 24f, rect.width - 36f, 36f), heading, centeredStyle);
             GUI.Label(new Rect(rect.x + 18f, rect.y + 70f, rect.width - 36f, 28f), run.LastEvent, centeredStyle);
             GUI.Label(new Rect(rect.x + 18f, rect.y + 108f, rect.width - 36f, 46f),
-                "移動: Left Stick / WASD   ジャンプ: South / Space\n刀: Right Trigger / F   回転斬り: West / Q   氷魔法: North / E",
+                "移動: Left Stick / WASD   ジャンプ: South / Space\n刀: Right Trigger / F   居合斬り: West / Q   氷魔法: North / E",
                 centeredStyle);
 
             string buttonLabel = run.Mode == CombatRunMode.Paused ? "再開" : "開始";
@@ -365,7 +365,7 @@ namespace CoffeeGame.UI
 
             DrawRebindRow(panel, 84f, 0, "ジャンプ", GameInputSemantic.Jump);
             DrawRebindRow(panel, 124f, 1, "刀攻撃", GameInputSemantic.Sword);
-            DrawRebindRow(panel, 164f, 2, "回転斬り", GameInputSemantic.Special);
+            DrawRebindRow(panel, 164f, 2, "居合斬り", GameInputSemantic.Special);
             DrawRebindRow(panel, 204f, 3, "氷魔法", GameInputSemantic.Magic);
 
             DrawSettingsCommandButton(

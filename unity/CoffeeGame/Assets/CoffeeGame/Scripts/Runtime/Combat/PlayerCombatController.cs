@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using CoffeeGame.Actors;
 using CoffeeGame.Audio;
@@ -32,11 +33,13 @@ namespace CoffeeGame.Combat
         private float attackCooldown;
         private bool airSlashUsed;
         private bool plungeWasActive;
+        private Coroutine specialReleaseRoutine;
+        private GameObject activeIaiEffect;
 
         public int AttackBonus { get; set; }
         public bool IsCharging => chargeKind != ChargeKind.None;
         public float ChargeNormalized { get; private set; }
-        public string ChargeLabel => chargeKind == ChargeKind.Special ? "回転斬り" : chargeKind == ChargeKind.Magic ? "氷魔法" : string.Empty;
+        public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? "氷魔法" : string.Empty;
 
         public void Initialize(
             GameInputReader inputReader,
@@ -71,6 +74,16 @@ namespace CoffeeGame.Combat
 
         public void CancelPendingActions()
         {
+            if (specialReleaseRoutine != null)
+            {
+                StopCoroutine(specialReleaseRoutine);
+                specialReleaseRoutine = null;
+            }
+            if (activeIaiEffect != null)
+            {
+                Destroy(activeIaiEffect);
+                activeIaiEffect = null;
+            }
             chargeKind = ChargeKind.None;
             chargeRemaining = 0f;
             ChargeNormalized = 0f;
@@ -191,6 +204,7 @@ namespace CoffeeGame.Combat
             motor.MovementScale = 0.22f;
             visual?.PlayAction(CharacterAction.MagicCharge, tuning.MagicChargeSeconds);
             audioDirector?.Play(CombatSound.MagicCharge, 0.6f);
+            CombatVfxFactory.SpawnMagicCharge(transform, tuning.MagicChargeSeconds);
         }
 
         private void TickCharge(float deltaTime)
@@ -220,16 +234,40 @@ namespace CoffeeGame.Combat
 
         private void ReleaseSpecial()
         {
-            visual?.PlayAction(CharacterAction.SpinRelease, 0.42f);
-            int hitCount = DamageTargets(tuning.SpecialRange, tuning.SpecialDamage + AttackBonus, true, false);
+            motor.MovementScale = 0f;
+            visual?.PlayAction(CharacterAction.SpinRelease, IaiCinematicTiming.Duration);
+            activeIaiEffect = CombatVfxFactory.SpawnIaiCinematic(
+                transform.position,
+                motor.Facing,
+                tuning.SpecialRange);
+            specialReleaseRoutine = StartCoroutine(ResolveIaiStrike());
+            attackCooldown = IaiCinematicTiming.Duration;
+        }
+
+        private IEnumerator ResolveIaiStrike()
+        {
+            yield return new WaitForSecondsRealtime(IaiCinematicTiming.StrikeTime);
+            int hitCount = DamageTargets(
+                tuning.SpecialRange,
+                tuning.SpecialDamage + AttackBonus,
+                true,
+                false);
             audioDirector?.Play(CombatSound.SpinRelease, hitCount > 0 ? 1f : 0.72f);
-            CombatVfxFactory.SpawnRing(transform.position, tuning.SpecialRange, new Color(1f, 0.72f, 0.25f), 0.38f);
-            attackCooldown = 0.34f;
+
+            yield return new WaitForSecondsRealtime(
+                IaiCinematicTiming.Duration - IaiCinematicTiming.StrikeTime);
+            if (motor != null)
+            {
+                motor.MovementScale = 1f;
+            }
+            activeIaiEffect = null;
+            specialReleaseRoutine = null;
         }
 
         private void ReleaseMagic()
         {
-            visual?.PlayAction(CharacterAction.MagicRelease, 0.24f);
+            visual?.PlayAction(CharacterAction.MagicRelease, 0.36f);
+            CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing);
             var projectileObject = new GameObject("Ice bolt");
             projectileObject.transform.position = transform.position + Vector3.up * 0.72f + motor.Facing * 0.38f;
             IceProjectile projectile = projectileObject.AddComponent<IceProjectile>();
@@ -237,7 +275,7 @@ namespace CoffeeGame.Combat
             projectile.Destroyed += HandleProjectileDestroyed;
             activeProjectiles.Add(projectile);
             audioDirector?.Play(CombatSound.IceRelease, 0.92f);
-            attackCooldown = 0.2f;
+            attackCooldown = 0.32f;
         }
 
         private int DamageTargets(float range, int damage, bool fullCircle, bool frontArc)

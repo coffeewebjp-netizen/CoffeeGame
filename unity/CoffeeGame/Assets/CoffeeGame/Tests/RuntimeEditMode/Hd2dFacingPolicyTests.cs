@@ -1,3 +1,5 @@
+using System.Reflection;
+using CoffeeGame.Combat;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -175,6 +177,41 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(
                 CharacterVisualTransitionPolicy.IsForcedPhysicsTransition(current, next),
                 Is.True);
+        }
+
+        [Test]
+        public void SpinRelease_UsesARestrainedIaiPoseInsteadOfRotatingTheWholeSprite()
+        {
+            var cameraObject = new GameObject("Iai pose test camera");
+            var actorObject = new GameObject("Iai pose test actor");
+            var visualObject = new GameObject("Iai pose test visual");
+            visualObject.transform.SetParent(actorObject.transform, false);
+
+            try
+            {
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.transform.rotation = Quaternion.LookRotation(new Vector3(0f, -4.97f, 8.85f));
+                var visual = visualObject.AddComponent<DirectionalSpriteCharacterVisual>();
+                Assert.That(visual.TryInitialize("Art/HD2D/hero-hd2d", null, 1f, camera), Is.True);
+
+                visual.PlayAction(CharacterAction.SpinRelease, IaiCinematicTiming.Duration);
+                typeof(DirectionalSpriteCharacterVisual)
+                    .GetField("actionElapsed", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.SetValue(visual, IaiCinematicTiming.Duration * 0.5f);
+                typeof(DirectionalSpriteCharacterVisual)
+                    .GetMethod("ApplyActionPose", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.Invoke(visual, null);
+
+                float rotation = Mathf.Abs(Mathf.DeltaAngle(
+                    visual.Renderer.transform.localEulerAngles.z,
+                    0f));
+                Assert.That(rotation, Is.LessThan(8f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(actorObject);
+                Object.DestroyImmediate(cameraObject);
+            }
         }
     }
 }

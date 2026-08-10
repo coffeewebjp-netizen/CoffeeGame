@@ -75,6 +75,7 @@ namespace CoffeeGame.Bootstrap
             sceneCamera = CreateCamera();
             CreateLighting();
             CreateGrasslandArena();
+            Hd2dScenePresentation.Create(runtimeRoot, sceneCamera);
 
             GameInputReader input = gameObject.AddComponent<GameInputReader>();
             AudioDirector audioDirector = gameObject.AddComponent<AudioDirector>();
@@ -173,6 +174,7 @@ namespace CoffeeGame.Bootstrap
             Material floorMaterial = GrasslandArenaVisuals.CreateGroundMaterial();
             CreateCube("Grassland ground", new Vector3(0f, -0.12f, 1.5f), new Vector3(14f, 0.24f, 11f), floorMaterial);
             GrasslandArenaVisuals.CreateBackdrop(runtimeRoot);
+            GrasslandArenaVisuals.CreateDepthAccents(runtimeRoot);
 
             CreateInvisibleBoundary("North jump boundary", new Vector3(0f, 1.5f, 2.78f), new Vector3(9.8f, 3f, 0.22f));
             CreateInvisibleBoundary("South jump boundary", new Vector3(0f, 1.5f, -2.78f), new Vector3(9.8f, 3f, 0.22f));

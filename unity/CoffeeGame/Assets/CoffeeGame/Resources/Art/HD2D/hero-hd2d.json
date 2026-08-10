@@ -77,11 +77,13 @@
     },
     {
       "action": "MagicCharge", "framesPerSecond": 5.0, "loop": true, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down"] }
+      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down"], "pixelsPerUnit": 565.0, "usePivotOverride": true, "pivotX": 0.5, "pivotY": 0.055 }
     },
     {
-      "action": "MagicRelease", "framesPerSecond": 9.0, "loop": false, "holdLastFrame": true,
-      "all": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down"] }
+      "action": "MagicRelease", "framesPerSecond": 12.0, "loop": false, "holdLastFrame": true,
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down", "Art/HD2D/Hero/Frames/hero_magic_release_v2"] },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down", "Art/HD2D/Hero/Frames/hero_magic_release_v2"] },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_magic_down", "Art/HD2D/Hero/Frames/hero_magic_release_v2"] }
     },
     {
       "action": "Hurt", "framesPerSecond": 9.0, "loop": false, "holdLastFrame": true,

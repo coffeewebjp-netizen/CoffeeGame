@@ -34,5 +34,22 @@ namespace CoffeeGame.Presentation.Tests
                 Object.DestroyImmediate(root);
             }
         }
+
+        [Test]
+        public void DepthAccents_AddLitGeometryWithoutChangingCollision()
+        {
+            var root = new GameObject("Grassland accent test root");
+            try
+            {
+                GameObject accents = GrasslandArenaVisuals.CreateDepthAccents(root.transform);
+
+                Assert.That(accents.GetComponentsInChildren<Renderer>(), Has.Length.GreaterThanOrEqualTo(9));
+                Assert.That(accents.GetComponentsInChildren<Collider>(), Is.Empty);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
     }
 }

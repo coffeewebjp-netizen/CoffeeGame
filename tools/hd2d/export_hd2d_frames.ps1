@@ -465,6 +465,11 @@ for ($index = 0; $index -lt 6; $index++) {
         -ScaleOverride 1.285
 }
 
+Export-Hd2dFrame -SourcePath (Join-Path $referenceRoot "hero-magic-release-v2.png") `
+    -SearchRect ([System.Drawing.Rectangle]::new(0, 0, 1254, 1254)) `
+    -OutputPath (Join-Path $heroOutput "hero_magic_release_v2.png") `
+    -KeepComponents 16
+
 $slimeNames = @(
     "slime_idle.png", "slime_squash.png", "slime_hop.png",
     "slime_windup.png", "slime_hurt.png", "slime_defeated.png"
@@ -492,4 +497,4 @@ Export-Hd2dContactSheet -InputDirectory $heroOutput `
 Export-Hd2dContactSheet -InputDirectory $slimeOutput `
     -OutputPath (Join-Path $previewRoot "slime-frames-v1.png") -Columns 3
 
-Write-Host "Exported $($heroFrames.Count + $actionNames.Count + $stateNames.Count) hero frames and $($slimeNames.Count) slime frames."
+Write-Host "Exported $($heroFrames.Count + $actionNames.Count + $stateNames.Count + 1) hero frames and $($slimeNames.Count) slime frames."
