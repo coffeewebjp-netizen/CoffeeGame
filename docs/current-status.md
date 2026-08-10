@@ -49,6 +49,8 @@ CoffeeGAMEは、ブラウザ試作からUnity製Windows／Androidアプリへ本
 
 ### 表示
 
+- 最初の戦闘エリアを、反復する草地床と空・丘・遠い木立の草原背景で表示
+- 草原の遠景は描画専用で、従来の9.6 x 5.4メートルの戦闘境界とジャンプ衝突は維持
 - 主人公21枚、スライム6枚の個別透過PNG
 - 正面／横／背面の方向解決と左右反転
 - 移動、ジャンプ、落下、着地、通常斬り、空中斬り、急降下、回転斬り、魔法、被弾、敗北の表示状態
@@ -218,4 +220,3 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 - [3d-character-pipeline.md](3d-character-pipeline.md): 将来3D化の資産契約
 - [../art/hd2d/README.md](../art/hd2d/README.md): HD-2D素材生成・検証
 - [../unity/CoffeeGame/README.md](../unity/CoffeeGame/README.md): Unityプロジェクトの詳細
-

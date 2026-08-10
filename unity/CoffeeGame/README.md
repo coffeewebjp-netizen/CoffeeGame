@@ -25,7 +25,8 @@ panel is replaced by uGUI/UI Toolkit.
 
 ## First milestone
 
-- A 9.6 x 5.4 metre room in XZ space, with Y used for jump height
+- A 9.6 x 5.4 metre grassland combat boundary in XZ space, with Y used for jump height
+- A generated painterly grass floor and distant rolling-hill panorama, kept visual-only outside the existing collision boundary
 - Directional HD-2D heroine and animated HD-2D slime rendered inside the 3D scene
 - Walk, run, jump, sword, air slash, plunge, spin slash, and ice magic
 - Exactly-once EXP 1, Gold 1, and Slime Jelly 1 per defeated slime

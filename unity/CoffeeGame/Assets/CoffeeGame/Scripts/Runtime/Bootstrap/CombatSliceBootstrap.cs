@@ -74,7 +74,7 @@ namespace CoffeeGame.Bootstrap
 
             sceneCamera = CreateCamera();
             CreateLighting();
-            CreateRoom();
+            CreateGrasslandArena();
 
             GameInputReader input = gameObject.AddComponent<GameInputReader>();
             AudioDirector audioDirector = gameObject.AddComponent<AudioDirector>();
@@ -118,7 +118,7 @@ namespace CoffeeGame.Bootstrap
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 80f;
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.055f, 0.075f, 0.105f);
+            camera.backgroundColor = new Color(0.42f, 0.75f, 0.94f);
             // A lower three-quarter view keeps the face and clothing silhouette
             // readable while preserving enough floor for the 3D combat plane.
             cameraObject.transform.position = new Vector3(0f, 5.75f, -8.85f);
@@ -134,20 +134,20 @@ namespace CoffeeGame.Bootstrap
         private void CreateLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.34f, 0.38f, 0.44f);
+            RenderSettings.ambientLight = new Color(0.56f, 0.64f, 0.58f);
             RenderSettings.ambientIntensity = 1f;
 
             CreateDirectionalLight(
                 "Warm key light",
                 Quaternion.Euler(44f, -32f, 0f),
-                new Color(1f, 0.92f, 0.86f),
-                1f,
+                new Color(1f, 0.95f, 0.82f),
+                1.06f,
                 LightShadows.Soft);
             CreateDirectionalLight(
                 "Cool fill light",
                 Quaternion.Euler(32f, 148f, 0f),
-                new Color(0.58f, 0.76f, 1f),
-                0.34f,
+                new Color(0.66f, 0.82f, 1f),
+                0.28f,
                 LightShadows.None);
         }
 
@@ -168,31 +168,16 @@ namespace CoffeeGame.Bootstrap
             light.shadows = shadows;
         }
 
-        private void CreateRoom()
+        private void CreateGrasslandArena()
         {
-            Material floorMaterial = CreateLitMaterial("Jade floor", new Color(0.11f, 0.26f, 0.24f));
-            Material wallMaterial = CreateLitMaterial("Dark jade wall", new Color(0.07f, 0.14f, 0.17f));
-
-            CreateCube("Arena floor", new Vector3(0f, -0.12f, 0f), new Vector3(9.6f, 0.24f, 5.4f), floorMaterial);
-            CreateCube("North wall", new Vector3(0f, 0.3f, 2.78f), new Vector3(9.8f, 0.65f, 0.18f), wallMaterial);
-            CreateCube("South wall", new Vector3(0f, 0.3f, -2.78f), new Vector3(9.8f, 0.65f, 0.18f), wallMaterial);
-            CreateCube("East wall", new Vector3(4.88f, 0.3f, 0f), new Vector3(0.18f, 0.65f, 5.4f), wallMaterial);
-            CreateCube("West wall", new Vector3(-4.88f, 0.3f, 0f), new Vector3(0.18f, 0.65f, 5.4f), wallMaterial);
+            Material floorMaterial = GrasslandArenaVisuals.CreateGroundMaterial();
+            CreateCube("Grassland ground", new Vector3(0f, -0.12f, 1.5f), new Vector3(14f, 0.24f, 11f), floorMaterial);
+            GrasslandArenaVisuals.CreateBackdrop(runtimeRoot);
 
             CreateInvisibleBoundary("North jump boundary", new Vector3(0f, 1.5f, 2.78f), new Vector3(9.8f, 3f, 0.22f));
             CreateInvisibleBoundary("South jump boundary", new Vector3(0f, 1.5f, -2.78f), new Vector3(9.8f, 3f, 0.22f));
             CreateInvisibleBoundary("East jump boundary", new Vector3(4.88f, 1.5f, 0f), new Vector3(0.22f, 3f, 5.4f));
             CreateInvisibleBoundary("West jump boundary", new Vector3(-4.88f, 1.5f, 0f), new Vector3(0.22f, 3f, 5.4f));
-
-            for (int i = -4; i <= 4; i++)
-            {
-                GameObject marker = CreateCube($"Floor line {i}", new Vector3(i, 0.012f, 0f), new Vector3(0.018f, 0.012f, 5.2f), wallMaterial);
-                Collider markerCollider = marker.GetComponent<Collider>();
-                if (markerCollider != null)
-                {
-                    Destroy(markerCollider);
-                }
-            }
         }
 
         private PlayerParts CreatePlayer(GameInputReader input, AudioDirector audioDirector)
