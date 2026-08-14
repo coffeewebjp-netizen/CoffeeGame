@@ -1,0 +1,152 @@
+{
+  "contractVersion": "1.0",
+  "basePath": "/api/integrations/coffee-game/v1",
+  "weakSync": {
+    "request": {
+      "method": "GET",
+      "path": "/api/integrations/coffee-game/v1/weak-items",
+      "query": {
+        "cursor": null,
+        "limit": 50
+      }
+    },
+    "response": {
+      "contractVersion": "1.0",
+      "items": [
+        {
+          "weakItemId": "wi_fixture_resilient_001",
+          "prompt": {
+            "text": "resilient",
+            "answerLocale": "ja-JP"
+          },
+          "difficulty": {
+            "band": "intermediate",
+            "level": 3
+          }
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false,
+      "syncAfterSeconds": 900
+    }
+  },
+  "challengeIssue": {
+    "request": {
+      "method": "POST",
+      "path": "/api/integrations/coffee-game/v1/challenges",
+      "body": {
+        "weakItemId": "wi_fixture_resilient_001",
+        "clientRequestId": "cr_fixture_encounter_001"
+      }
+    },
+    "response": {
+      "contractVersion": "1.0",
+      "challenge": {
+        "challengeId": "ch_fixture_resilient_001",
+        "weakItemId": "wi_fixture_resilient_001",
+        "prompt": {
+          "text": "resilient",
+          "answerLocale": "ja-JP"
+        },
+        "difficulty": {
+          "band": "intermediate",
+          "level": 3
+        },
+        "acceptedInputModes": [
+          "typed",
+          "speechTranscript"
+        ],
+        "expiresAt": "2030-01-02T03:04:05.000Z"
+      }
+    }
+  },
+  "answerSubmit": {
+    "request": {
+      "method": "POST",
+      "path": "/api/integrations/coffee-game/v1/answers",
+      "body": {
+        "challengeId": "ch_fixture_resilient_001",
+        "clientAttemptId": "ca_fixture_resilient_001",
+        "answer": {
+          "text": "しなやかで回復力がある",
+          "inputMode": "speechTranscript"
+        }
+      }
+    },
+    "response": {
+      "contractVersion": "1.0",
+      "result": {
+        "resultId": "rs_fixture_resilient_001",
+        "challengeId": "ch_fixture_resilient_001",
+        "clientAttemptId": "ca_fixture_resilient_001",
+        "status": "pending",
+        "retryAfterSeconds": 3,
+        "recovery": {
+          "method": "GET",
+          "path": "/api/integrations/coffee-game/v1/results/rs_fixture_resilient_001"
+        }
+      }
+    }
+  },
+  "resultRecovery": {
+    "request": {
+      "method": "GET",
+      "path": "/api/integrations/coffee-game/v1/results/rs_fixture_resilient_001"
+    },
+    "response": {
+      "contractVersion": "1.0",
+      "result": {
+        "resultId": "rs_fixture_resilient_001",
+        "challengeId": "ch_fixture_resilient_001",
+        "clientAttemptId": "ca_fixture_resilient_001",
+        "status": "completed",
+        "judgment": {
+          "isCorrect": true
+        },
+        "learning": {
+          "state": "ok",
+          "mutationApplied": true
+        },
+        "rewardEligibility": {
+          "eligible": true,
+          "grantId": "gr_fixture_resilient_001",
+          "difficulty": {
+            "band": "intermediate",
+            "level": 3
+          }
+        },
+        "completedAt": "2030-01-02T03:04:06.000Z"
+      }
+    }
+  },
+  "errors": {
+    "disabled": {
+      "status": 503,
+      "body": {
+        "contractVersion": "1.0",
+        "error": {
+          "code": "INTEGRATION_DISABLED",
+          "message": "CoffeeGAME integration is disabled.",
+          "retryable": false
+        }
+      }
+    },
+    "invalidRequest": {
+      "status": 400,
+      "body": {
+        "contractVersion": "1.0",
+        "error": {
+          "code": "INVALID_REQUEST",
+          "message": "The CoffeeGAME request does not match contract v1.",
+          "retryable": false,
+          "fields": [
+            {
+              "field": "body.answer.text",
+              "issue": "must contain at least 1 character(s)"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
