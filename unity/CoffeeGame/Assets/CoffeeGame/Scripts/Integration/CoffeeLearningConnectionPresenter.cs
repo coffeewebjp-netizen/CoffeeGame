@@ -506,7 +506,13 @@ namespace CoffeeGame.Integration
         public static CoffeeLearningConnectionPresenter CreateProduction()
         {
             var store = CoffeeGameAccessTokenStoreFactory.CreatePlatformDefault();
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
+            ICoffeeLearningDesktopConnectionService connection =
+                new AndroidCoffeeLearningConnectService(
+                    new CoffeeLearningDesktopConnectOptions(),
+                    store,
+                    new UnityCoffeeGameBrowserLauncher());
+#elif UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             ICoffeeLearningDesktopConnectionService connection =
                 new CoffeeLearningDesktopConnectService(
                     new CoffeeLearningDesktopConnectOptions(),

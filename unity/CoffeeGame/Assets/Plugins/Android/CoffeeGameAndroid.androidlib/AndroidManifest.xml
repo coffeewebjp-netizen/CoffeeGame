@@ -5,5 +5,19 @@
     <application
         android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        tools:replace="android:networkSecurityConfig,android:usesCleartextTraffic" />
+        tools:replace="android:networkSecurityConfig,android:usesCleartextTraffic">
+        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="coffeegame" android:host="coffee-game-callback" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="jp.coffeetools.coffeegame.androidlib.CloudFolder$PickFolderActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    </application>
 </manifest>

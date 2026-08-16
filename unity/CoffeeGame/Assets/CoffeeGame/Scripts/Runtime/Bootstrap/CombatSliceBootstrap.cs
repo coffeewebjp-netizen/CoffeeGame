@@ -103,6 +103,7 @@ namespace CoffeeGame.Bootstrap
             Hd2dScenePresentation.Create(runtimeRoot, sceneCamera);
 
             GameInputReader input = gameObject.AddComponent<GameInputReader>();
+            gameObject.AddComponent<CoffeeGameDeepLinkListener>();
             coffeeLearningConnection = CoffeeLearningConnectionComposition.CreateProduction();
             AudioDirector audioDirector = gameObject.AddComponent<AudioDirector>();
             audioDirector.Initialize();
@@ -131,7 +132,10 @@ namespace CoffeeGame.Bootstrap
                 SavePlayerProfileManually,
                 coffeeLearningConnection,
                 ExportPlayerProfile,
-                ImportPlayerProfile);
+                ImportPlayerProfile,
+                UseGoogleDriveSave,
+                UseFolderSave,
+                UseLocalSave);
             _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
@@ -152,7 +156,7 @@ namespace CoffeeGame.Bootstrap
                 return;
             }
 
-            profileStore = new PlayerProfileStore();
+            profileStore = new PlayerProfileStore(CloudSaveSettings.ResolveProfilePath());
             sessionProgression = profileStore.LoadOrCreate(out string message);
             sessionProgression.Changed += SavePlayerProfile;
             Debug.Log($"CoffeeGAME profile: {message}");
@@ -214,6 +218,48 @@ namespace CoffeeGame.Bootstrap
             }
 
             return message;
+        }
+
+        private string UseGoogleDriveSave()
+        {
+            bool selected = Application.isMobilePlatform
+                ? CloudSaveSettings.TryPickAndroidFolder(out string message)
+                : CloudSaveSettings.TryUseGoogleDrive(out message);
+            if (selected)
+            {
+                RebindProfileStore();
+            }
+
+            return message + " " + CloudSaveSettings.StatusLabel;
+        }
+
+        private string UseFolderSave()
+        {
+            bool selected = Application.isMobilePlatform
+                ? CloudSaveSettings.TryPickAndroidFolder(out string message)
+                : CloudSaveSettings.TryUseClipboardFolder(out message);
+            if (selected)
+            {
+                RebindProfileStore();
+            }
+
+            return message + " " + CloudSaveSettings.StatusLabel;
+        }
+
+        private string UseLocalSave()
+        {
+            CloudSaveSettings.UseLocal();
+            RebindProfileStore();
+            return "端末ローカルへ戻しました。 " + CloudSaveSettings.StatusLabel;
+        }
+
+        private void RebindProfileStore()
+        {
+            profileStore = new PlayerProfileStore(CloudSaveSettings.ResolveProfilePath());
+            if (sessionProgression != null)
+            {
+                TrySavePlayerProfile(out _);
+            }
         }
 
         private Camera CreateCamera()

@@ -1,0 +1,135 @@
+using System;
+using System.IO;
+using UnityEngine;
+
+namespace CoffeeGame.Persistence
+{
+    public static class CloudSaveSettings
+    {
+        public const string KindPlayerPrefsKey = "CoffeeGame.Save.Kind.v1";
+        public const string FolderPlayerPrefsKey = "CoffeeGame.Save.Folder.v1";
+        public const string KindLocal = "local";
+        public const string KindFolder = "folder";
+
+        public static string Kind =>
+            PlayerPrefs.HasKey(KindPlayerPrefsKey)
+                ? PlayerPrefs.GetString(KindPlayerPrefsKey, KindLocal)
+                : KindLocal;
+
+        public static string FolderPath => PlayerPrefs.GetString(FolderPlayerPrefsKey, string.Empty);
+
+        public static string StatusLabel
+        {
+            get
+            {
+                if (Kind == KindFolder && !string.IsNullOrWhiteSpace(FolderPath))
+                {
+                    return "クラウド連携: " + FolderPath;
+                }
+
+                return "クラウド連携: 端末ローカル";
+            }
+        }
+
+        public static string ResolveProfilePath()
+        {
+            if (Kind == KindFolder && Directory.Exists(FolderPath))
+            {
+                return Path.Combine(FolderPath, PlayerProfilePortability.PortableFileName);
+            }
+
+            return Path.Combine(Application.persistentDataPath, "CoffeeGAME", "player-profile.json");
+        }
+
+        public static void UseLocal()
+        {
+            PlayerPrefs.SetString(KindPlayerPrefsKey, KindLocal);
+            PlayerPrefs.Save();
+        }
+
+        public static bool TryUseFolder(string folder, out string message)
+        {
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                message = "フォルダパスが空です。";
+                return false;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(folder);
+                PlayerPrefs.SetString(KindPlayerPrefsKey, KindFolder);
+                PlayerPrefs.SetString(FolderPlayerPrefsKey, Path.GetFullPath(folder));
+                PlayerPrefs.Save();
+                message = "セーブ先を設定しました: " + Path.GetFullPath(folder);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                message = "セーブ先を設定できませんでした: " + exception.Message;
+                return false;
+            }
+        }
+
+        public static bool TryUseGoogleDrive(out string message)
+        {
+            foreach (string folder in GoogleDriveCandidates())
+            {
+                string root = Path.GetPathRoot(folder);
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                {
+                    continue;
+                }
+
+                return TryUseFolder(folder, out message);
+            }
+
+            message = "Google Driveフォルダが見つかりません。パスをコピーして『セーブ先パスを取り込む』を押すか、スマホではフォルダ選択を使ってください。";
+            return false;
+        }
+
+        public static bool TryUseClipboardFolder(out string message)
+        {
+            return TryUseFolder(GUIUtility.systemCopyBuffer, out message);
+        }
+
+        public static bool TryPickAndroidFolder(out string message)
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var picker = new AndroidJavaClass("jp.coffeetools.coffeegame.androidlib.CloudFolder"))
+                {
+                    picker.CallStatic("pickFolder", activity);
+                }
+
+                message = "Google Driveなどのフォルダを選んでください。選んだ場所へ自動保存します。";
+                return true;
+            }
+            catch (Exception exception)
+            {
+                message = "フォルダ選択を開けませんでした: " + exception.Message;
+                return false;
+            }
+#else
+            message = "この端末ではフォルダ選択の代わりにパス指定を使います。";
+            return false;
+#endif
+        }
+
+        public static string[] GoogleDriveCandidates()
+        {
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return new[]
+            {
+                Path.Combine(userProfile, "Google Drive", "CoffeeGAME"),
+                Path.Combine(userProfile, "GoogleDrive", "CoffeeGAME"),
+                Path.Combine(userProfile, "マイドライブ", "CoffeeGAME"),
+                @"I:\CoffeeGAME",
+                @"G:\マイドライブ\CoffeeGAME"
+            };
+        }
+    }
+}

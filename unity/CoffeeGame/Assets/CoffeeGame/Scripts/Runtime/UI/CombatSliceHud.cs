@@ -24,14 +24,17 @@ namespace CoffeeGame.UI
         private const int SaveRow = 5;
         private const int ExportProfileRow = 6;
         private const int ImportProfileRow = 7;
-        private const int ResetRow = 8;
-        private const int CloseRow = 9;
-        private const int PerformanceRow = 10;
-        private const int FrameStatsRow = 11;
-        private const int CoffeeLearningPrimaryRow = 12;
-        private const int CoffeeLearningDisconnectRow = 13;
-        private const int CoffeeLearningCancelRow = 14;
-        private const int SettingsRowCount = 15;
+        private const int CloudDriveRow = 8;
+        private const int CloudFolderRow = 9;
+        private const int CloudLocalRow = 10;
+        private const int ResetRow = 11;
+        private const int CloseRow = 12;
+        private const int PerformanceRow = 13;
+        private const int FrameStatsRow = 14;
+        private const int CoffeeLearningPrimaryRow = 15;
+        private const int CoffeeLearningDisconnectRow = 16;
+        private const int CoffeeLearningCancelRow = 17;
+        private const int SettingsRowCount = 18;
         private static readonly InputMode[] SelectableInputModes =
         {
             InputMode.KeyboardMouse,
@@ -78,6 +81,9 @@ namespace CoffeeGame.UI
         private Func<string> saveProfileCommand;
         private Func<string> exportProfileCommand;
         private Func<string> importProfileCommand;
+        private Func<string> cloudDriveCommand;
+        private Func<string> cloudFolderCommand;
+        private Func<string> cloudLocalCommand;
         private CoffeeLearningConnectionPresenter coffeeLearningConnection;
         private RivalLearningQuestionSession rivalLearningQuestion;
         private bool rivalEncounterActive;
@@ -88,13 +94,19 @@ namespace CoffeeGame.UI
             Func<string> manualSaveCommand = null,
             CoffeeLearningConnectionPresenter learningConnection = null,
             Func<string> exportProfile = null,
-            Func<string> importProfile = null)
+            Func<string> importProfile = null,
+            Func<string> cloudDrive = null,
+            Func<string> cloudFolder = null,
+            Func<string> cloudLocal = null)
         {
             run = runController;
             input = inputReader;
             saveProfileCommand = manualSaveCommand;
             exportProfileCommand = exportProfile;
             importProfileCommand = importProfile;
+            cloudDriveCommand = cloudDrive;
+            cloudFolderCommand = cloudFolder;
+            cloudLocalCommand = cloudLocal;
             coffeeLearningConnection = learningConnection;
             rivalLearningQuestion = new RivalLearningQuestionSession(
                 () => coffeeLearningConnection?.LearningBridge ?? new NullLearningBridge());
@@ -117,6 +129,9 @@ namespace CoffeeGame.UI
             modernView.SaveRequested += HandleManualSave;
             modernView.ExportProfileRequested += HandleExportProfile;
             modernView.ImportProfileRequested += HandleImportProfile;
+            modernView.CloudDriveRequested += HandleCloudDrive;
+            modernView.CloudFolderRequested += HandleCloudFolder;
+            modernView.CloudLocalRequested += HandleCloudLocal;
             modernView.ResetBindingsRequested += HandleResetBindings;
             modernView.CancelRebindRequested += input.CancelInteractiveRebind;
             modernView.CoffeeLearningPrimaryRequested += HandleCoffeeLearningPrimary;
@@ -558,6 +573,15 @@ namespace CoffeeGame.UI
                 case ImportProfileRow:
                     HandleImportProfile();
                     break;
+                case CloudDriveRow:
+                    HandleCloudDrive();
+                    break;
+                case CloudFolderRow:
+                    HandleCloudFolder();
+                    break;
+                case CloudLocalRow:
+                    HandleCloudLocal();
+                    break;
                 case ResetRow:
                     HandleResetBindings();
                     break;
@@ -711,6 +735,21 @@ namespace CoffeeGame.UI
             SetSystemNotice(importProfileCommand != null
                 ? importProfileCommand()
                 : "セーブの取り込み先を初期化できていません。");
+        }
+
+        private void HandleCloudDrive()
+        {
+            SetSystemNotice(cloudDriveCommand != null ? cloudDriveCommand() : "クラウド設定を初期化できていません。");
+        }
+
+        private void HandleCloudFolder()
+        {
+            SetSystemNotice(cloudFolderCommand != null ? cloudFolderCommand() : "クラウド設定を初期化できていません。");
+        }
+
+        private void HandleCloudLocal()
+        {
+            SetSystemNotice(cloudLocalCommand != null ? cloudLocalCommand() : "クラウド設定を初期化できていません。");
         }
 
         private void SetSystemNotice(string message)
@@ -1242,6 +1281,15 @@ namespace CoffeeGame.UI
                 case ImportProfileRow:
                     HandleImportProfile();
                     break;
+                case CloudDriveRow:
+                    HandleCloudDrive();
+                    break;
+                case CloudFolderRow:
+                    HandleCloudFolder();
+                    break;
+                case CloudLocalRow:
+                    HandleCloudLocal();
+                    break;
                 case ResetRow:
                     if (SupportsButtonRebind)
                     {
@@ -1334,6 +1382,9 @@ namespace CoffeeGame.UI
                    row == SaveRow ||
                    row == ExportProfileRow ||
                    row == ImportProfileRow ||
+                   row == CloudDriveRow ||
+                   row == CloudFolderRow ||
+                   row == CloudLocalRow ||
                    row == CloseRow ||
                    row == PerformanceRow ||
                    row == FrameStatsRow;

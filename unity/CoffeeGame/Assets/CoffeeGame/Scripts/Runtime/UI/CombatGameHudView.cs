@@ -101,6 +101,9 @@ namespace CoffeeGame.UI
         public event Action SaveRequested;
         public event Action ExportProfileRequested;
         public event Action ImportProfileRequested;
+        public event Action CloudDriveRequested;
+        public event Action CloudFolderRequested;
+        public event Action CloudLocalRequested;
         public event Action ResetBindingsRequested;
         public event Action CancelRebindRequested;
         public event Action CoffeeLearningPrimaryRequested;
@@ -901,6 +904,9 @@ namespace CoffeeGame.UI
             AddCommandButton(menuScrollContent, "セーブする", () => SaveRequested?.Invoke());
             AddCommandButton(menuScrollContent, "セーブを書き出す", () => ExportProfileRequested?.Invoke());
             AddCommandButton(menuScrollContent, "セーブを取り込む", () => ImportProfileRequested?.Invoke());
+            AddCommandButton(menuScrollContent, "Google Driveを使う", () => CloudDriveRequested?.Invoke());
+            AddCommandButton(menuScrollContent, "セーブ先を指定", () => CloudFolderRequested?.Invoke());
+            AddCommandButton(menuScrollContent, "ローカル保存に戻す", () => CloudLocalRequested?.Invoke());
             AddCommandButton(menuScrollContent, "初期配置へ戻す", () => ResetBindingsRequested?.Invoke());
             AddCommandButton(menuScrollContent, "戦闘へ戻る", () => ResumeRequested?.Invoke());
 
@@ -1015,7 +1021,7 @@ namespace CoffeeGame.UI
 
         private void RefreshCoffeeLearningControls(bool rebinding)
         {
-            if (coffeeLearningStatusText == null || controlButtons.Count < 15)
+            if (coffeeLearningStatusText == null || controlButtons.Count < 18)
             {
                 return;
             }
@@ -1023,22 +1029,22 @@ namespace CoffeeGame.UI
             if (coffeeLearningConnection == null)
             {
                 coffeeLearningStatusText.text = "CoffeeLearning: \u672a\u63a5\u7d9a";
-                controlButtons[12].GetComponentInChildren<Text>().text = "CoffeeLearning\u3068\u63a5\u7d9a";
-                controlButtons[12].interactable = false;
-                controlButtons[13].GetComponentInChildren<Text>().text = "CoffeeLearning\u63a5\u7d9a\u3092\u89e3\u9664";
-                controlButtons[13].interactable = false;
-                controlButtons[14].GetComponentInChildren<Text>().text = "CoffeeLearning\u64cd\u4f5c\u3092\u30ad\u30e3\u30f3\u30bb\u30eb";
-                controlButtons[14].interactable = false;
+                controlButtons[15].GetComponentInChildren<Text>().text = "CoffeeLearning\u3068\u63a5\u7d9a";
+                controlButtons[15].interactable = false;
+                controlButtons[16].GetComponentInChildren<Text>().text = "CoffeeLearning\u63a5\u7d9a\u3092\u89e3\u9664";
+                controlButtons[16].interactable = false;
+                controlButtons[17].GetComponentInChildren<Text>().text = "CoffeeLearning\u64cd\u4f5c\u3092\u30ad\u30e3\u30f3\u30bb\u30eb";
+                controlButtons[17].interactable = false;
                 return;
             }
 
             coffeeLearningStatusText.text = "CoffeeLearning: " + coffeeLearningConnection.StatusLabel;
-            controlButtons[12].GetComponentInChildren<Text>().text = coffeeLearningConnection.PrimaryActionLabel;
-            controlButtons[13].GetComponentInChildren<Text>().text = coffeeLearningConnection.DisconnectActionLabel;
-            controlButtons[14].GetComponentInChildren<Text>().text = coffeeLearningConnection.CancelActionLabel;
-            controlButtons[12].interactable = !rebinding && coffeeLearningConnection.CanUsePrimaryAction;
-            controlButtons[13].interactable = !rebinding && coffeeLearningConnection.CanUseDisconnectAction;
-            controlButtons[14].interactable = !rebinding && coffeeLearningConnection.CanUseCancelAction;
+            controlButtons[15].GetComponentInChildren<Text>().text = coffeeLearningConnection.PrimaryActionLabel;
+            controlButtons[16].GetComponentInChildren<Text>().text = coffeeLearningConnection.DisconnectActionLabel;
+            controlButtons[17].GetComponentInChildren<Text>().text = coffeeLearningConnection.CancelActionLabel;
+            controlButtons[15].interactable = !rebinding && coffeeLearningConnection.CanUsePrimaryAction;
+            controlButtons[16].interactable = !rebinding && coffeeLearningConnection.CanUseDisconnectAction;
+            controlButtons[17].interactable = !rebinding && coffeeLearningConnection.CanUseCancelAction;
         }
 
         private void BuildMenuScrollArea(RectTransform host)
