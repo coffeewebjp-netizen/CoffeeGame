@@ -18,27 +18,27 @@
   "clips": [
     {
       "action": "Idle", "framesPerSecond": 2.4, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_idle_down"] },
-      "downSide": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_idle_down_right"], "authoredFacingRight": true },
-      "side": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_idle_right"] },
-      "upSide": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_idle_up_right"], "authoredFacingRight": true },
-      "up": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_idle_up"] }
+      "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down"] },
+      "downSide": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down_right_01_v4"], "authoredFacingRight": true },
+      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_right"] },
+      "upSide": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up_right_01_v4"], "authoredFacingRight": true },
+      "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up"] }
     },
     {
-      "action": "Walk", "framesPerSecond": 6.5, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_walk_down_01", "Art/HD2D/HeroGirl1/Frames/girl1_walk_down_02", "Art/HD2D/HeroGirl1/Frames/girl1_walk_down_03", "Art/HD2D/HeroGirl1/Frames/girl1_walk_down_04", "Art/HD2D/HeroGirl1/Frames/girl1_walk_down_05", "Art/HD2D/HeroGirl1/Frames/girl1_walk_down_06"] },
-      "downSide": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_walk_right_01", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_02", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_03", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_04", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_05", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_06", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_07", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_08"], "authoredFacingRight": true },
-      "side": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_walk_right_01", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_02", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_03", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_04", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_05", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_06", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_07", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_08"], "authoredFacingRight": true },
-      "upSide": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_walk_right_01", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_02", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_03", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_04", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_05", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_06", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_07", "Art/HD2D/HeroGirl1/Frames/girl1_walk_right_08"], "authoredFacingRight": true },
-      "up": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_walk_up_01", "Art/HD2D/HeroGirl1/Frames/girl1_walk_up_02", "Art/HD2D/HeroGirl1/Frames/girl1_walk_up_03", "Art/HD2D/HeroGirl1/Frames/girl1_walk_up_04", "Art/HD2D/HeroGirl1/Frames/girl1_walk_up_05", "Art/HD2D/HeroGirl1/Frames/girl1_walk_up_06"] }
+      "action": "Walk", "framesPerSecond": 7.5, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_down_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1] },
+      "downSide": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_down_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "side": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "upSide": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_up_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "up": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_up_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1] }
     },
     {
-      "action": "Run", "framesPerSecond": 7.0, "loop": true, "holdLastFrame": true,
-      "down": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_run_down_01", "Art/HD2D/HeroGirl1/Frames/girl1_run_down_02", "Art/HD2D/HeroGirl1/Frames/girl1_run_down_03", "Art/HD2D/HeroGirl1/Frames/girl1_run_down_04", "Art/HD2D/HeroGirl1/Frames/girl1_run_down_05", "Art/HD2D/HeroGirl1/Frames/girl1_run_down_06"] },
-      "downSide": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_run_right_01", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_02", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_03", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_04", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_05", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_06"], "authoredFacingRight": true },
-      "side": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_run_right_01", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_02", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_03", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_04", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_05", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_06"], "authoredFacingRight": true },
-      "upSide": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_run_right_01", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_02", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_03", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_04", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_05", "Art/HD2D/HeroGirl1/Frames/girl1_run_right_06"], "authoredFacingRight": true },
-      "up": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_run_up_01", "Art/HD2D/HeroGirl1/Frames/girl1_run_up_02", "Art/HD2D/HeroGirl1/Frames/girl1_run_up_03", "Art/HD2D/HeroGirl1/Frames/girl1_run_up_04", "Art/HD2D/HeroGirl1/Frames/girl1_run_up_05", "Art/HD2D/HeroGirl1/Frames/girl1_run_up_06"] }
+      "action": "Run", "framesPerSecond": 15.0, "loop": true, "holdLastFrame": true,
+      "down": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_run_down_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1] },
+      "downSide": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_run_down_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "side": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_run_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "upSide": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_run_up_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "up": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_run_up_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1] }
     },
     {
       "action": "Jump", "framesPerSecond": 10.0, "loop": false, "holdLastFrame": true,

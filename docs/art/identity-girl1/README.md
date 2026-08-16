@@ -1,7 +1,7 @@
 # girl1 identity (not in-game)
 
 Source: `C:\work\girl1.png`  
-Status: HD-2D Idle/Walk/Run use Grok 2D frames. **Stabilize 4 directions first** (down / side / up; diagonals reuse side). Original game is 8-directional; unique diagonal art comes later. 3D trial remains stopped.
+Status: Archived for later. In-game display is the original HD-2D heroine again (`ORC-20260816-037`). Keep `HeroGirl1` frames and look-previews; do not delete.
 
 | File | View |
 | --- | --- |
