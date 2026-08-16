@@ -69,34 +69,50 @@ def add_mesh(name: str, primitive: str, location, scale, material, **kwargs):
 
 
 def build_blockout():
-    skin = mat("Skin", (0.86, 0.68, 0.58))
-    hair = mat("Hair", (0.12, 0.08, 0.07))
-    cloth = mat("Cloth", (0.22, 0.24, 0.38))
-    accent = mat("Accent", (0.78, 0.74, 0.70))
+    skin = mat("Skin", (0.90, 0.74, 0.66))
+    hair = mat("Hair", (0.35, 0.78, 0.88))
+    kimono = mat("Kimono", (0.62, 0.14, 0.16))
+    skirt = mat("Skirt", (0.86, 0.68, 0.18))
+    wood = mat("Wood", (0.28, 0.18, 0.10))
+    steel = mat("Steel", (0.72, 0.74, 0.78))
     parts = [
         add_mesh("Head", "uv_sphere", (0, 0, 1.50), (0.11, 0.12, 0.13), skin),
-        add_mesh("Hair", "uv_sphere", (0, -0.03, 1.52), (0.13, 0.16, 0.16), hair),
+        add_mesh("HairCap", "uv_sphere", (0, -0.01, 1.54), (0.125, 0.14, 0.12), hair),
+        add_mesh("HairBack", "uv_sphere", (0, -0.06, 1.44), (0.11, 0.12, 0.14), hair),
         add_mesh("Neck", "cylinder", (0, 0, 1.36), (0.04, 0.04, 0.05), skin, vertices=12),
-        add_mesh("Chest", "cube", (0, 0, 1.18), (0.16, 0.10, 0.14), cloth),
-        add_mesh("Waist", "cube", (0, 0, 1.00), (0.13, 0.09, 0.08), cloth),
-        add_mesh("Hips", "cube", (0, 0, 0.86), (0.16, 0.10, 0.08), cloth),
-        add_mesh("Skirt", "cone", (0, 0, 0.68), (0.20, 0.16, 0.18), cloth, vertices=16),
+        add_mesh("Chest", "cube", (0, 0, 1.18), (0.17, 0.10, 0.14), kimono),
+        add_mesh("Sleeve.L", "cube", (0.20, 0.02, 1.12), (0.08, 0.10, 0.10), kimono),
+        add_mesh("Sleeve.R", "cube", (-0.20, 0.02, 1.12), (0.08, 0.10, 0.10), kimono),
+        add_mesh("Waist", "cube", (0, 0, 1.00), (0.14, 0.09, 0.08), kimono),
+        add_mesh("Obi", "cube", (0, 0.02, 0.94), (0.15, 0.08, 0.04), wood),
+        add_mesh("Hips", "cube", (0, 0, 0.86), (0.16, 0.10, 0.08), skirt),
+        add_mesh("Skirt", "cone", (0, 0, 0.66), (0.22, 0.16, 0.20), skirt, vertices=16),
         add_mesh("Thigh.L", "cylinder", (0.06, 0, 0.58), (0.055, 0.06, 0.16), skin, vertices=12),
         add_mesh("Thigh.R", "cylinder", (-0.06, 0, 0.58), (0.055, 0.06, 0.16), skin, vertices=12),
         add_mesh("Shin.L", "cylinder", (0.06, 0, 0.28), (0.045, 0.05, 0.14), skin, vertices=12),
         add_mesh("Shin.R", "cylinder", (-0.06, 0, 0.28), (0.045, 0.05, 0.14), skin, vertices=12),
-        add_mesh("Foot.L", "cube", (0.06, 0.04, 0.07), (0.05, 0.10, 0.04), accent),
-        add_mesh("Foot.R", "cube", (-0.06, 0.04, 0.07), (0.05, 0.10, 0.04), accent),
+        add_mesh("Foot.L", "cube", (0.06, 0.05, 0.06), (0.05, 0.12, 0.03), wood),
+        add_mesh("Foot.R", "cube", (-0.06, 0.05, 0.06), (0.05, 0.12, 0.03), wood),
         add_mesh("UpperArm.L", "cylinder", (0.28, 0, 1.20), (0.035, 0.035, 0.13), skin, vertices=10),
         add_mesh("UpperArm.R", "cylinder", (-0.28, 0, 1.20), (0.035, 0.035, 0.13), skin, vertices=10),
         add_mesh("Forearm.L", "cylinder", (0.48, 0, 1.20), (0.03, 0.03, 0.11), skin, vertices=10),
         add_mesh("Forearm.R", "cylinder", (-0.48, 0, 1.20), (0.03, 0.03, 0.11), skin, vertices=10),
         add_mesh("Hand.L", "uv_sphere", (0.60, 0, 1.20), (0.035, 0.025, 0.04), skin),
         add_mesh("Hand.R", "uv_sphere", (-0.60, 0, 1.20), (0.035, 0.025, 0.04), skin),
+        add_mesh("Saya", "cylinder", (0.16, 0.08, 0.92), (0.018, 0.018, 0.28), wood, vertices=10),
+        add_mesh("Blade", "cube", (0.16, 0.08, 1.18), (0.012, 0.004, 0.16), steel),
     ]
     for arm in ("UpperArm.L", "UpperArm.R", "Forearm.L", "Forearm.R"):
         obj = bpy.data.objects[arm]
         obj.rotation_euler = (0, math.radians(90), 0)
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+        obj.select_set(False)
+
+    for name, rot in (("Saya", (0, math.radians(70), math.radians(20))), ("Blade", (0, math.radians(70), math.radians(20)))):
+        obj = bpy.data.objects[name]
+        obj.rotation_euler = rot
         bpy.context.view_layer.objects.active = obj
         obj.select_set(True)
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
