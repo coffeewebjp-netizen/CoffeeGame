@@ -20,15 +20,31 @@ def reset():
     scene.render.resolution_x = 960
     scene.render.resolution_y = 1280
     scene.frame_start = 1
-    scene.frame_end = 48
+    scene.frame_end = 16
+    scene.render.fps = 8
+    scene.use_preview_range = False
     world = bpy.data.worlds.new("LookWorld")
     scene.world = world
     world.use_nodes = True
     world.node_tree.nodes["Background"].inputs[0].default_value = (0.18, 0.18, 0.20, 1.0)
 
 
-def image_card(name: str, path: Path, location, rotation, height: float):
+def load_image(path: Path, sequence_frames: int = 0):
     image = bpy.data.images.load(str(path))
+    if sequence_frames > 1:
+        image.source = "SEQUENCE"
+        image.reload()
+    return image
+
+
+def apply_sequence(image, frames: int):
+    if frames <= 1:
+        return
+    image.source = "SEQUENCE"
+
+
+def image_card(name: str, path: Path, location, rotation, height: float, sequence_frames: int = 0):
+    image = load_image(path, sequence_frames)
     aspect = image.size[0] / max(1, image.size[1])
     width = height * aspect
     bpy.ops.object.empty_add(type="IMAGE", location=location, rotation=rotation)
@@ -38,6 +54,10 @@ def image_card(name: str, path: Path, location, rotation, height: float):
     empty.empty_display_size = height
     empty.empty_image_side = "DOUBLE_SIDED"
     empty.show_in_front = True
+    if sequence_frames > 1 and hasattr(empty, "image_user"):
+        empty.image_user.frame_duration = 240
+        empty.image_user.use_auto_refresh = True
+        empty.image_user.use_cyclic = True
 
     bpy.ops.mesh.primitive_plane_add(size=1.0, location=location, rotation=rotation)
     plane = bpy.context.object
@@ -51,21 +71,84 @@ def image_card(name: str, path: Path, location, rotation, height: float):
     principled = nodes["Principled BSDF"]
     tex = nodes.new("ShaderNodeTexImage")
     tex.image = image
+    if sequence_frames > 1:
+        tex.image_user.frame_duration = 240
+        tex.image_user.frame_start = 1
+        tex.image_user.frame_offset = 0
+        tex.image_user.use_auto_refresh = True
+        tex.image_user.use_cyclic = True
     links.new(tex.outputs["Color"], principled.inputs["Base Color"])
     principled.inputs["Roughness"].default_value = 1.0
     plane.data.materials.append(mat)
     return empty
 
 
+def key_hide(obj, frame: int, hidden: bool) -> None:
+    obj.hide_viewport = hidden
+    obj.hide_render = hidden
+    obj.keyframe_insert("hide_viewport", frame=frame)
+    obj.keyframe_insert("hide_render", frame=frame)
+    if obj.animation_data and obj.animation_data.action:
+        for fcu in obj.animation_data.action.fcurves:
+            if fcu.data_path.startswith("hide_"):
+                for kp in fcu.keyframe_points:
+                    kp.interpolation = "CONSTANT"
+
+
+def flipbook(entries) -> None:
+    for obj, keys in entries:
+        mesh = bpy.data.objects.get(obj.name + ".Mesh")
+        for frame, visible in keys:
+            key_hide(obj, frame, not visible)
+            if mesh is not None:
+                key_hide(mesh, frame, not visible)
+
+
 def main():
     reset()
-    image_card("Look.34", LOOK / "look-34.jpg", (0.0, 0.15, 0.81), (math.radians(90), 0, 0), 1.62)
-    image_card(
-        "Look.Right",
-        LOOK / "look-right.jpg",
+    a = image_card(
+        "Look.34A",
+        LOOK / "move" / "walk3d_34_01.jpg",
+        (0.0, 0.15, 0.81),
+        (math.radians(90), 0, 0),
+        1.62,
+    )
+    b = image_card(
+        "Look.34B",
+        LOOK / "move" / "walk3d_34_02.jpg",
+        (0.0, 0.15, 0.81),
+        (math.radians(90), 0, 0),
+        1.62,
+    )
+    r1 = image_card(
+        "Look.RightA",
+        LOOK / "move" / "walk3d_right_01.jpg",
         (0.15, 0.0, 0.81),
         (math.radians(90), 0, math.radians(90)),
         1.62,
+    )
+    r2 = image_card(
+        "Look.RightB",
+        LOOK / "move" / "walk3d_right_02.jpg",
+        (0.15, 0.0, 0.81),
+        (math.radians(90), 0, math.radians(90)),
+        1.62,
+    )
+    r3 = image_card(
+        "Look.RightC",
+        LOOK / "move" / "walk3d_right_03.jpg",
+        (0.15, 0.0, 0.81),
+        (math.radians(90), 0, math.radians(90)),
+        1.62,
+    )
+    flipbook(
+        [
+            (a, [(1, True), (8, False), (9, True), (16, False)]),
+            (b, [(1, False), (8, True), (9, False), (16, True)]),
+            (r1, [(1, True), (5, False), (13, True)]),
+            (r2, [(1, False), (5, True), (9, False), (13, False)]),
+            (r3, [(1, False), (9, True), (13, False)]),
+        ]
     )
     image_card("Look.Bust", LOOK / "look-bust.jpg", (1.8, 0.15, 1.15), (math.radians(90), 0, 0), 1.1)
 
@@ -84,14 +167,7 @@ def main():
             area.spaces[0].shading.type = "SOLID"
             area.spaces[0].shading.color_type = "TEXTURE"
 
-    pivot.rotation_euler = (0, 0, 0)
-    pivot.keyframe_insert("rotation_euler", frame=1)
-    pivot.rotation_euler = (0, 0, math.radians(180))
-    pivot.keyframe_insert("rotation_euler", frame=48)
-    if pivot.animation_data and pivot.animation_data.action:
-        for fcu in pivot.animation_data.action.fcurves:
-            for kp in fcu.keyframe_points:
-                kp.interpolation = "LINEAR"
+    # Playback is the walk flipbook. Orbit by hand; do not auto-spin.
 
     bpy.ops.object.light_add(type="SUN", location=(1, -2, 3))
     bpy.context.object.data.energy = 2.0

@@ -5,7 +5,7 @@ Quality trial only. The playable HD-2D heroine is unchanged.
 ## Open
 
 1. Blender 4.5
-2. **Judge look here:** `girl1-look-preview.blend` (approved stills only, no clay)
+2. **Judge look + motion here:** `girl1-look-preview.blend` — Space で再生（1–16）。同じ120点ルックの歩きコマ送り。
 3. Sculpt clay (not for judging): `girl1-sculpt.blend`
 4. Older blockout: `girl1-prototype.blend`
 3. Timeline 1–24, play. Action name: `WalkInPlace`
