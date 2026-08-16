@@ -2,7 +2,8 @@
   "name": "CoffeeGame.Integration",
   "rootNamespace": "CoffeeGame.Integration",
   "references": [
-    "CoffeeGame.Domain"
+    "CoffeeGame.Domain",
+    "UnityEngine.AndroidJNIModule"
   ],
   "autoReferenced": true
 }

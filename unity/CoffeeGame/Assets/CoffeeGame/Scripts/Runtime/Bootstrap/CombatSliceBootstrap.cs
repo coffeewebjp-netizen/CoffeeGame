@@ -125,7 +125,13 @@ namespace CoffeeGame.Bootstrap
                 () => slimeSpawnIndex = 0);
 
             CombatSliceHud hud = gameObject.AddComponent<CombatSliceHud>();
-            hud.Initialize(runController, input, SavePlayerProfileManually, coffeeLearningConnection);
+            hud.Initialize(
+                runController,
+                input,
+                SavePlayerProfileManually,
+                coffeeLearningConnection,
+                ExportPlayerProfile,
+                ImportPlayerProfile);
             _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
@@ -182,6 +188,32 @@ namespace CoffeeGame.Bootstrap
                 return false;
             }
             return profileStore.TrySave(sessionProgression, out message);
+        }
+
+        private string ExportPlayerProfile()
+        {
+            if (profileStore == null || sessionProgression == null)
+            {
+                return "プロフィール保存がまだ初期化されていません。";
+            }
+
+            PlayerProfilePortability.TryExport(profileStore, sessionProgression, out string message);
+            return message;
+        }
+
+        private string ImportPlayerProfile()
+        {
+            if (profileStore == null)
+            {
+                return "プロフィール保存がまだ初期化されていません。";
+            }
+
+            if (!PlayerProfilePortability.TryImport(profileStore, out _, out string message))
+            {
+                return message;
+            }
+
+            return message;
         }
 
         private Camera CreateCamera()

@@ -129,5 +129,24 @@ namespace CoffeeGame.Persistence.Tests
             Assert.That(File.Exists(profilePath), Is.False);
             Assert.That(Directory.GetFiles(temporaryDirectory, "profile.json.invalid-*").Length, Is.EqualTo(1));
         }
+
+        [Test]
+        public void PortableExportAndClipboardImport_RoundTripsGold()
+        {
+            var source = new PlayerProfileStore(profilePath);
+            var progression = new PlayerProgression(3, 8, 12, 4);
+            Assert.That(source.TrySave(progression, out _), Is.True);
+            string json = File.ReadAllText(profilePath);
+            UnityEngine.GUIUtility.systemCopyBuffer = json;
+
+            var destinationPath = Path.Combine(temporaryDirectory, "imported.json");
+            var destination = new PlayerProfileStore(destinationPath);
+            Assert.That(
+                PlayerProfilePortability.TryImport(destination, out PlayerProgression imported, out string message),
+                Is.True,
+                message);
+            Assert.That(imported.Gold, Is.EqualTo(12));
+            Assert.That(imported.Level, Is.EqualTo(3));
+        }
     }
 }

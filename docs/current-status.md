@@ -160,7 +160,7 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 
 ## CoffeeLearning連携
 
-contract v1の実HTTP bridge、WindowsのDPAPI資格情報、ブラウザ接続設定、アカウント表示、苦手問題の取得・出題・typed回答確認・送信・pending結果回復、AI判定feedback表示、正解時のGold／EXP／才能ポイント／親密度報酬と仲間化・profile v2永続化まで実装済みです。CoffeeLearning側の正解は通常OKと同じWordの`okCount`加算を結果IDで一度だけ行います。音声入力とAndroid Keystoreは未実装です。
+contract v1の実HTTP bridge、WindowsのDPAPI資格情報、ブラウザ接続設定、アカウント表示、苦手問題の取得・出題・typed回答確認・送信・pending結果回復、AI判定feedback表示、正解時のGold／EXP／才能ポイント／親密度報酬と仲間化・profile v2永続化まで実装済みです。CoffeeLearning側の正解は通常OKと同じWordの`okCount`加算を結果IDで一度だけ行います。音声入力は未実装です。AndroidはKeystoreでtokenを保存し、Windowsと同じブラウザ往復（端末内の 127.0.0.1 コールバック）でCoffeeLearning接続できます。セーブは端末ローカルのままなので、システム画面の書き出し／取り込みで JSON を Google Drive などに渡せます。自動クラウド同期は未接続です。
 
 ### CoffeeGAMEからCoffeeLearning
 

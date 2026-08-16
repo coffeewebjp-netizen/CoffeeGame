@@ -153,7 +153,13 @@ namespace CoffeeGame.Integration
     {
         public static ICoffeeGameAccessTokenStore CreatePlatformDefault()
         {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_ANDROID && !UNITY_EDITOR
+            var path = Path.Combine(
+                Application.persistentDataPath,
+                "CoffeeLearning",
+                "coffee-game-token.v1.keystore");
+            return new AndroidKeystoreAccessTokenStore(path);
+#elif UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             var path = Path.Combine(
                 Application.persistentDataPath,
                 "CoffeeLearning",
@@ -522,6 +528,115 @@ namespace CoffeeGame.Integration
             string existingFileName,
             string newFileName,
             int flags);
+    }
+#endif
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    public sealed class AndroidKeystoreAccessTokenStore : ICoffeeGameAccessTokenStore
+    {
+        private readonly object gate = new object();
+        private readonly string filePath;
+
+        public AndroidKeystoreAccessTokenStore(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("Credential file path is required.", nameof(filePath));
+            }
+
+            this.filePath = Path.GetFullPath(filePath);
+        }
+
+        public bool HasAccessToken
+        {
+            get
+            {
+                lock (gate)
+                {
+                    return File.Exists(filePath) && new FileInfo(filePath).Length > 0;
+                }
+            }
+        }
+
+        public Task<string> LoadAccessTokenAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            lock (gate)
+            {
+                if (!File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("CoffeeLearning credential file was not found.", filePath);
+                }
+
+                byte[] encrypted = File.ReadAllBytes(filePath);
+                byte[] plaintext = TokenVault.Unprotect(encrypted);
+                string token = Encoding.UTF8.GetString(plaintext);
+                return Task.FromResult(CoffeeGameAccessToken.Normalize(token));
+            }
+        }
+
+        public Task SaveAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string canonical = CoffeeGameAccessToken.Normalize(accessToken);
+            lock (gate)
+            {
+                string directory = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                string temporaryPath = filePath + ".tmp";
+                byte[] encrypted = TokenVault.Protect(Encoding.UTF8.GetBytes(canonical));
+                File.WriteAllBytes(temporaryPath, encrypted);
+                if (File.Exists(filePath))
+                {
+                    File.Replace(temporaryPath, filePath, null);
+                }
+                else
+                {
+                    File.Move(temporaryPath, filePath);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAccessTokenAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            lock (gate)
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static class TokenVault
+        {
+            private const string JavaClass = "jp.coffeetools.coffeegame.androidlib.TokenVault";
+
+            public static byte[] Protect(byte[] plaintext)
+            {
+                using (var vault = new AndroidJavaClass(JavaClass))
+                {
+                    return vault.CallStatic<byte[]>("protect", plaintext);
+                }
+            }
+
+            public static byte[] Unprotect(byte[] ciphertext)
+            {
+                using (var vault = new AndroidJavaClass(JavaClass))
+                {
+                    return vault.CallStatic<byte[]>("unprotect", ciphertext);
+                }
+            }
+        }
     }
 #endif
 }

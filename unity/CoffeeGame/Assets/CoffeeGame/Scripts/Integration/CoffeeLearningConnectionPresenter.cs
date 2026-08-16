@@ -506,7 +506,7 @@ namespace CoffeeGame.Integration
         public static CoffeeLearningConnectionPresenter CreateProduction()
         {
             var store = CoffeeGameAccessTokenStoreFactory.CreatePlatformDefault();
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_ANDROID
             ICoffeeLearningDesktopConnectionService connection =
                 new CoffeeLearningDesktopConnectService(
                     new CoffeeLearningDesktopConnectOptions(),

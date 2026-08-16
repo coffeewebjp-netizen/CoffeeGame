@@ -22,14 +22,16 @@ namespace CoffeeGame.UI
         private const string HeroStatusSpriteResource = "Art/UI/Hero/hero_fullbody_ui";
         private const int InputModeRow = 4;
         private const int SaveRow = 5;
-        private const int ResetRow = 6;
-        private const int CloseRow = 7;
-        private const int PerformanceRow = 8;
-        private const int FrameStatsRow = 9;
-        private const int CoffeeLearningPrimaryRow = 10;
-        private const int CoffeeLearningDisconnectRow = 11;
-        private const int CoffeeLearningCancelRow = 12;
-        private const int SettingsRowCount = 13;
+        private const int ExportProfileRow = 6;
+        private const int ImportProfileRow = 7;
+        private const int ResetRow = 8;
+        private const int CloseRow = 9;
+        private const int PerformanceRow = 10;
+        private const int FrameStatsRow = 11;
+        private const int CoffeeLearningPrimaryRow = 12;
+        private const int CoffeeLearningDisconnectRow = 13;
+        private const int CoffeeLearningCancelRow = 14;
+        private const int SettingsRowCount = 15;
         private static readonly InputMode[] SelectableInputModes =
         {
             InputMode.KeyboardMouse,
@@ -74,6 +76,8 @@ namespace CoffeeGame.UI
         private OnScreenTouchControls touchControls;
         private int pauseOpenedFrame = -1;
         private Func<string> saveProfileCommand;
+        private Func<string> exportProfileCommand;
+        private Func<string> importProfileCommand;
         private CoffeeLearningConnectionPresenter coffeeLearningConnection;
         private RivalLearningQuestionSession rivalLearningQuestion;
         private bool rivalEncounterActive;
@@ -82,11 +86,15 @@ namespace CoffeeGame.UI
             CombatRunController runController,
             GameInputReader inputReader,
             Func<string> manualSaveCommand = null,
-            CoffeeLearningConnectionPresenter learningConnection = null)
+            CoffeeLearningConnectionPresenter learningConnection = null,
+            Func<string> exportProfile = null,
+            Func<string> importProfile = null)
         {
             run = runController;
             input = inputReader;
             saveProfileCommand = manualSaveCommand;
+            exportProfileCommand = exportProfile;
+            importProfileCommand = importProfile;
             coffeeLearningConnection = learningConnection;
             rivalLearningQuestion = new RivalLearningQuestionSession(
                 () => coffeeLearningConnection?.LearningBridge ?? new NullLearningBridge());
@@ -107,6 +115,8 @@ namespace CoffeeGame.UI
             modernView.PerformancePresetRequested += HandlePerformancePreset;
             modernView.FrameStatsToggleRequested += HandleFrameStatsToggle;
             modernView.SaveRequested += HandleManualSave;
+            modernView.ExportProfileRequested += HandleExportProfile;
+            modernView.ImportProfileRequested += HandleImportProfile;
             modernView.ResetBindingsRequested += HandleResetBindings;
             modernView.CancelRebindRequested += input.CancelInteractiveRebind;
             modernView.CoffeeLearningPrimaryRequested += HandleCoffeeLearningPrimary;
@@ -542,6 +552,12 @@ namespace CoffeeGame.UI
                 case SaveRow:
                     HandleManualSave();
                     break;
+                case ExportProfileRow:
+                    HandleExportProfile();
+                    break;
+                case ImportProfileRow:
+                    HandleImportProfile();
+                    break;
                 case ResetRow:
                     HandleResetBindings();
                     break;
@@ -680,7 +696,25 @@ namespace CoffeeGame.UI
             string bindingMessage = bindingsSaved
                 ? "ボタン設定も保存しました。"
                 : "ボタン設定を保存できませんでした。";
-            string message = $"{profileMessage} {bindingMessage}";
+            SetSystemNotice($"{profileMessage} {bindingMessage}");
+        }
+
+        private void HandleExportProfile()
+        {
+            SetSystemNotice(exportProfileCommand != null
+                ? exportProfileCommand()
+                : "セーブの書き出し先を初期化できていません。");
+        }
+
+        private void HandleImportProfile()
+        {
+            SetSystemNotice(importProfileCommand != null
+                ? importProfileCommand()
+                : "セーブの取り込み先を初期化できていません。");
+        }
+
+        private void SetSystemNotice(string message)
+        {
             if (modernView != null)
             {
                 modernView.SetSystemNotice(message);
@@ -1202,6 +1236,12 @@ namespace CoffeeGame.UI
                 case SaveRow:
                     HandleManualSave();
                     break;
+                case ExportProfileRow:
+                    HandleExportProfile();
+                    break;
+                case ImportProfileRow:
+                    HandleImportProfile();
+                    break;
                 case ResetRow:
                     if (SupportsButtonRebind)
                     {
@@ -1292,6 +1332,8 @@ namespace CoffeeGame.UI
             return SupportsButtonRebind ||
                    row == InputModeRow ||
                    row == SaveRow ||
+                   row == ExportProfileRow ||
+                   row == ImportProfileRow ||
                    row == CloseRow ||
                    row == PerformanceRow ||
                    row == FrameStatsRow;
