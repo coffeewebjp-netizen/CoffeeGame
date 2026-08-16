@@ -1,7 +1,7 @@
 # girl1 identity (not in-game)
 
 Source: `C:\work\girl1.png`  
-Status: HD-2D first slice started (`ORC-20260816-035`). Side idle + side walk use the 120-look frames. Other facings are still the old heroine. 3D trial remains stopped.
+Status: HD-2D Idle/Walk/Run use Grok 2D frames. **Stabilize 4 directions first** (down / side / up; diagonals reuse side). Original game is 8-directional; unique diagonal art comes later. 3D trial remains stopped.
 
 | File | View |
 | --- | --- |
