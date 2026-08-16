@@ -5,7 +5,8 @@ Quality trial only. The playable HD-2D heroine is unchanged.
 ## Open
 
 1. Blender 4.5
-2. **Next compare:** `girl1-compare.blend` — 120点ルック絵と、既存の1.6m 3Dヒロイン（Walk再生可）
+2. **Look match:** `girl1-lookmatch.blend` — 左が120点絵、中央が色寄せした既存3D、右が投影の上限
+3. Motion check: `girl1-compare.blend`
 3. Look flipbook: `girl1-look-preview.blend`
 3. Sculpt clay (not for judging): `girl1-sculpt.blend`
 4. Older blockout: `girl1-prototype.blend`
