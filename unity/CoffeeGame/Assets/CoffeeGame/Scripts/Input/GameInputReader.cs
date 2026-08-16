@@ -569,7 +569,7 @@ namespace CoffeeGame.Input
                     break;
                 case InputMode.TouchOnScreen:
                     bindingGroup = TouchGroup;
-                    message = "画面タッチを使用します。左スティックで移動、右側のボタンでジャンプと攻撃です。";
+                    message = "画面タッチを使用します。横画面で、左半分をスワイプして押しっぱなしで移動、右半分でカメラです。";
                     break;
                 default:
                     message = "使用する入力方式を選択してください。";

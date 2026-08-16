@@ -97,7 +97,7 @@ Blender製の `heroine-v4` と `slime-v2` は、将来3Dへ戻るための基礎
 1. `Keyboard / Mouse`
 2. `Controller / Gamepad`
 3. `Steam Desktop compatibility`
-4. `タッチ（画面操作）` — Android実機向けの仮想スティックと攻撃ボタン
+4. `タッチ（画面操作）` — 横画面。左半分をスワイプして押しっぱなしで移動、右半分でカメラ、右下に跳／刀／居合／氷
 
 選択後は一つのInput System binding groupだけを有効にし、別方式からの戦闘入力を混在させません。GamepadがUnityへ届いていないときは `Controller / Gamepad` を選択できません。モバイルでは起動時カーソルがタッチ方式になります。
 

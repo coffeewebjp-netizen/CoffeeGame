@@ -870,7 +870,7 @@ namespace CoffeeGame.UI
                 338f,
                 3,
                 "タッチ（画面操作）",
-                "スマホ向け。左スティックで移動、右側の跳／刀／居合／氷、右側ドラッグでカメラ。",
+                "横画面。左半分を少しスワイプして押しっぱなしで移動、右半分でカメラ、右下で跳／刀／居合／氷。",
                 true);
 
             string status = string.IsNullOrEmpty(inputModeSelectionMessage)

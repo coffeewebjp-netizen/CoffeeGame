@@ -6,30 +6,35 @@ using UnityEngine.InputSystem.Controls;
 namespace CoffeeGame.UI
 {
     /// <summary>
-    /// Pixel-first virtual stick and action pad for Android. Writes into
-    /// <see cref="GameInputReader"/> instead of mixing Touchscreen bindings
-    /// with keyboard or gamepad groups.
+    /// Landscape twin-zone overlay: left half is a swipe-and-hold move stick
+    /// that appears at the finger, right half looks the camera, and combat
+    /// buttons sit in the lower-right thumb cluster.
     /// </summary>
     [DefaultExecutionOrder(-300)]
     [DisallowMultipleComponent]
     public sealed class OnScreenTouchControls : MonoBehaviour
     {
+        private const float CameraPixelsPerYaw = 42f;
+        private const float CameraPixelsPerPitch = 56f;
+
         private GameInputReader input;
         private bool visible;
         private int moveFingerId = -1;
         private int cameraFingerId = -1;
         private Vector2 moveOrigin;
+        private Vector2 currentMovePosition;
         private Vector2 lastCameraPosition;
         private bool jumpHeld;
         private bool swordHeld;
         private bool specialHeld;
         private bool magicHeld;
         private GUIStyle labelStyle;
-        private GUIStyle captionStyle;
+        private Texture2D circleTexture;
 
         public void Initialize(GameInputReader inputReader)
         {
             input = inputReader;
+            ApplyLandscapeOrientation();
         }
 
         public void SetVisible(bool isVisible)
@@ -41,6 +46,11 @@ namespace CoffeeGame.UI
             }
         }
 
+        private void OnEnable()
+        {
+            ApplyLandscapeOrientation();
+        }
+
         private void Update()
         {
             if (input == null || !input.UsesTouchOverlay)
@@ -49,6 +59,7 @@ namespace CoffeeGame.UI
                 return;
             }
 
+            ApplyLandscapeOrientation();
             Touchscreen touchscreen = Touchscreen.current;
             if (touchscreen == null)
             {
@@ -74,34 +85,51 @@ namespace CoffeeGame.UI
 
                 Vector2 position = touch.position.ReadValue();
                 int fingerId = touch.touchId.ReadValue();
-                if (IsInside(position, JumpRect))
+                bool onJump = IsInside(position, JumpRect);
+                bool onSword = IsInside(position, SwordRect);
+                bool onSpecial = IsInside(position, SpecialRect);
+                bool onMagic = IsInside(position, MagicRect);
+                bool onAction = onJump || onSword || onSpecial || onMagic;
+
+                if (onJump)
                 {
                     jump = true;
+                    continue;
                 }
-                else if (IsInside(position, SwordRect))
+
+                if (onSword)
                 {
                     sword = true;
+                    continue;
                 }
-                else if (IsInside(position, SpecialRect))
+
+                if (onSpecial)
                 {
                     special = true;
+                    continue;
                 }
-                else if (IsInside(position, MagicRect))
+
+                if (onMagic)
                 {
                     magic = true;
+                    continue;
                 }
-                else if (moveFingerId == fingerId || (moveFingerId < 0 && IsInside(position, MovePadRect)))
+
+                if (moveFingerId == fingerId || (moveFingerId < 0 && !onAction && IsLeftHalf(position)))
                 {
                     if (moveFingerId < 0)
                     {
                         moveFingerId = fingerId;
-                        moveOrigin = MovePadCenter;
+                        moveOrigin = position;
                     }
 
-                    move = Vector2.ClampMagnitude((position - moveOrigin) / MoveRadius, 1f);
+                    currentMovePosition = position;
+                    move = TouchOverlayMath.ResolveHoldMove(moveOrigin, position);
                     sawMove = true;
+                    continue;
                 }
-                else if (position.x > Screen.width * 0.45f)
+
+                if (cameraFingerId == fingerId || (cameraFingerId < 0 && !onAction && IsRightHalf(position)))
                 {
                     if (cameraFingerId != fingerId)
                     {
@@ -111,7 +139,7 @@ namespace CoffeeGame.UI
                     else
                     {
                         Vector2 delta = position - lastCameraPosition;
-                        camera = new Vector2(delta.x / 48f, -delta.y / 64f);
+                        camera = new Vector2(delta.x / CameraPixelsPerYaw, -delta.y / CameraPixelsPerPitch);
                         lastCameraPosition = position;
                     }
                 }
@@ -122,50 +150,17 @@ namespace CoffeeGame.UI
                 moveFingerId = -1;
             }
 
-            if (cameraFingerId >= 0)
+            if (cameraFingerId >= 0 && !IsFingerHeld(touchscreen, cameraFingerId))
             {
-                bool cameraStillHeld = false;
-                foreach (TouchControl touch in touchscreen.touches)
-                {
-                    if (touch.touchId.ReadValue() == cameraFingerId && touch.press.isPressed)
-                    {
-                        cameraStillHeld = true;
-                        break;
-                    }
-                }
-
-                if (!cameraStillHeld)
-                {
-                    cameraFingerId = -1;
-                }
+                cameraFingerId = -1;
             }
 
             input.SetTouchMove(move);
             input.SetTouchCamera(camera);
-            if (jump && !jumpHeld)
-            {
-                input.QueueTouchPress(GameInputSemantic.Jump);
-            }
-
-            if (sword && !swordHeld)
-            {
-                input.QueueTouchPress(GameInputSemantic.Sword);
-            }
-
-            if (special && !specialHeld)
-            {
-                input.QueueTouchPress(GameInputSemantic.Special);
-            }
-
-            if (magic && !magicHeld)
-            {
-                input.QueueTouchPress(GameInputSemantic.Magic);
-            }
-
-            jumpHeld = jump;
-            swordHeld = sword;
-            specialHeld = special;
-            magicHeld = magic;
+            QueueIfNewlyPressed(jump, ref jumpHeld, GameInputSemantic.Jump);
+            QueueIfNewlyPressed(sword, ref swordHeld, GameInputSemantic.Sword);
+            QueueIfNewlyPressed(special, ref specialHeld, GameInputSemantic.Special);
+            QueueIfNewlyPressed(magic, ref magicHeld, GameInputSemantic.Magic);
         }
 
         private void OnGUI()
@@ -176,15 +171,25 @@ namespace CoffeeGame.UI
             }
 
             EnsureStyles();
-            DrawPad(MovePadRect, "移動");
-            DrawButton(JumpRect, "跳");
-            DrawButton(SwordRect, "刀");
-            DrawButton(SpecialRect, "居合");
-            DrawButton(MagicRect, "氷");
-            GUI.Label(
-                new Rect(Screen.width * 0.42f, Screen.height - Scaled(56f), Screen.width * 0.2f, Scaled(36f)),
-                "右ドラッグ: カメラ",
-                captionStyle);
+            DrawActionButton(JumpRect, "跳");
+            DrawActionButton(SwordRect, "刀");
+            DrawActionButton(SpecialRect, "居合");
+            DrawActionButton(MagicRect, "氷");
+
+            if (moveFingerId >= 0)
+            {
+                DrawDynamicStick(moveOrigin, currentMovePosition);
+            }
+        }
+
+        private void DrawDynamicStick(Vector2 originBottomLeft, Vector2 currentBottomLeft)
+        {
+            Vector2 originGui = ToGui(originBottomLeft);
+            Vector2 currentGui = ToGui(currentBottomLeft);
+            float ring = TouchOverlayMath.MoveFullRadius * 2f;
+            DrawCircle(new Rect(originGui.x - ring * 0.5f, originGui.y - ring * 0.5f, ring, ring), new Color(1f, 1f, 1f, 0.14f));
+            float knob = 56f;
+            DrawCircle(new Rect(currentGui.x - knob * 0.5f, currentGui.y - knob * 0.5f, knob, knob), new Color(1f, 1f, 1f, 0.32f));
         }
 
         private void ResetTouches()
@@ -202,26 +207,71 @@ namespace CoffeeGame.UI
             }
         }
 
-        private static Rect MovePadRect =>
-            new Rect(Scaled(28f), Screen.height - Scaled(280f), Scaled(240f), Scaled(240f));
-
-        private static Vector2 MovePadCenter => MovePadRect.center;
-
-        private static float MoveRadius => MovePadRect.width * 0.42f;
-
-        private static Rect JumpRect => ButtonRect(0, 1);
-        private static Rect SwordRect => ButtonRect(1, 1);
-        private static Rect SpecialRect => ButtonRect(0, 0);
-        private static Rect MagicRect => ButtonRect(1, 0);
-
-        private static Rect ButtonRect(int column, int row)
+        private static void ApplyLandscapeOrientation()
         {
-            float size = Scaled(108f);
-            float gap = Scaled(16f);
-            float left = Screen.width - Scaled(28f) - (size * 2f) - gap;
-            float top = Screen.height - Scaled(28f) - (size * 2f) - gap;
-            return new Rect(left + column * (size + gap), top + row * (size + gap), size, size);
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            if (Screen.orientation != ScreenOrientation.LandscapeLeft
+                && Screen.orientation != ScreenOrientation.LandscapeRight)
+            {
+                Screen.orientation = ScreenOrientation.LandscapeLeft;
+            }
         }
+
+        private void QueueIfNewlyPressed(bool held, ref bool wasHeld, GameInputSemantic semantic)
+        {
+            if (held && !wasHeld)
+            {
+                input.QueueTouchPress(semantic);
+            }
+
+            wasHeld = held;
+        }
+
+        private static bool IsFingerHeld(Touchscreen touchscreen, int fingerId)
+        {
+            foreach (TouchControl touch in touchscreen.touches)
+            {
+                if (touch.touchId.ReadValue() == fingerId && touch.press.isPressed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsLeftHalf(Vector2 screenPosition) => screenPosition.x < Screen.width * 0.5f;
+
+        private static bool IsRightHalf(Vector2 screenPosition) => screenPosition.x >= Screen.width * 0.5f;
+
+        private static Rect JumpRect => new Rect(
+            Screen.width - Scaled(28f) - ButtonSize * 2f - Scaled(18f),
+            Screen.height - Scaled(36f) - ButtonSize,
+            ButtonSize,
+            ButtonSize);
+
+        private static Rect SwordRect => new Rect(
+            Screen.width - Scaled(28f) - ButtonSize,
+            Screen.height - Scaled(36f) - ButtonSize,
+            ButtonSize * 1.08f,
+            ButtonSize * 1.08f);
+
+        private static Rect SpecialRect => new Rect(
+            Screen.width - Scaled(28f) - ButtonSize * 2f - Scaled(18f),
+            Screen.height - Scaled(36f) - ButtonSize * 2f - Scaled(16f),
+            ButtonSize * 0.92f,
+            ButtonSize * 0.92f);
+
+        private static Rect MagicRect => new Rect(
+            Screen.width - Scaled(28f) - ButtonSize,
+            Screen.height - Scaled(36f) - ButtonSize * 2f - Scaled(16f),
+            ButtonSize * 0.92f,
+            ButtonSize * 0.92f);
+
+        private static float ButtonSize => Scaled(104f);
 
         private static float Scaled(float value)
         {
@@ -230,26 +280,58 @@ namespace CoffeeGame.UI
 
         private static bool IsInside(Vector2 screenPosition, Rect rect)
         {
-            float y = Screen.height - screenPosition.y;
-            return rect.Contains(new Vector2(screenPosition.x, y));
+            return rect.Contains(ToGui(screenPosition));
         }
 
-        private void DrawPad(Rect rect, string label)
+        private static Vector2 ToGui(Vector2 screenPosition)
         {
-            Color previous = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, 0.16f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = previous;
+            return new Vector2(screenPosition.x, Screen.height - screenPosition.y);
+        }
+
+        private void DrawActionButton(Rect rect, string label)
+        {
+            DrawCircle(rect, new Color(0.99f, 0.66f, 0.24f, 0.34f));
             GUI.Label(rect, label, labelStyle);
         }
 
-        private void DrawButton(Rect rect, string label)
+        private void DrawCircle(Rect rect, Color color)
         {
             Color previous = GUI.color;
-            GUI.color = new Color(0.99f, 0.66f, 0.24f, 0.28f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = color;
+            GUI.DrawTexture(rect, CircleTexture);
             GUI.color = previous;
-            GUI.Label(rect, label, labelStyle);
+        }
+
+        private Texture2D CircleTexture
+        {
+            get
+            {
+                if (circleTexture != null)
+                {
+                    return circleTexture;
+                }
+
+                const int size = 64;
+                circleTexture = new Texture2D(size, size, TextureFormat.ARGB32, false)
+                {
+                    hideFlags = HideFlags.HideAndDontSave,
+                    filterMode = FilterMode.Bilinear
+                };
+                Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+                float radius = (size - 1) * 0.5f;
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float distance = Vector2.Distance(new Vector2(x, y), center);
+                        float alpha = Mathf.Clamp01((radius - distance) / 2.4f);
+                        circleTexture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                    }
+                }
+
+                circleTexture.Apply();
+                return circleTexture;
+            }
         }
 
         private void EnsureStyles()
@@ -262,17 +344,19 @@ namespace CoffeeGame.UI
             labelStyle = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.RoundToInt(Scaled(28f)),
+                fontSize = Mathf.RoundToInt(Scaled(26f)),
                 fontStyle = FontStyle.Bold,
                 wordWrap = true
             };
             labelStyle.normal.textColor = Color.white;
-            captionStyle = new GUIStyle(GUI.skin.label)
+        }
+
+        private void OnDestroy()
+        {
+            if (circleTexture != null)
             {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.RoundToInt(Scaled(16f))
-            };
-            captionStyle.normal.textColor = new Color(1f, 1f, 1f, 0.7f);
+                Destroy(circleTexture);
+            }
         }
     }
 }

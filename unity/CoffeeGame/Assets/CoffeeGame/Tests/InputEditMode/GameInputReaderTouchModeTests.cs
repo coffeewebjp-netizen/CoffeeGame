@@ -72,6 +72,16 @@ namespace CoffeeGame.Input.Tests
         }
 
         [Test]
+        public void SwipeAndHold_KeepsMoveAfterAShortDrag()
+        {
+            Vector2 origin = new Vector2(200f, 200f);
+            Assert.That(TouchOverlayMath.ResolveHoldMove(origin, origin), Is.EqualTo(Vector2.zero));
+            Vector2 held = TouchOverlayMath.ResolveHoldMove(origin, origin + new Vector2(80f, 0f));
+            Assert.That(held.x, Is.GreaterThan(0.5f));
+            Assert.That(held.y, Is.EqualTo(0f).Within(0.01f));
+        }
+
+        [Test]
         public void TouchMode_DoesNotRequireAGamepad()
         {
             GameInputReader reader = readerObject.AddComponent<GameInputReader>();
