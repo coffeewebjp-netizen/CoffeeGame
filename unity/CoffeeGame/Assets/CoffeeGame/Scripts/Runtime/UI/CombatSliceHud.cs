@@ -135,6 +135,7 @@ namespace CoffeeGame.UI
             modernView.ResetBindingsRequested += HandleResetBindings;
             modernView.CancelRebindRequested += input.CancelInteractiveRebind;
             modernView.CoffeeLearningPrimaryRequested += HandleCoffeeLearningPrimary;
+            modernView.PasteConnectionRequested += HandlePasteConnection;
             modernView.CoffeeLearningDisconnectRequested += HandleCoffeeLearningDisconnect;
             modernView.CoffeeLearningCancelRequested += HandleCoffeeLearningCancel;
             modernView.RivalAnswerChanged += HandleRivalAnswerChanged;
@@ -244,6 +245,7 @@ namespace CoffeeGame.UI
 
             if (modernView != null && run.Mode != CombatRunMode.InputModeSelection)
             {
+                DrawPinnedSystemActions();
                 return;
             }
 
@@ -787,17 +789,31 @@ namespace CoffeeGame.UI
         {
             if (coffeeLearningConnection == null)
             {
+                SetSystemNotice("CoffeeLearning接続が初期化できていません。");
                 return;
             }
 
-            if (coffeeLearningConnection.ConfirmationIntent == CoffeeLearningConfirmationIntent.Connect
-                || coffeeLearningConnection.ConfirmationIntent == CoffeeLearningConfirmationIntent.Reconnect)
+            if (coffeeLearningConnection.ConfirmationIntent != CoffeeLearningConfirmationIntent.Connect
+                && coffeeLearningConnection.ConfirmationIntent != CoffeeLearningConfirmationIntent.Reconnect)
             {
-                await coffeeLearningConnection.ConfirmPrimaryActionAsync();
+                coffeeLearningConnection.RequestPrimaryAction();
+            }
+
+            SetSystemNotice("ブラウザでCoffeeLearningにログインし、CoffeeGAMEを開くを押してください。");
+            await coffeeLearningConnection.ConfirmPrimaryActionAsync();
+            SetSystemNotice(coffeeLearningConnection.StatusLabel);
+        }
+
+        private async void HandlePasteConnection()
+        {
+            if (coffeeLearningConnection == null)
+            {
+                SetSystemNotice("CoffeeLearning接続が初期化できていません。");
                 return;
             }
 
-            coffeeLearningConnection.RequestPrimaryAction();
+            string message = await coffeeLearningConnection.TryApplyPastedAccessTokenAsync(GUIUtility.systemCopyBuffer);
+            SetSystemNotice(message);
         }
 
         private async void HandleCoffeeLearningDisconnect()
@@ -889,6 +905,50 @@ namespace CoffeeGame.UI
                     selectedMode = InputMode.ControllerGamepad;
                 }
                 SelectInputMode(selectedMode);
+            }
+        }
+
+        private void DrawPinnedSystemActions()
+        {
+            if (!pauseMenuOpen || selectedPauseMenuTab != PauseMenuTab.System)
+            {
+                return;
+            }
+
+            EnsureStyles();
+            float height = Mathf.Max(72f, Screen.height * 0.11f);
+            Rect bar = new Rect(12f, Screen.height - height - 8f, Screen.width - 24f, height);
+            Color previous = GUI.color;
+            GUI.color = new Color(0.02f, 0.04f, 0.06f, 0.92f);
+            GUI.DrawTexture(bar, Texture2D.whiteTexture);
+            GUI.color = previous;
+
+            float buttonWidth = (bar.width - 36f) / 5f;
+            float buttonHeight = bar.height * 0.55f;
+            float y = bar.y + bar.height * 0.35f;
+            if (GUI.Button(new Rect(bar.x + 8f, y, buttonWidth, buttonHeight), "セーブする"))
+            {
+                HandleManualSave();
+            }
+
+            if (GUI.Button(new Rect(bar.x + 12f + buttonWidth, y, buttonWidth, buttonHeight), "書き出す"))
+            {
+                HandleExportProfile();
+            }
+
+            if (GUI.Button(new Rect(bar.x + 16f + buttonWidth * 2f, y, buttonWidth, buttonHeight), "取り込む"))
+            {
+                HandleImportProfile();
+            }
+
+            if (GUI.Button(new Rect(bar.x + 20f + buttonWidth * 3f, y, buttonWidth, buttonHeight), "接続"))
+            {
+                HandleCoffeeLearningPrimary();
+            }
+
+            if (GUI.Button(new Rect(bar.x + 24f + buttonWidth * 4f, y, buttonWidth, buttonHeight), "コード貼付"))
+            {
+                HandlePasteConnection();
             }
         }
 
@@ -1464,6 +1524,7 @@ namespace CoffeeGame.UI
                 modernView.ResetBindingsRequested -= HandleResetBindings;
                 modernView.CancelRebindRequested -= input.CancelInteractiveRebind;
                 modernView.CoffeeLearningPrimaryRequested -= HandleCoffeeLearningPrimary;
+                modernView.PasteConnectionRequested -= HandlePasteConnection;
                 modernView.CoffeeLearningDisconnectRequested -= HandleCoffeeLearningDisconnect;
                 modernView.CoffeeLearningCancelRequested -= HandleCoffeeLearningCancel;
                 modernView.RivalAnswerChanged -= HandleRivalAnswerChanged;

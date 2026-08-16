@@ -65,6 +65,8 @@ namespace CoffeeGame.UI
         private Text staminaText;
         private Text magicText;
         private Text experienceText;
+        private GameObject systemActionDock;
+        private Text actionNoticeText;
         private RectTransform menuContentHost;
         private ScrollRect menuScrollRect;
         private Scrollbar menuScrollbar;
@@ -104,6 +106,7 @@ namespace CoffeeGame.UI
         public event Action CloudDriveRequested;
         public event Action CloudFolderRequested;
         public event Action CloudLocalRequested;
+        public event Action PasteConnectionRequested;
         public event Action ResetBindingsRequested;
         public event Action CancelRebindRequested;
         public event Action CoffeeLearningPrimaryRequested;
@@ -435,7 +438,13 @@ namespace CoffeeGame.UI
 
             bool showIllustration = tab == CharacterMenuTab.Status;
             fullBodyImage.gameObject.SetActive(showIllustration);
-            menuContentHost.anchorMin = new Vector2(showIllustration ? 0.36f : 0.035f, 0.105f);
+            if (systemActionDock != null)
+            {
+                systemActionDock.SetActive(tab == CharacterMenuTab.System);
+            }
+
+            float contentBottom = tab == CharacterMenuTab.System ? 0.195f : 0.105f;
+            menuContentHost.anchorMin = new Vector2(showIllustration ? 0.36f : 0.035f, contentBottom);
             menuContentHost.offsetMin = Vector2.zero;
             menuContentHost.offsetMax = Vector2.zero;
         }
@@ -488,6 +497,13 @@ namespace CoffeeGame.UI
         public void SetSystemNotice(string notice)
         {
             systemNotice = notice ?? string.Empty;
+            if (actionNoticeText != null)
+            {
+                actionNoticeText.text = string.IsNullOrEmpty(systemNotice)
+                    ? "セーブとCoffeeLearningは下の大きなボタンから操作します。"
+                    : systemNotice;
+            }
+
             if (selectedTab == CharacterMenuTab.System && controlsStatusText != null && input != null)
             {
                 RefreshControls(input.IsRebinding);
@@ -834,8 +850,9 @@ namespace CoffeeGame.UI
             fullBodyImage.sprite = Resources.Load<Sprite>(FullBodyResource);
             fullBodyImage.preserveAspect = true;
 
-            menuContentHost = CreateRect("Menu Content Host", panel.transform, new Vector2(0.36f, 0.105f), new Vector2(0.975f, 0.825f));
+            menuContentHost = CreateRect("Menu Content Host", panel.transform, new Vector2(0.36f, 0.195f), new Vector2(0.975f, 0.825f));
             BuildMenuScrollArea(menuContentHost);
+            BuildSystemActionDock(panel.rectTransform);
             menuFooterText = CreateText("Footer", panel.transform, 20, FontStyle.Normal, TextAnchor.MiddleLeft, MutedInk);
             Anchor(menuFooterText.rectTransform, new Vector2(0.035f, 0.02f), new Vector2(0.78f, 0.09f));
             menuFooterText.text = "←→: タブ　↑↓: 選択　決定: 実行　Start / Esc / 取消: 戻る";
@@ -1069,6 +1086,36 @@ namespace CoffeeGame.UI
             controlButtons[CoffeeLearningCancelButton].interactable = !rebinding && coffeeLearningConnection.CanUseCancelAction;
         }
 
+        private void BuildSystemActionDock(RectTransform panel)
+        {
+            Image dock = CreateImage("System Action Dock", panel, new Color(0.04f, 0.06f, 0.09f, 0.98f));
+            Anchor(dock.rectTransform, new Vector2(0.36f, 0.095f), new Vector2(0.975f, 0.185f));
+            systemActionDock = dock.gameObject;
+
+            actionNoticeText = CreateText("Action Notice", dock.transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft, Accent);
+            Anchor(actionNoticeText.rectTransform, new Vector2(0.02f, 0.58f), new Vector2(0.98f, 0.95f));
+            actionNoticeText.text = "セーブとCoffeeLearningは下の大きなボタンから操作します。";
+
+            string[] labels = { "セーブする", "書き出す", "取り込む", "接続", "コード貼付" };
+            Action[] commands =
+            {
+                () => SaveRequested?.Invoke(),
+                () => ExportProfileRequested?.Invoke(),
+                () => ImportProfileRequested?.Invoke(),
+                () => CoffeeLearningPrimaryRequested?.Invoke(),
+                () => PasteConnectionRequested?.Invoke()
+            };
+            for (int index = 0; index < labels.Length; index++)
+            {
+                int captured = index;
+                Button button = CreateButton($"Dock {labels[index]}", dock.transform, labels[index], 20, commands[captured]);
+                float left = 0.015f + index * 0.195f;
+                Anchor(button.GetComponent<RectTransform>(), new Vector2(left, 0.08f), new Vector2(left + 0.185f, 0.52f));
+            }
+
+            systemActionDock.SetActive(false);
+        }
+
         private void BuildMenuScrollArea(RectTransform host)
         {
             Image viewportImage = CreateImage("Viewport", host, new Color(0.035f, 0.055f, 0.078f, 0.62f));
@@ -1296,6 +1343,8 @@ namespace CoffeeGame.UI
                 eventSystem = eventSystemObject.GetComponent<EventSystem>();
             }
             eventSystem.sendNavigationEvents = false;
+            float dpi = Screen.dpi > 1f ? Screen.dpi : 160f;
+            eventSystem.pixelDragThreshold = Mathf.Max(25, Mathf.RoundToInt(dpi / 6f));
             if (eventSystem.GetComponent<BaseInputModule>() == null)
             {
                 InputSystemUIInputModule module = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();

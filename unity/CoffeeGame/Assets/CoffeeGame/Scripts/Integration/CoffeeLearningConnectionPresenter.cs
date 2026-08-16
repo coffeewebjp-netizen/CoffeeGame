@@ -199,6 +199,24 @@ namespace CoffeeGame.Integration
             }
         }
 
+        public async Task<string> TryApplyPastedAccessTokenAsync(string raw, CancellationToken cancellationToken = default)
+        {
+            ThrowIfDisposed();
+            try
+            {
+                string token = CoffeeGameAccessToken.Normalize(raw);
+                await tokenStore.SaveAccessTokenAsync(token, cancellationToken).ConfigureAwait(true);
+                RefreshFromStoredCredential();
+                LastErrorCode = string.Empty;
+                return "CoffeeLearningの接続コードを保存しました。";
+            }
+            catch (Exception)
+            {
+                LastErrorCode = "PASTE_INVALID";
+                return "接続コードを読めませんでした。ブラウザのページからコピーして、もう一度貼り付けてください。";
+            }
+        }
+
         public bool RequestPrimaryAction()
         {
             ThrowIfDisposed();
