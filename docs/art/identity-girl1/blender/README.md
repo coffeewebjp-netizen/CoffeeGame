@@ -5,7 +5,8 @@ Quality trial only. The playable HD-2D heroine is unchanged.
 ## Open
 
 1. Blender 4.5
-2. `girl1-prototype.blend`
+2. **Sculpt start:** `girl1-sculpt.blend` (open this now)
+3. Older blockout: `girl1-prototype.blend`
 3. Timeline 1–24, play. Action name: `WalkInPlace`
 4. Empty images `Ref.Front` / `Ref.Right` / `Ref.Back` are the T-pose drawings
 
@@ -25,7 +26,11 @@ It is **not** a finished game mesh. Judge whether this Blender path is worth scu
 | `refs/tpose-right.jpg` | Right T-pose |
 | `refs/tpose-back.jpg` | Back T-pose |
 | `girl1-prototype.blend` | Editable prototype |
-| `girl1-prototype.glb` | Quick preview export |
+| `girl1-sculpt.blend` | Sculpt-ready start (body + hair + kimono + skirt + sword, Multires) |
+| `girl1-sculpt.glb` | Sculpt mesh export |
+| `renders/sculpt-preview.jpg` | Sculpt start preview |
+| `build_girl1_sculpt.py` | Rebuild sculpt file |
+| `girl1-prototype.glb` | Older blockout export |
 | `renders/preview-front.jpg` | Frame 1 mannequin render |
 | `look-previews/look-34.jpg` | 3D-style three-quarter still (judge this) |
 | `look-previews/look-right.jpg` | 3D-style profile still |
