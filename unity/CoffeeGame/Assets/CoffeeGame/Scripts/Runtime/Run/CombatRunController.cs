@@ -433,7 +433,7 @@ namespace CoffeeGame.Run
             Time.timeScale = 1f;
             Mode = CombatRunMode.Playing;
             playerMotor.CanMove = true;
-            input.EnableBattle();
+            input.RestoreBattleAfterTextEntry();
             LastEvent = "ライバルは次の勝負を予告して去っていった";
             SpawnNextSlime();
             StateChanged?.Invoke();

@@ -509,6 +509,38 @@ namespace CoffeeGame.Input
             _suppressActionsUntilRelease = true;
         }
 
+        /// <summary>
+        /// Returns to Battle after the rival answer editor. Keyboard/IME text entry
+        /// can leave stale Gamepad pressed-state and must not keep the release gate
+        /// closed. A held South/trigger from the previous UI confirm is still gated.
+        /// </summary>
+        public void RestoreBattleAfterTextEntry()
+        {
+            EnsureInitialized();
+            Keyboard.current?.SetIMEEnabled(false);
+            ReenableConnectedGamepads();
+
+            if (HasConnectedGamepad
+                && (SelectedInputMode == InputMode.ControllerGamepad
+                    || SelectedInputMode == InputMode.Unselected
+                    || _preferredInputMode == InputMode.ControllerGamepad))
+            {
+                _selectedBindingGroup = GamepadGroup;
+                SelectedInputMode = InputMode.ControllerGamepad;
+                _preferredInputMode = InputMode.ControllerGamepad;
+                if (Gamepad.current != null)
+                {
+                    LastUsedDevice = Gamepad.current;
+                }
+            }
+
+            EnableBattle();
+            if (!IsCombatLeakControlHeld())
+            {
+                _suppressActionsUntilRelease = false;
+            }
+        }
+
         public void DisableBattle()
         {
             if (_battleMap == null)
@@ -1814,13 +1846,13 @@ namespace CoffeeGame.Input
 
         private bool IsAnyContextSwitchControlActuated()
         {
-            if (IsAnyNativeGamepadControlActuated())
+            if (IsCombatLeakControlHeld() || IsAnyNativeGamepadStickActuated())
             {
                 return true;
             }
 
             // Native Gamepad battle must ignore leftover keyboard / IME state
-            // from the rival answer editor. Those keys are not battle actions.
+            // and stale synthetic Gamepad buttons after text entry.
             if (SelectedInputMode == InputMode.ControllerGamepad
                 && Context == GameInputContext.Battle)
             {
@@ -1830,13 +1862,8 @@ namespace CoffeeGame.Input
             return IsAnySteamDesktopButtonPressed();
         }
 
-        private static bool IsAnyNativeGamepadControlActuated()
+        private static bool IsAnyNativeGamepadStickActuated()
         {
-            if (IsAnyGamepadButtonPressed())
-            {
-                return true;
-            }
-
             foreach (Gamepad gamepad in Gamepad.all)
             {
                 if (gamepad != null
@@ -1848,6 +1875,58 @@ namespace CoffeeGame.Input
             }
 
             return false;
+        }
+
+        private static bool IsCombatLeakControlHeld()
+        {
+            foreach (Gamepad gamepad in Gamepad.all)
+            {
+                if (gamepad == null)
+                {
+                    continue;
+                }
+
+                if (gamepad.buttonSouth.isPressed
+                    || gamepad.buttonEast.isPressed
+                    || gamepad.buttonWest.isPressed
+                    || gamepad.buttonNorth.isPressed
+                    || gamepad.startButton.isPressed
+                    || gamepad.selectButton.isPressed
+                    || gamepad.leftShoulder.isPressed
+                    || gamepad.rightShoulder.isPressed
+                    || gamepad.leftTrigger.isPressed
+                    || gamepad.rightTrigger.isPressed
+                    || gamepad.leftStickButton.isPressed
+                    || gamepad.rightStickButton.isPressed
+                    || gamepad.dpad.up.isPressed
+                    || gamepad.dpad.down.isPressed
+                    || gamepad.dpad.left.isPressed
+                    || gamepad.dpad.right.isPressed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void ReenableConnectedGamepads()
+        {
+            for (int index = 0; index < Gamepad.all.Count; index++)
+            {
+                Gamepad gamepad = Gamepad.all[index];
+                if (gamepad == null)
+                {
+                    continue;
+                }
+
+                if (!gamepad.enabled)
+                {
+                    InputSystem.EnableDevice(gamepad);
+                }
+
+                InputSystem.ResetDevice(gamepad);
+            }
         }
 
         private void ClearRebindState()

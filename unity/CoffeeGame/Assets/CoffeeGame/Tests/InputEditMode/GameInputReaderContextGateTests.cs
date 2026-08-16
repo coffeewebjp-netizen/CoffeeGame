@@ -124,6 +124,48 @@ namespace CoffeeGame.Input.Tests
         }
 
         [Test]
+        public void RestoreBattleAfterTextEntry_AcceptsGamepadWithoutReleasingTypingKeys()
+        {
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader);
+            reader.EnableUI();
+            TickReader(reader);
+
+            Press(keyboard.aKey);
+            Press(keyboard.enterKey);
+
+            reader.RestoreBattleAfterTextEntry();
+            InputSystem.Update();
+
+            Set(gamepad.leftStick, Vector2.up);
+            Assert.That(reader.Context, Is.EqualTo(GameInputContext.Battle));
+            Assert.That(reader.SelectedInputMode, Is.EqualTo(InputMode.ControllerGamepad));
+            Assert.That(reader.Move.y, Is.GreaterThan(0.5f),
+                "Continue after a typed rival answer must restore Gamepad movement immediately.");
+        }
+
+        [Test]
+        public void RestoreBattleAfterTextEntry_StillGatesHeldSouth()
+        {
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader);
+            reader.EnableUI();
+            TickReader(reader);
+
+            Press(gamepad.buttonSouth);
+            reader.RestoreBattleAfterTextEntry();
+            InputSystem.Update();
+            Assert.That(reader.JumpPressed, Is.False,
+                "A South press used to confirm the rival screen must not become Jump.");
+
+            Release(gamepad.buttonSouth);
+            TickReader(reader);
+            Press(gamepad.buttonSouth);
+            Assert.That(reader.JumpPressed, Is.True);
+        }
+
+        [Test]
         public void ControllerProfile_KeepsKeyboardSettingsRecoveryAvailable()
         {
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
