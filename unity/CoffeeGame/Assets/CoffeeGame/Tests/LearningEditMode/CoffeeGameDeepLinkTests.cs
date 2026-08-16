@@ -16,6 +16,14 @@ namespace CoffeeGame.Integration.Tests
         }
 
         [Test]
+        public void AccessToken_ExtractsCgtFromSurroundingText()
+        {
+            const string token = "cgt_id.secret";
+            Assert.That(CoffeeGameAccessToken.TryExtract("bearer=" + token + "&state=abc", out string extracted), Is.True);
+            Assert.That(extracted, Is.EqualTo(token));
+        }
+
+        [Test]
         public void AppCallback_RejectsMismatchedState()
         {
             string url = CoffeeGameDeepLink.AppCallback + "?state=nope&bearer=cgt_id.secret";

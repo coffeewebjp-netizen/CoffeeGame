@@ -44,6 +44,44 @@ namespace CoffeeGame.Integration
             return token;
         }
 
+        public static bool TryExtract(string value, out string token)
+        {
+            token = null;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            string text = value.Trim();
+            int start = text.IndexOf(TokenPrefix, StringComparison.Ordinal);
+            if (start >= 0)
+            {
+                int end = start + TokenPrefix.Length;
+                while (end < text.Length
+                       && !char.IsWhiteSpace(text[end])
+                       && text[end] != '&'
+                       && text[end] != '"'
+                       && text[end] != '\''
+                       && text[end] != '<'
+                       && text[end] != '>')
+                {
+                    end++;
+                }
+
+                text = text.Substring(start, end - start);
+            }
+
+            try
+            {
+                token = Normalize(text);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
         public static bool IsValid(string value)
         {
             if (string.IsNullOrWhiteSpace(value)

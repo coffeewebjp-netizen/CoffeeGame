@@ -155,6 +155,7 @@ namespace CoffeeGame.UI
             }
 
             RefreshTouchOverlay();
+            _ = ConsumePendingCoffeeLearningBearer();
 
             if (modernView != null)
             {
@@ -799,8 +800,9 @@ namespace CoffeeGame.UI
                 coffeeLearningConnection.RequestPrimaryAction();
             }
 
-            SetSystemNotice("ブラウザでCoffeeLearningにログインし、CoffeeGAMEを開くを押してください。");
+            SetSystemNotice("ブラウザでCoffeeLearningにログインし、CoffeeGAMEを開くを押すか、接続コードをコピーしてコード貼付してください。");
             await coffeeLearningConnection.ConfirmPrimaryActionAsync();
+            await ConsumePendingCoffeeLearningBearer();
             SetSystemNotice(coffeeLearningConnection.StatusLabel);
         }
 
@@ -812,8 +814,53 @@ namespace CoffeeGame.UI
                 return;
             }
 
-            string message = await coffeeLearningConnection.TryApplyPastedAccessTokenAsync(GUIUtility.systemCopyBuffer);
+            string pasted = ReadClipboardText();
+            if (string.IsNullOrWhiteSpace(pasted) && !string.IsNullOrWhiteSpace(CoffeeGameDeepLink.LastUrl))
+            {
+                pasted = CoffeeGameDeepLink.LastUrl;
+            }
+
+            string message = await coffeeLearningConnection.TryApplyPastedAccessTokenAsync(pasted);
             SetSystemNotice(message);
+        }
+
+        private async System.Threading.Tasks.Task ConsumePendingCoffeeLearningBearer()
+        {
+            if (coffeeLearningConnection == null || !CoffeeGameDeepLink.TryTakePendingBearer(out string token))
+            {
+                return;
+            }
+
+            string message = await coffeeLearningConnection.TryApplyPastedAccessTokenAsync(token);
+            SetSystemNotice(message);
+        }
+
+        private static string ReadClipboardText()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var clipboard = activity.Call<AndroidJavaObject>("getSystemService", "clipboard"))
+                {
+                    if (clipboard == null || !clipboard.Call<bool>("hasPrimaryClip"))
+                    {
+                        return string.Empty;
+                    }
+
+                    using (var clip = clipboard.Call<AndroidJavaObject>("getPrimaryClip"))
+                    using (var item = clip.Call<AndroidJavaObject>("getItemAt", 0))
+                    {
+                        return item.Call<AndroidJavaObject>("coerceToText", activity)?.Call<string>("toString") ?? string.Empty;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+#endif
+            return GUIUtility.systemCopyBuffer ?? string.Empty;
         }
 
         private async void HandleCoffeeLearningDisconnect()

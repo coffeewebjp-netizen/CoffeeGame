@@ -35,7 +35,11 @@ namespace CoffeeGame.Persistence
 
             TryCopyToSharedDriveFolder(PortablePath);
             ShareExportedFile(PortablePath);
-            message = "セーブを書き出しました。共有先で Google Drive を選べます。 " + PortablePath;
+            var info = new FileInfo(PortablePath);
+            message = "セーブを書き出しました。"
+                + "\n場所: " + info.FullName
+                + "\n日時: " + info.LastWriteTime.ToString("yyyy/MM/dd HH:mm:ss")
+                + "\nサイズ: " + info.Length.ToString("N0") + " bytes";
             return true;
         }
 

@@ -18,7 +18,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="jp.coffeetools.coffeegame.androidlib.CloudFolder$PickFolderActivity"
+            android:name="jp.coffeetools.coffeegame.androidlib.PickFolderActivity"
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>

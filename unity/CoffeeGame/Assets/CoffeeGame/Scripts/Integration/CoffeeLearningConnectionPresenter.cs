@@ -204,16 +204,21 @@ namespace CoffeeGame.Integration
             ThrowIfDisposed();
             try
             {
-                string token = CoffeeGameAccessToken.Normalize(raw);
+                if (!CoffeeGameAccessToken.TryExtract(raw, out string token))
+                {
+                    LastErrorCode = "PASTE_INVALID";
+                    return "クリップボードに接続コードが見つかりませんでした。ブラウザの「接続コードをコピー」を押してから、もう一度コード貼付してください。";
+                }
+
                 await tokenStore.SaveAccessTokenAsync(token, cancellationToken).ConfigureAwait(true);
                 RefreshFromStoredCredential();
                 LastErrorCode = string.Empty;
-                return "CoffeeLearningの接続コードを保存しました。";
+                return "CoffeeLearningの接続コードを保存しました。 " + StatusLabel;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                LastErrorCode = "PASTE_INVALID";
-                return "接続コードを読めませんでした。ブラウザのページからコピーして、もう一度貼り付けてください。";
+                LastErrorCode = "PASTE_STORE_FAILED";
+                return "接続コードは読めましたが保存できませんでした: " + exception.Message;
             }
         }
 

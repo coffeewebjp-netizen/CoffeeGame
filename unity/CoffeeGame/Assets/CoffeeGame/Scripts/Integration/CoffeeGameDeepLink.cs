@@ -10,10 +10,18 @@ namespace CoffeeGame.Integration
         public static event Action<string> Received;
 
         public static string LastUrl { get; private set; } = string.Empty;
+        public static string PendingBearer { get; private set; } = string.Empty;
 
         public static void Clear()
         {
             LastUrl = string.Empty;
+        }
+
+        public static bool TryTakePendingBearer(out string token)
+        {
+            token = PendingBearer;
+            PendingBearer = string.Empty;
+            return !string.IsNullOrEmpty(token);
         }
 
         public static bool TryParseCallback(string url, string expectedState, out string token, out string error)
@@ -77,6 +85,11 @@ namespace CoffeeGame.Integration
             }
 
             LastUrl = url.Trim();
+            if (CoffeeGameAccessToken.TryExtract(LastUrl, out string token))
+            {
+                PendingBearer = token;
+            }
+
             Received?.Invoke(LastUrl);
         }
     }

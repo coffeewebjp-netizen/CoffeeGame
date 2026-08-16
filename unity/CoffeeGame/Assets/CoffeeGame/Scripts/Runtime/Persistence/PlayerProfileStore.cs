@@ -68,6 +68,20 @@ namespace CoffeeGame.Persistence
             }
         }
 
+        public string DescribeSavedFile(string prefix = null)
+        {
+            if (!File.Exists(profilePath))
+            {
+                return (prefix ?? "セーブ") + " ファイルはまだありません: " + profilePath;
+            }
+
+            var info = new FileInfo(profilePath);
+            return (prefix ?? "セーブ")
+                + "\n場所: " + info.FullName
+                + "\n日時: " + info.LastWriteTime.ToString("yyyy/MM/dd HH:mm:ss")
+                + "\nサイズ: " + info.Length.ToString("N0") + " bytes";
+        }
+
         public bool TrySave(PlayerProgression progression, out string message)
         {
             if (progression == null)
@@ -94,7 +108,7 @@ namespace CoffeeGame.Persistence
 
                 File.Move(temporaryPath, profilePath);
 
-                message = "プレイヤープロフィールを保存しました。";
+                message = DescribeSavedFile("プレイヤープロフィールを保存しました。");
                 return true;
             }
             catch (Exception exception)

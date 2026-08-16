@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 public final class CloudFolder {
     static final String PREFS = "CoffeeGAME.cloud";
     static final String KEY_URI = "treeUri";
-    static final int REQUEST_CODE = 7101;
+    public static final int REQUEST_CODE = 7101;
 
     private CloudFolder() {
     }
@@ -44,8 +44,14 @@ public final class CloudFolder {
     }
 
     public static void pickFolder(Activity activity) {
-        Intent intent = new Intent(activity, PickFolderActivity.class);
-        activity.startActivity(intent);
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        Intent chooser = new Intent(activity, PickFolderActivity.class);
+        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        activity.startActivity(chooser);
     }
 
     public static boolean hasFolder(Context context) {
@@ -125,7 +131,7 @@ public final class CloudFolder {
         }
     }
 
-    static void persist(Context context, Uri tree) {
+    public static void persist(Context context, Uri tree) {
         context.getContentResolver().takePersistableUriPermission(
             tree,
             Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
@@ -147,25 +153,4 @@ public final class CloudFolder {
         return null;
     }
 
-    public static class PickFolderActivity extends Activity {
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-            intent.addFlags(
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-            startActivityForResult(intent, REQUEST_CODE);
-        }
-
-        @Override
-        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-            super.onActivityResult(requestCode, resultCode, data);
-            if (requestCode == REQUEST_CODE && resultCode == RESULT_OK && data != null && data.getData() != null) {
-                CloudFolder.persist(this, data.getData());
-            }
-            finish();
-        }
-    }
 }
