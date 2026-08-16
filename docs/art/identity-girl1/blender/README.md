@@ -1,6 +1,6 @@
 # girl1 Blender prototype
 
-Quality trial only. The playable HD-2D heroine is unchanged.
+**Closed trial.** Owner confirmed HD-2D (`ORC-20260816-034-DEC01`). Do not continue sculpt or look-matching on `heroine-v4`. Keep these files as archive. The playable heroine is unchanged.
 
 ## Open
 
