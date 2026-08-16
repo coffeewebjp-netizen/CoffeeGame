@@ -10,6 +10,7 @@ namespace CoffeeGame.Persistence
         public const string FolderPlayerPrefsKey = "CoffeeGame.Save.Folder.v1";
         public const string KindLocal = "local";
         public const string KindFolder = "folder";
+        public const string KindAndroidSaf = AndroidCloudFolder.KindAndroidSaf;
 
         public static string Kind =>
             PlayerPrefs.HasKey(KindPlayerPrefsKey)
@@ -22,6 +23,11 @@ namespace CoffeeGame.Persistence
         {
             get
             {
+                if (AndroidCloudFolder.HasFolder)
+                {
+                    return "クラウド連携: " + AndroidCloudFolder.Label;
+                }
+
                 if (Kind == KindFolder && !string.IsNullOrWhiteSpace(FolderPath))
                 {
                     return "クラウド連携: " + FolderPath;
@@ -105,7 +111,9 @@ namespace CoffeeGame.Persistence
                     picker.CallStatic("pickFolder", activity);
                 }
 
-                message = "Google Driveなどのフォルダを選んでください。選んだ場所へ自動保存します。";
+                PlayerPrefs.SetString(KindPlayerPrefsKey, KindAndroidSaf);
+                PlayerPrefs.Save();
+                message = "フォルダ画面を開きました。Google Drive の CoffeeGAME 用フォルダを選んでください。選んだあと、もう一度セーブするを押してください。";
                 return true;
             }
             catch (Exception exception)
@@ -117,6 +125,51 @@ namespace CoffeeGame.Persistence
             message = "この端末ではフォルダ選択の代わりにパス指定を使います。";
             return false;
 #endif
+        }
+
+        public static bool TryPublishLocalFile(string localPath, out string message)
+        {
+            if (!AndroidCloudFolder.HasFolder)
+            {
+                message = string.Empty;
+                return false;
+            }
+
+            if (!File.Exists(localPath))
+            {
+                message = "ローカルセーブがまだないので Drive へ書けません。";
+                return false;
+            }
+
+            string json = File.ReadAllText(localPath);
+            if (!AndroidCloudFolder.TryWrite(PlayerProfilePortability.PortableFileName, json, out string error))
+            {
+                message = "Driveフォルダへ書けませんでした: " + error;
+                return false;
+            }
+
+            message = "Driveフォルダへ保存しました: " + AndroidCloudFolder.Label;
+            return true;
+        }
+
+        public static bool TryImportFromAndroidFolder(PlayerProfileStore store, out string message)
+        {
+            if (!AndroidCloudFolder.HasFolder)
+            {
+                message = "Driveフォルダがまだ選ばれていません。";
+                return false;
+            }
+
+            if (!AndroidCloudFolder.TryRead(PlayerProfilePortability.PortableFileName, out string json, out string error))
+            {
+                message = "Driveフォルダから読めませんでした: " + error + " / " + AndroidCloudFolder.Label;
+                return false;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(store.ProfilePath) ?? ".");
+            File.WriteAllText(store.ProfilePath, json);
+            message = "Driveフォルダから読みました: " + AndroidCloudFolder.Label;
+            return true;
         }
 
         public static string[] GoogleDriveCandidates()

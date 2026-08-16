@@ -2,7 +2,9 @@ package jp.coffeetools.coffeegame.androidlib;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.util.Base64;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 
 import javax.crypto.Cipher;
@@ -17,6 +19,16 @@ public final class TokenVault {
     private static final int GCM_TAG_LENGTH = 128;
 
     private TokenVault() {
+    }
+
+    public static String protectText(String plaintext) throws Exception {
+        byte[] packed = protect(plaintext.getBytes(StandardCharsets.UTF_8));
+        return Base64.encodeToString(packed, Base64.NO_WRAP);
+    }
+
+    public static String unprotectText(String packed) throws Exception {
+        byte[] plain = unprotect(Base64.decode(packed, Base64.NO_WRAP));
+        return new String(plain, StandardCharsets.UTF_8);
     }
 
     public static byte[] protect(byte[] plaintext) throws Exception {

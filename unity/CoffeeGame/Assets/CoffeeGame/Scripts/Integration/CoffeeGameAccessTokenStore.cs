@@ -606,9 +606,8 @@ namespace CoffeeGame.Integration
                     throw new FileNotFoundException("CoffeeLearning credential file was not found.", filePath);
                 }
 
-                byte[] encrypted = File.ReadAllBytes(filePath);
-                byte[] plaintext = TokenVault.Unprotect(encrypted);
-                string token = Encoding.UTF8.GetString(plaintext);
+                string packed = File.ReadAllText(filePath, Encoding.UTF8);
+                string token = TokenVault.UnprotectText(packed);
                 return Task.FromResult(CoffeeGameAccessToken.Normalize(token));
             }
         }
@@ -626,16 +625,14 @@ namespace CoffeeGame.Integration
                 }
 
                 string temporaryPath = filePath + ".tmp";
-                byte[] encrypted = TokenVault.Protect(Encoding.UTF8.GetBytes(canonical));
-                File.WriteAllBytes(temporaryPath, encrypted);
+                string packed = TokenVault.ProtectText(canonical);
+                File.WriteAllText(temporaryPath, packed, Encoding.UTF8);
                 if (File.Exists(filePath))
                 {
-                    File.Replace(temporaryPath, filePath, null);
+                    File.Delete(filePath);
                 }
-                else
-                {
-                    File.Move(temporaryPath, filePath);
-                }
+
+                File.Move(temporaryPath, filePath);
             }
 
             return Task.CompletedTask;
@@ -659,19 +656,95 @@ namespace CoffeeGame.Integration
         {
             private const string JavaClass = "jp.coffeetools.coffeegame.androidlib.TokenVault";
 
-            public static byte[] Protect(byte[] plaintext)
+            public static string ProtectText(string plaintext)
             {
-                using (var vault = new AndroidJavaClass(JavaClass))
+                try
                 {
-                    return vault.CallStatic<byte[]>("protect", plaintext);
+                    using (var vault = new AndroidJavaClass(JavaClass))
+                    {
+                        string packed = vault.CallStatic<string>("protectText", plaintext);
+                        if (string.IsNullOrEmpty(packed))
+                        {
+                            throw new InvalidOperationException("TokenVault.protectText returned empty.");
+                        }
+
+                        return packed;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning("Android Keystore protect failed, using device-bound AES: " + exception.Message);
+                    return DeviceBoundAes.Protect(plaintext);
                 }
             }
 
-            public static byte[] Unprotect(byte[] ciphertext)
+            public static string UnprotectText(string packed)
             {
-                using (var vault = new AndroidJavaClass(JavaClass))
+                try
                 {
-                    return vault.CallStatic<byte[]>("unprotect", ciphertext);
+                    using (var vault = new AndroidJavaClass(JavaClass))
+                    {
+                        return vault.CallStatic<string>("unprotectText", packed);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning("Android Keystore unprotect failed, trying device-bound AES: " + exception.Message);
+                    return DeviceBoundAes.Unprotect(packed);
+                }
+            }
+        }
+
+        private static class DeviceBoundAes
+        {
+            public static string Protect(string plaintext)
+            {
+                using (var aes = System.Security.Cryptography.Aes.Create())
+                {
+                    aes.Key = CreateKey();
+                    aes.GenerateIV();
+                    using (var encryptor = aes.CreateEncryptor())
+                    {
+                        byte[] plain = Encoding.UTF8.GetBytes(plaintext);
+                        byte[] cipher = encryptor.TransformFinalBlock(plain, 0, plain.Length);
+                        byte[] packed = new byte[aes.IV.Length + cipher.Length];
+                        Buffer.BlockCopy(aes.IV, 0, packed, 0, aes.IV.Length);
+                        Buffer.BlockCopy(cipher, 0, packed, aes.IV.Length, cipher.Length);
+                        return "dev1." + Convert.ToBase64String(packed);
+                    }
+                }
+            }
+
+            public static string Unprotect(string packed)
+            {
+                if (packed != null && !packed.StartsWith("dev1.", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Credential is not a device-bound AES payload.");
+                }
+
+                byte[] data = Convert.FromBase64String(packed.Substring(5));
+                using (var aes = System.Security.Cryptography.Aes.Create())
+                {
+                    aes.Key = CreateKey();
+                    byte[] iv = new byte[16];
+                    Buffer.BlockCopy(data, 0, iv, 0, 16);
+                    aes.IV = iv;
+                    using (var decryptor = aes.CreateDecryptor())
+                    {
+                        byte[] cipher = new byte[data.Length - 16];
+                        Buffer.BlockCopy(data, 16, cipher, 0, cipher.Length);
+                        byte[] plain = decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+                        return Encoding.UTF8.GetString(plain);
+                    }
+                }
+            }
+
+            private static byte[] CreateKey()
+            {
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                {
+                    return sha.ComputeHash(Encoding.UTF8.GetBytes(
+                        "CoffeeGAME/CoffeeLearning/cgt/v1/" + SystemInfo.deviceUniqueIdentifier));
                 }
             }
         }

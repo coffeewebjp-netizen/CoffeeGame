@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
@@ -63,36 +64,36 @@ public final class CloudFolder {
         return uri == null ? "" : uri.toString();
     }
 
-    public static boolean writeText(Context context, String name, String text) {
+    public static String writeTextResult(Context context, String name, String text) {
         Uri tree = getFolderUri(context);
         if (tree == null) {
-            return false;
+            return "NO_FOLDER";
         }
 
         try {
             Uri document = DocumentsContract.buildDocumentUriUsingTree(
                 tree,
                 DocumentsContract.getTreeDocumentId(tree));
-            Uri existing = findChild(context, document, name);
+            Uri existing = findChild(context, tree, name);
             Uri target = existing != null
                 ? existing
                 : DocumentsContract.createDocument(context.getContentResolver(), document, "application/json", name);
             if (target == null) {
-                return false;
+                return "CREATE_FAILED";
             }
 
-            OutputStream output = context.getContentResolver().openOutputStream(target, "wt");
+            OutputStream output = context.getContentResolver().openOutputStream(target, "rwt");
             if (output == null) {
-                return false;
+                return "OPEN_FAILED";
             }
             try {
                 output.write(text.getBytes(StandardCharsets.UTF_8));
             } finally {
                 output.close();
             }
-            return true;
+            return "OK";
         } catch (Exception exception) {
-            return false;
+            return exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
     }
 
@@ -106,7 +107,7 @@ public final class CloudFolder {
             Uri document = DocumentsContract.buildDocumentUriUsingTree(
                 tree,
                 DocumentsContract.getTreeDocumentId(tree));
-            Uri existing = findChild(context, document, name);
+            Uri existing = findChild(context, tree, name);
             if (existing == null) {
                 return null;
             }
@@ -148,8 +149,34 @@ public final class CloudFolder {
         return Uri.parse(raw);
     }
 
-    private static Uri findChild(Context context, Uri parent, String name) {
-        // Best-effort: createDocument will fail if the file exists; callers then rewrite.
+    private static Uri findChild(Context context, Uri tree, String name) {
+        Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(
+            tree,
+            DocumentsContract.getTreeDocumentId(tree));
+        Cursor cursor = context.getContentResolver().query(
+            children,
+            new String[] {
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+            },
+            null,
+            null,
+            null);
+        if (cursor == null) {
+            return null;
+        }
+
+        try {
+            while (cursor.moveToNext()) {
+                String displayName = cursor.getString(1);
+                if (name.equals(displayName)) {
+                    return DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(0));
+                }
+            }
+        } finally {
+            cursor.close();
+        }
+
         return null;
     }
 

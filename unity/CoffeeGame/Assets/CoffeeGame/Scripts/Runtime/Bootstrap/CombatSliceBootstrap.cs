@@ -191,7 +191,22 @@ namespace CoffeeGame.Bootstrap
                 message = "プロフィール保存がまだ初期化されていません。";
                 return false;
             }
-            return profileStore.TrySave(sessionProgression, out message);
+            if (!profileStore.TrySave(sessionProgression, out message))
+            {
+                return false;
+            }
+
+            if (CloudSaveSettings.TryPublishLocalFile(profileStore.ProfilePath, out string cloudMessage)
+                && !string.IsNullOrEmpty(cloudMessage))
+            {
+                message = message + "\n" + cloudMessage;
+            }
+            else if (!string.IsNullOrEmpty(cloudMessage))
+            {
+                message = message + "\n" + cloudMessage;
+            }
+
+            return true;
         }
 
         private string ExportPlayerProfile()
@@ -212,6 +227,12 @@ namespace CoffeeGame.Bootstrap
                 return "プロフィール保存がまだ初期化されていません。";
             }
 
+            if (AndroidCloudFolder.HasFolder
+                && CloudSaveSettings.TryImportFromAndroidFolder(profileStore, out string cloudMessage))
+            {
+                return cloudMessage + "\n" + profileStore.DescribeSavedFile();
+            }
+
             if (!PlayerProfilePortability.TryImport(profileStore, out _, out string message))
             {
                 return message;
@@ -222,15 +243,19 @@ namespace CoffeeGame.Bootstrap
 
         private string UseGoogleDriveSave()
         {
-            bool selected = Application.isMobilePlatform
-                ? CloudSaveSettings.TryPickAndroidFolder(out string message)
-                : CloudSaveSettings.TryUseGoogleDrive(out message);
+            if (Application.isMobilePlatform)
+            {
+                CloudSaveSettings.TryPickAndroidFolder(out string message);
+                return message + "\n" + CloudSaveSettings.StatusLabel;
+            }
+
+            bool selected = CloudSaveSettings.TryUseGoogleDrive(out string desktopMessage);
             if (selected)
             {
                 RebindProfileStore();
             }
 
-            return message + " " + CloudSaveSettings.StatusLabel;
+            return desktopMessage + "\n" + CloudSaveSettings.StatusLabel;
         }
 
         private string UseFolderSave()
