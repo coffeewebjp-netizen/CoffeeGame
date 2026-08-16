@@ -20,8 +20,8 @@ def reset():
     scene.render.resolution_x = 960
     scene.render.resolution_y = 1280
     scene.frame_start = 1
-    scene.frame_end = 16
-    scene.render.fps = 8
+    scene.frame_end = 24
+    scene.render.fps = 12
     scene.use_preview_range = False
     world = bpy.data.worlds.new("LookWorld")
     scene.world = world
@@ -106,50 +106,40 @@ def flipbook(entries) -> None:
 
 def main():
     reset()
-    a = image_card(
-        "Look.34A",
-        LOOK / "move" / "walk3d_34_01.jpg",
-        (0.0, 0.15, 0.81),
-        (math.radians(90), 0, 0),
-        1.62,
-    )
-    b = image_card(
-        "Look.34B",
-        LOOK / "move" / "walk3d_34_02.jpg",
-        (0.0, 0.15, 0.81),
-        (math.radians(90), 0, 0),
-        1.62,
-    )
-    r1 = image_card(
-        "Look.RightA",
-        LOOK / "move" / "walk3d_right_01.jpg",
-        (0.15, 0.0, 0.81),
-        (math.radians(90), 0, math.radians(90)),
-        1.62,
-    )
-    r2 = image_card(
-        "Look.RightB",
-        LOOK / "move" / "walk3d_right_02.jpg",
-        (0.15, 0.0, 0.81),
-        (math.radians(90), 0, math.radians(90)),
-        1.62,
-    )
-    r3 = image_card(
-        "Look.RightC",
-        LOOK / "move" / "walk3d_right_03.jpg",
-        (0.15, 0.0, 0.81),
-        (math.radians(90), 0, math.radians(90)),
-        1.62,
-    )
-    flipbook(
-        [
-            (a, [(1, True), (8, False), (9, True), (16, False)]),
-            (b, [(1, False), (8, True), (9, False), (16, True)]),
-            (r1, [(1, True), (5, False), (13, True)]),
-            (r2, [(1, False), (5, True), (9, False), (13, False)]),
-            (r3, [(1, False), (9, True), (13, False)]),
-        ]
-    )
+    def card(name, filename, loc, rot):
+        return image_card(name, LOOK / "move" / filename, loc, rot, 1.62)
+
+    front = (0.0, 0.15, 0.81)
+    side = (0.15, 0.0, 0.81)
+    frot = (math.radians(90), 0, 0)
+    srot = (math.radians(90), 0, math.radians(90))
+    f1 = card("Look.34A", "walk3d_34_01.jpg", front, frot)
+    f2 = card("Look.34M", "walk3d_34_midA.jpg", front, frot)
+    f3 = card("Look.34B", "walk3d_34_02.jpg", front, frot)
+    f4 = card("Look.34N", "walk3d_34_midB.jpg", front, frot)
+    r1 = card("Look.RightA", "walk3d_right_01.jpg", side, srot)
+    r2 = card("Look.RightM12", "walk3d_right_mid12.jpg", side, srot)
+    r3 = card("Look.RightB", "walk3d_right_02.jpg", side, srot)
+    r4 = card("Look.RightM23", "walk3d_right_mid23.jpg", side, srot)
+    r5 = card("Look.RightC", "walk3d_right_03.jpg", side, srot)
+    r6 = card("Look.RightM31", "walk3d_right_mid31.jpg", side, srot)
+
+    def cycle(objs, hold):
+        keys = []
+        total = len(objs) * hold
+        for i, obj in enumerate(objs):
+            on = 1 + i * hold
+            off = on + hold
+            k = []
+            if on > 1:
+                k.append((1, False))
+            k.append((on, True))
+            if off <= total:
+                k.append((off, False))
+            keys.append((obj, k))
+        return keys
+
+    flipbook(cycle([f1, f2, f3, f4], 6) + cycle([r1, r2, r3, r4, r5, r6], 4))
     image_card("Look.Bust", LOOK / "look-bust.jpg", (1.8, 0.15, 1.15), (math.radians(90), 0, 0), 1.1)
 
     bpy.ops.object.empty_add(type="PLAIN_AXES", location=(0, 0, 0.81))
