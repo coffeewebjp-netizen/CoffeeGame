@@ -25,6 +25,29 @@ namespace CoffeeGame.Editor
                 File.WriteAllText(gradle, patched);
                 Debug.Log("CoffeeGAME: set androidlib namespace to jp.coffeetools.coffeegame.androidlib");
             }
+
+            string[] manifests =
+            {
+                Path.Combine(path, "src", "main", "AndroidManifest.xml"),
+                Path.GetFullPath(Path.Combine(path, "..", "launcher", "src", "main", "AndroidManifest.xml"))
+            };
+            foreach (string manifestPath in manifests)
+            {
+                if (!File.Exists(manifestPath))
+                {
+                    continue;
+                }
+
+                string manifest = File.ReadAllText(manifestPath);
+                string replaced = manifest.Replace(
+                    "com.unity3d.player.UnityPlayerGameActivity",
+                    "jp.coffeetools.coffeegame.androidlib.CoffeeGameActivity");
+                if (replaced != manifest)
+                {
+                    File.WriteAllText(manifestPath, replaced);
+                    Debug.Log("CoffeeGAME: rewrote activity in " + manifestPath);
+                }
+            }
         }
     }
 }

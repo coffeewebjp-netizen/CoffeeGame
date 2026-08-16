@@ -104,11 +104,15 @@ namespace CoffeeGame.Persistence
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
+                const int GrantRead = 1;
+                const int GrantWrite = 2;
+                const int GrantPersistable = 64;
                 using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
                 using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                using (var picker = new AndroidJavaClass("jp.coffeetools.coffeegame.androidlib.CloudFolder"))
+                using (var intent = new AndroidJavaObject("android.content.Intent", "android.intent.action.OPEN_DOCUMENT_TREE"))
                 {
-                    picker.CallStatic("pickFolder", activity);
+                    intent.Call<AndroidJavaObject>("addFlags", GrantRead | GrantWrite | GrantPersistable);
+                    activity.Call("startActivityForResult", intent, 7101);
                 }
 
                 PlayerPrefs.SetString(KindPlayerPrefsKey, KindAndroidSaf);

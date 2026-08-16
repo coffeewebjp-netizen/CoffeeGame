@@ -50,9 +50,7 @@ public final class CloudFolder {
             Intent.FLAG_GRANT_READ_URI_PERMISSION
                 | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        Intent chooser = new Intent(activity, PickFolderActivity.class);
-        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity.startActivity(chooser);
+        activity.startActivityForResult(intent, REQUEST_CODE);
     }
 
     public static boolean hasFolder(Context context) {

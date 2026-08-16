@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity
+            android:name="jp.coffeetools.coffeegame.androidlib.CoffeeGameActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:hardwareAccelerated="false"
+            android:resizeableActivity="true"
+            android:screenOrientation="landscape"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+            android:theme="@style/BaseUnityGameActivityTheme"
+            tools:replace="android:name,android:launchMode,android:theme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="unityplayer.UnityActivity"
+                android:value="true" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="coffeegame"
+                    android:host="coffee-game-callback" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
