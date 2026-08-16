@@ -20,7 +20,7 @@
       "action": "Idle", "framesPerSecond": 2.4, "loop": true, "holdLastFrame": true,
       "down": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_down"] },
       "downSide": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_down_right_01_v4"], "authoredFacingRight": true },
-      "side": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_right"] },
+      "side": { "resourcePaths": ["Art/HD2D/HeroGirl1/Frames/girl1_idle_right"] },
       "upSide": { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_walk_up_right_01_v4"], "authoredFacingRight": true },
       "up":   { "resourcePaths": ["Art/HD2D/Hero/Frames/hero_idle_up"] }
     },
@@ -28,7 +28,7 @@
       "action": "Walk", "framesPerSecond": 7.5, "loop": true, "holdLastFrame": true,
       "down": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_down_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1] },
       "downSide": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_down_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
-      "side": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
+      "side": { "resourcePath": "Art/HD2D/HeroGirl1/Atlases/girl1_walk_right", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
       "upSide": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_up_right_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1], "authoredFacingRight": true },
       "up": { "resourcePath": "Art/HD2D/Hero/Atlases/hero_walk_up_v5", "columns": 3, "rows": 2, "frameColumns": [0, 1, 2, 0, 1, 2], "frameRows": [0, 0, 0, 1, 1, 1] }
     },

@@ -1,7 +1,7 @@
 # girl1 identity (not in-game)
 
 Source: `C:\work\girl1.png`  
-Status: 2D reference only. Owner confirmed HD-2D as the display path (`ORC-20260816-034-DEC01`). The Blender 3D trial is stopped. The playable heroine is still the current HD-2D set; this folder is not an in-game swap.
+Status: HD-2D first slice started (`ORC-20260816-035`). Side idle + side walk use the 120-look frames. Other facings are still the old heroine. 3D trial remains stopped.
 
 | File | View |
 | --- | --- |
