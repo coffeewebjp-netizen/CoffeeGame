@@ -110,23 +110,13 @@ namespace CoffeeGame.Persistence
         {
             try
             {
-                string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                string[] candidates =
+                foreach (string folder in CloudSaveSettings.ManualShareCandidates())
                 {
-                    Path.Combine(userProfile, "Google Drive", "CoffeeGAME"),
-                    Path.Combine(userProfile, "GoogleDrive", "CoffeeGAME"),
-                    @"I:\CoffeeGAME"
-                };
-
-                foreach (string folder in candidates)
-                {
-                    string root = Path.GetPathRoot(folder);
-                    if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                    if (!Directory.Exists(folder))
                     {
                         continue;
                     }
 
-                    Directory.CreateDirectory(folder);
                     File.Copy(sourcePath, Path.Combine(folder, PortableFileName), true);
                     return;
                 }
@@ -139,13 +129,9 @@ namespace CoffeeGame.Persistence
 
         private static string FindNewestSharedCopy()
         {
-            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string[] candidates =
-            {
-                Path.Combine(userProfile, "Google Drive", "CoffeeGAME", PortableFileName),
-                Path.Combine(userProfile, "GoogleDrive", "CoffeeGAME", PortableFileName),
-                Path.Combine(@"I:\CoffeeGAME", PortableFileName)
-            };
+            string[] candidates = Array.ConvertAll(
+                CloudSaveSettings.ManualShareCandidates(),
+                folder => Path.Combine(folder, PortableFileName));
 
             string newest = null;
             DateTime stamp = DateTime.MinValue;

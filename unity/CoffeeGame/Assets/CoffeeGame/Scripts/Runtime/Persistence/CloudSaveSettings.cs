@@ -39,12 +39,28 @@ namespace CoffeeGame.Persistence
 
         public static string ResolveProfilePath()
         {
+            DiscardGuessedWindowsDriveIfNeeded();
             if (Kind == KindFolder && Directory.Exists(FolderPath))
             {
                 return Path.Combine(FolderPath, PlayerProfilePortability.PortableFileName);
             }
 
             return Path.Combine(Application.persistentDataPath, "CoffeeGAME", "player-profile.json");
+        }
+
+        public static void DiscardGuessedWindowsDriveIfNeeded()
+        {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            if (Kind != KindFolder || string.IsNullOrWhiteSpace(FolderPath))
+            {
+                return;
+            }
+
+            if (WindowsFolderPicker.LooksLikeGuessedUserProfileDrive(FolderPath))
+            {
+                UseLocal();
+            }
+#endif
         }
 
         public static void UseLocal()
@@ -77,26 +93,31 @@ namespace CoffeeGame.Persistence
             }
         }
 
-        public static bool TryUseGoogleDrive(out string message)
+        public static bool TryPickWindowsFolder(string title, out string message)
         {
-            foreach (string folder in GoogleDriveCandidates())
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            if (WindowsFolderPicker.TryPick(title, out string folder))
             {
-                string root = Path.GetPathRoot(folder);
-                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
-                {
-                    continue;
-                }
-
                 return TryUseFolder(folder, out message);
             }
 
-            message = "Google Driveフォルダが見つかりません。パスをコピーして『セーブ先パスを取り込む』を押すか、スマホではフォルダ選択を使ってください。";
+            message = "フォルダ選択が取り消されました。";
             return false;
+#else
+            message = "この端末ではWindowsのフォルダ選択は使えません。";
+            return false;
+#endif
         }
 
         public static bool TryUseClipboardFolder(out string message)
         {
-            return TryUseFolder(GUIUtility.systemCopyBuffer, out message);
+            string pasted = GUIUtility.systemCopyBuffer;
+            if (string.IsNullOrWhiteSpace(pasted))
+            {
+                return TryPickWindowsFolder("セーブ先フォルダを選択", out message);
+            }
+
+            return TryUseFolder(pasted.Trim().Trim('"'), out message);
         }
 
         public static bool TryPickAndroidFolder(out string message)
@@ -176,17 +197,16 @@ namespace CoffeeGame.Persistence
             return true;
         }
 
-        public static string[] GoogleDriveCandidates()
+        public static string[] ManualShareCandidates()
         {
-            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return new[]
+            if (Kind == KindFolder && Directory.Exists(FolderPath))
             {
-                Path.Combine(userProfile, "Google Drive", "CoffeeGAME"),
-                Path.Combine(userProfile, "GoogleDrive", "CoffeeGAME"),
-                Path.Combine(userProfile, "マイドライブ", "CoffeeGAME"),
-                @"I:\CoffeeGAME",
-                @"G:\マイドライブ\CoffeeGAME"
-            };
+                return new[] { FolderPath };
+            }
+
+            return Directory.Exists(@"I:\CoffeeGAME")
+                ? new[] { @"I:\CoffeeGAME" }
+                : Array.Empty<string>();
         }
     }
 }

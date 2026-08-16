@@ -249,7 +249,9 @@ namespace CoffeeGame.Bootstrap
                 return message + "\n" + CloudSaveSettings.StatusLabel;
             }
 
-            bool selected = CloudSaveSettings.TryUseGoogleDrive(out string desktopMessage);
+            bool selected = CloudSaveSettings.TryPickWindowsFolder(
+                "Google Driveのフォルダを選んでください（このPCでは I: が起点です）",
+                out string desktopMessage);
             if (selected)
             {
                 RebindProfileStore();
@@ -262,7 +264,7 @@ namespace CoffeeGame.Bootstrap
         {
             bool selected = Application.isMobilePlatform
                 ? CloudSaveSettings.TryPickAndroidFolder(out string message)
-                : CloudSaveSettings.TryUseClipboardFolder(out message);
+                : CloudSaveSettings.TryPickWindowsFolder("セーブ先フォルダを選択", out message);
             if (selected)
             {
                 RebindProfileStore();
