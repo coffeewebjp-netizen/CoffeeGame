@@ -86,28 +86,13 @@ namespace CoffeeGame.Persistence
 
                 ProfileFile data = CreateFile(progression);
                 string json = JsonUtility.ToJson(data, true);
-                using (var stream = new FileStream(
-                           temporaryPath,
-                           FileMode.Create,
-                           FileAccess.Write,
-                           FileShare.None,
-                           4096,
-                           FileOptions.WriteThrough))
-                using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
-                {
-                    writer.Write(json);
-                    writer.Flush();
-                    stream.Flush(true);
-                }
-
+                File.WriteAllText(temporaryPath, json, new UTF8Encoding(false));
                 if (File.Exists(profilePath))
                 {
-                    File.Replace(temporaryPath, profilePath, null);
+                    File.Delete(profilePath);
                 }
-                else
-                {
-                    File.Move(temporaryPath, profilePath);
-                }
+
+                File.Move(temporaryPath, profilePath);
 
                 message = "プレイヤープロフィールを保存しました。";
                 return true;

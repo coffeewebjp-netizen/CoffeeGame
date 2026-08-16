@@ -42,26 +42,39 @@ namespace CoffeeGame.Integration
                     return;
                 }
 
-                if (!string.IsNullOrEmpty(error))
+                if (!string.IsNullOrEmpty(error) && url != null && url.IndexOf(state, StringComparison.Ordinal) >= 0)
                 {
                     completion.TrySetException(new CoffeeLearningDesktopConnectException("CONNECT_REJECTED", error));
                 }
             }
 
+            CoffeeGameDeepLink.Clear();
             CoffeeGameDeepLink.Received += OnDeepLink;
             try
             {
-                if (!string.IsNullOrEmpty(CoffeeGameDeepLink.LastUrl))
-                {
-                    OnDeepLink(CoffeeGameDeepLink.LastUrl);
-                }
-
                 browserLauncher.Open(connectUri);
                 using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                 {
                     timeout.CancelAfter(TimeSpan.FromSeconds(options.TimeoutSeconds));
                     using (timeout.Token.Register(() => completion.TrySetCanceled(timeout.Token)))
                     {
+                        while (!completion.Task.IsCompleted)
+                        {
+                            CoffeeGameDeepLinkListener.PollNativeIntent();
+                            if (!string.IsNullOrEmpty(Application.absoluteURL))
+                            {
+                                OnDeepLink(Application.absoluteURL);
+                            }
+
+                            if (completion.Task.IsCompleted)
+                            {
+                                break;
+                            }
+
+                            await Task.Yield();
+                            timeout.Token.ThrowIfCancellationRequested();
+                        }
+
                         string token = await completion.Task.ConfigureAwait(true);
                         await tokenStore.SaveAccessTokenAsync(token, cancellationToken).ConfigureAwait(true);
                     }

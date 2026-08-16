@@ -21,6 +21,28 @@ public final class CloudFolder {
     private CloudFolder() {
     }
 
+    public static String takeCoffeeGameLink(Activity activity) {
+        if (activity == null) {
+            return "";
+        }
+
+        Intent intent = activity.getIntent();
+        if (intent == null || intent.getData() == null) {
+            return "";
+        }
+
+        Uri data = intent.getData();
+        if (data == null || !"coffeegame".equals(data.getScheme())) {
+            return "";
+        }
+
+        String value = data.toString();
+        Intent cleaned = new Intent(intent);
+        cleaned.setData(null);
+        activity.setIntent(cleaned);
+        return value;
+    }
+
     public static void pickFolder(Activity activity) {
         Intent intent = new Intent(activity, PickFolderActivity.class);
         activity.startActivity(intent);

@@ -11,6 +11,11 @@ namespace CoffeeGame.Integration
 
         public static string LastUrl { get; private set; } = string.Empty;
 
+        public static void Clear()
+        {
+            LastUrl = string.Empty;
+        }
+
         public static bool TryParseCallback(string url, string expectedState, out string token, out string error)
         {
             token = null;
@@ -81,15 +86,54 @@ namespace CoffeeGame.Integration
         private void OnEnable()
         {
             Application.deepLinkActivated += CoffeeGameDeepLink.Notify;
+            PollNativeIntent();
             if (!string.IsNullOrEmpty(Application.absoluteURL))
             {
                 CoffeeGameDeepLink.Notify(Application.absoluteURL);
             }
         }
 
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                PollNativeIntent();
+            }
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (!paused)
+            {
+                PollNativeIntent();
+            }
+        }
+
         private void OnDisable()
         {
             Application.deepLinkActivated -= CoffeeGameDeepLink.Notify;
+        }
+
+        public static void PollNativeIntent()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var bridge = new AndroidJavaClass("jp.coffeetools.coffeegame.androidlib.CloudFolder"))
+                {
+                    string url = bridge.CallStatic<string>("takeCoffeeGameLink", activity);
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        CoffeeGameDeepLink.Notify(url);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+#endif
         }
     }
 }

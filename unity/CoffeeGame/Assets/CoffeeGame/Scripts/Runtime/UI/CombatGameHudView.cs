@@ -892,7 +892,7 @@ namespace CoffeeGame.UI
             controlsStatusText.horizontalOverflow = HorizontalWrapMode.Wrap;
             controlsStatusText.verticalOverflow = VerticalWrapMode.Overflow;
             LayoutElement statusLayout = controlsStatusText.gameObject.AddComponent<LayoutElement>();
-            statusLayout.preferredHeight = 106f;
+            statusLayout.preferredHeight = 148f;
             statusLayout.flexibleWidth = 1f;
 
             AddControlButton(menuScrollContent, GameInputSemantic.Jump, "ジャンプ");
@@ -968,9 +968,25 @@ namespace CoffeeGame.UI
             controlButtons.Add(button);
         }
 
+        private const int InputModeButton = 4;
+        private const int SaveButton = 5;
+        private const int ExportButton = 6;
+        private const int ImportButton = 7;
+        private const int CloudDriveButton = 8;
+        private const int CloudFolderButton = 9;
+        private const int CloudLocalButton = 10;
+        private const int ResetBindingsButton = 11;
+        private const int ResumeButton = 12;
+        private const int PerformanceButton = 13;
+        private const int FrameStatsButton = 14;
+        private const int CoffeeLearningPrimaryButton = 15;
+        private const int CoffeeLearningDisconnectButton = 16;
+        private const int CoffeeLearningCancelButton = 17;
+        private const int SystemCommandButtonCount = 18;
+
         private void RefreshControls(bool rebinding)
         {
-            if (controlsStatusText == null || controlButtons.Count < 13)
+            if (controlsStatusText == null || controlButtons.Count < SystemCommandButtonCount)
             {
                 return;
             }
@@ -979,7 +995,7 @@ namespace CoffeeGame.UI
                 ? input.IsWaitingForRebindButtonRelease
                     ? "決定に使ったボタンを離してください。"
                     : $"新しく使うボタンを押してください（残り {Mathf.CeilToInt(input.RebindSecondsRemaining)} 秒）。Start / View / Esc で取り消せます。"
-                : $"{input.ActiveControllerProfileName}\n{input.LastRebindMessage}\n{input.ControllerCompatibilityHint}" +
+                : $"{input.ActiveControllerProfileName}\n{CoffeeGame.Persistence.CloudSaveSettings.StatusLabel}\n{input.LastRebindMessage}\n{input.ControllerCompatibilityHint}" +
                   (string.IsNullOrWhiteSpace(systemNotice) ? string.Empty : $"\n<color=#FCA83D>{systemNotice}</color>");
 
             GameInputSemantic[] semantics =
@@ -998,17 +1014,23 @@ namespace CoffeeGame.UI
                     $"{labels[index]}　　{input.GetActiveControllerBindingDescription(semantics[index])}";
                 controlButtons[index].interactable = supportsRebind && !rebinding;
             }
-            controlButtons[4].GetComponentInChildren<Text>().text = $"入力方式を選び直す　（現在: {input.ActiveControllerProfileName}）";
-            controlButtons[4].interactable = !rebinding;
-            controlButtons[5].interactable = !rebinding;
-            controlButtons[6].interactable = supportsRebind && !rebinding;
-            controlButtons[7].interactable = !rebinding;
-            controlButtons[8].GetComponentInChildren<Text>().text =
+            controlButtons[InputModeButton].GetComponentInChildren<Text>().text =
+                $"入力方式を選び直す　（現在: {input.ActiveControllerProfileName}）";
+            controlButtons[InputModeButton].interactable = !rebinding;
+            controlButtons[SaveButton].interactable = !rebinding;
+            controlButtons[ExportButton].interactable = !rebinding;
+            controlButtons[ImportButton].interactable = !rebinding;
+            controlButtons[CloudDriveButton].interactable = !rebinding;
+            controlButtons[CloudFolderButton].interactable = !rebinding;
+            controlButtons[CloudLocalButton].interactable = !rebinding;
+            controlButtons[ResetBindingsButton].interactable = supportsRebind && !rebinding;
+            controlButtons[ResumeButton].interactable = !rebinding;
+            controlButtons[PerformanceButton].GetComponentInChildren<Text>().text =
                 $"描画プリセット　{GamePerformanceSettings.CurrentPresetLabel}";
-            controlButtons[9].GetComponentInChildren<Text>().text =
+            controlButtons[FrameStatsButton].GetComponentInChildren<Text>().text =
                 $"FPS表示　{(GamePerformanceSettings.ShowFrameStats ? "ON" : "OFF")}";
-            controlButtons[8].interactable = !rebinding;
-            controlButtons[9].interactable = !rebinding;
+            controlButtons[PerformanceButton].interactable = !rebinding;
+            controlButtons[FrameStatsButton].interactable = !rebinding;
             RefreshCoffeeLearningControls(rebinding);
             SetSelectedControlRow(selectedControlRow);
 
@@ -1021,7 +1043,7 @@ namespace CoffeeGame.UI
 
         private void RefreshCoffeeLearningControls(bool rebinding)
         {
-            if (coffeeLearningStatusText == null || controlButtons.Count < 18)
+            if (coffeeLearningStatusText == null || controlButtons.Count < SystemCommandButtonCount)
             {
                 return;
             }
@@ -1029,22 +1051,22 @@ namespace CoffeeGame.UI
             if (coffeeLearningConnection == null)
             {
                 coffeeLearningStatusText.text = "CoffeeLearning: \u672a\u63a5\u7d9a";
-                controlButtons[15].GetComponentInChildren<Text>().text = "CoffeeLearning\u3068\u63a5\u7d9a";
-                controlButtons[15].interactable = false;
-                controlButtons[16].GetComponentInChildren<Text>().text = "CoffeeLearning\u63a5\u7d9a\u3092\u89e3\u9664";
-                controlButtons[16].interactable = false;
-                controlButtons[17].GetComponentInChildren<Text>().text = "CoffeeLearning\u64cd\u4f5c\u3092\u30ad\u30e3\u30f3\u30bb\u30eb";
-                controlButtons[17].interactable = false;
+                controlButtons[CoffeeLearningPrimaryButton].GetComponentInChildren<Text>().text = "CoffeeLearning\u3068\u63a5\u7d9a";
+                controlButtons[CoffeeLearningPrimaryButton].interactable = false;
+                controlButtons[CoffeeLearningDisconnectButton].GetComponentInChildren<Text>().text = "CoffeeLearning\u63a5\u7d9a\u3092\u89e3\u9664";
+                controlButtons[CoffeeLearningDisconnectButton].interactable = false;
+                controlButtons[CoffeeLearningCancelButton].GetComponentInChildren<Text>().text = "CoffeeLearning\u64cd\u4f5c\u3092\u30ad\u30e3\u30f3\u30bb\u30eb";
+                controlButtons[CoffeeLearningCancelButton].interactable = false;
                 return;
             }
 
             coffeeLearningStatusText.text = "CoffeeLearning: " + coffeeLearningConnection.StatusLabel;
-            controlButtons[15].GetComponentInChildren<Text>().text = coffeeLearningConnection.PrimaryActionLabel;
-            controlButtons[16].GetComponentInChildren<Text>().text = coffeeLearningConnection.DisconnectActionLabel;
-            controlButtons[17].GetComponentInChildren<Text>().text = coffeeLearningConnection.CancelActionLabel;
-            controlButtons[15].interactable = !rebinding && coffeeLearningConnection.CanUsePrimaryAction;
-            controlButtons[16].interactable = !rebinding && coffeeLearningConnection.CanUseDisconnectAction;
-            controlButtons[17].interactable = !rebinding && coffeeLearningConnection.CanUseCancelAction;
+            controlButtons[CoffeeLearningPrimaryButton].GetComponentInChildren<Text>().text = coffeeLearningConnection.PrimaryActionLabel;
+            controlButtons[CoffeeLearningDisconnectButton].GetComponentInChildren<Text>().text = coffeeLearningConnection.DisconnectActionLabel;
+            controlButtons[CoffeeLearningCancelButton].GetComponentInChildren<Text>().text = coffeeLearningConnection.CancelActionLabel;
+            controlButtons[CoffeeLearningPrimaryButton].interactable = !rebinding && coffeeLearningConnection.CanUsePrimaryAction;
+            controlButtons[CoffeeLearningDisconnectButton].interactable = !rebinding && coffeeLearningConnection.CanUseDisconnectAction;
+            controlButtons[CoffeeLearningCancelButton].interactable = !rebinding && coffeeLearningConnection.CanUseCancelAction;
         }
 
         private void BuildMenuScrollArea(RectTransform host)
