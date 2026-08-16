@@ -103,6 +103,27 @@ namespace CoffeeGame.Input.Tests
         }
 
         [Test]
+        public void ControllerBattle_IgnoresLeftoverKeyboardAfterRivalTextEntry()
+        {
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader);
+            reader.EnableUI();
+            TickReader(reader);
+
+            Press(keyboard.aKey);
+            Press(keyboard.numLockKey);
+
+            reader.EnableBattle();
+            InputSystem.Update();
+            TickReader(reader);
+
+            Set(gamepad.leftStick, Vector2.up);
+            Assert.That(reader.Move.y, Is.GreaterThan(0.5f),
+                "A leftover typing/IME keyboard state must not suppress Gamepad battle movement.");
+        }
+
+        [Test]
         public void ControllerProfile_KeepsKeyboardSettingsRecoveryAvailable()
         {
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();

@@ -1,6 +1,8 @@
+using System;
 using CoffeeGame.Actors;
 using CoffeeGame.Domain;
 using CoffeeGame.Input;
+using CoffeeGame.Integration;
 using CoffeeGame.Run;
 using UnityEngine;
 
@@ -9,15 +11,37 @@ namespace CoffeeGame.UI
     [DisallowMultipleComponent]
     public sealed class CombatSliceHud : MonoBehaviour
     {
+        private enum PauseMenuTab
+        {
+            Status,
+            Inventory,
+            System,
+            Companions
+        }
+
+        private const string HeroStatusSpriteResource = "Art/UI/Hero/hero_fullbody_ui";
         private const int InputModeRow = 4;
-        private const int ResetRow = 5;
-        private const int CloseRow = 6;
-        private const int SettingsRowCount = 7;
+        private const int SaveRow = 5;
+        private const int ResetRow = 6;
+        private const int CloseRow = 7;
+        private const int PerformanceRow = 8;
+        private const int FrameStatsRow = 9;
+        private const int CoffeeLearningPrimaryRow = 10;
+        private const int CoffeeLearningDisconnectRow = 11;
+        private const int CoffeeLearningCancelRow = 12;
+        private const int SettingsRowCount = 13;
         private static readonly InputMode[] SelectableInputModes =
         {
             InputMode.KeyboardMouse,
             InputMode.ControllerGamepad,
             InputMode.SteamDesktopCompatibility
+        };
+        private static readonly string[] PauseMenuTabLabels =
+        {
+            "ステータス",
+            "持ち物",
+            "システム",
+            "仲間"
         };
 
         private CombatRunController run;
@@ -28,18 +52,69 @@ namespace CoffeeGame.UI
         private GUIStyle centeredStyle;
         private GUIStyle buttonStyle;
         private GUIStyle selectedButtonStyle;
+        private GUIStyle pauseTitleStyle;
+        private GUIStyle pauseSubtitleStyle;
+        private GUIStyle pauseTabStyle;
+        private GUIStyle selectedPauseTabStyle;
+        private GUIStyle statusNameStyle;
+        private GUIStyle statusValueStyle;
+        private GUIStyle mutedCenteredStyle;
+        private Sprite heroStatusSprite;
         private bool showInputSettings;
+        private bool pauseMenuOpen;
+        private PauseMenuTab selectedPauseMenuTab;
+        private int pauseTabNavigationLatch;
         private int selectedSettingsRow;
         private int navigationLatch;
         private int selectedInputModeRow;
         private int inputModeNavigationLatch;
         private string inputModeSelectionMessage = string.Empty;
+        private CombatGameHudView modernView;
+        private int pauseOpenedFrame = -1;
+        private Func<string> saveProfileCommand;
+        private CoffeeLearningConnectionPresenter coffeeLearningConnection;
+        private RivalLearningQuestionSession rivalLearningQuestion;
+        private bool rivalEncounterActive;
 
-        public void Initialize(CombatRunController runController, GameInputReader inputReader)
+        public void Initialize(
+            CombatRunController runController,
+            GameInputReader inputReader,
+            Func<string> manualSaveCommand = null,
+            CoffeeLearningConnectionPresenter learningConnection = null)
         {
             run = runController;
             input = inputReader;
+            saveProfileCommand = manualSaveCommand;
+            coffeeLearningConnection = learningConnection;
+            rivalLearningQuestion = new RivalLearningQuestionSession(
+                () => coffeeLearningConnection?.LearningBridge ?? new NullLearningBridge());
+            GamePerformanceSettings.ApplySavedPreset();
             selectedInputModeRow = GetInputModeRow(input.PreferredInputModeForSelection);
+            heroStatusSprite = Resources.Load<Sprite>(HeroStatusSpriteResource);
+            modernView = gameObject.AddComponent<CombatGameHudView>();
+            modernView.Initialize(input, coffeeLearningConnection);
+            modernView.PauseRequested += HandlePointerPause;
+            modernView.ResumeRequested += ResumeFromPauseMenu;
+            modernView.StartRequested += run.StartNewRun;
+            modernView.InputSettingsRequested += OpenPreBattleInputSettings;
+            modernView.TabRequested += HandlePointerTab;
+            modernView.RebindRequested += BeginRebind;
+            modernView.InputModeSelectionRequested += BeginInputModeSelectionFromPause;
+            modernView.PerformancePresetRequested += HandlePerformancePreset;
+            modernView.FrameStatsToggleRequested += HandleFrameStatsToggle;
+            modernView.SaveRequested += HandleManualSave;
+            modernView.ResetBindingsRequested += HandleResetBindings;
+            modernView.CancelRebindRequested += input.CancelInteractiveRebind;
+            modernView.CoffeeLearningPrimaryRequested += HandleCoffeeLearningPrimary;
+            modernView.CoffeeLearningDisconnectRequested += HandleCoffeeLearningDisconnect;
+            modernView.CoffeeLearningCancelRequested += HandleCoffeeLearningCancel;
+            modernView.RivalAnswerChanged += HandleRivalAnswerChanged;
+            modernView.RivalPrimaryRequested += HandleRivalPrimary;
+            modernView.RivalSecondaryRequested += HandleRivalSecondary;
+            modernView.RivalContinueRequested += HandleRivalContinue;
+            run.StateChanged += HandleRunStateChanged;
+            run.Progression.Changed += HandleProgressionChanged;
+            HandleRunStateChanged();
         }
 
         private void Update()
@@ -49,10 +124,26 @@ namespace CoffeeGame.UI
                 return;
             }
 
+            if (modernView != null)
+            {
+                UpdateModernHud();
+                return;
+            }
+
             if (run.Mode == CombatRunMode.InputModeSelection)
             {
                 HandleInputModeSelection();
                 return;
+            }
+
+            if (run.Mode == CombatRunMode.Paused)
+            {
+                pauseMenuOpen = true;
+            }
+            else if (run.Mode == CombatRunMode.Playing && pauseMenuOpen)
+            {
+                pauseMenuOpen = false;
+                pauseTabNavigationLatch = 0;
             }
 
             if (input.IsRebinding)
@@ -62,7 +153,36 @@ namespace CoffeeGame.UI
 
             if (input.SettingsPressed)
             {
+                if (run.Mode == CombatRunMode.Playing)
+                {
+                    run.Pause();
+                    pauseMenuOpen = true;
+                    SelectPauseMenuTab(PauseMenuTab.System);
+                    return;
+                }
+
+                if (run.Mode == CombatRunMode.Paused)
+                {
+                    pauseMenuOpen = true;
+                    SelectPauseMenuTab(PauseMenuTab.System);
+                    return;
+                }
+
                 ToggleInputSettings();
+                return;
+            }
+
+            if (IsPauseMenuVisible)
+            {
+                HandlePauseMenuNavigation();
+                if (selectedPauseMenuTab == PauseMenuTab.System)
+                {
+                    HandleSettingsNavigation();
+                    if (input.ConfirmPressed)
+                    {
+                        ActivateSelectedSettingsRow();
+                    }
+                }
                 return;
             }
 
@@ -91,10 +211,25 @@ namespace CoffeeGame.UI
                 return;
             }
 
+            if (modernView != null && run.Mode != CombatRunMode.InputModeSelection)
+            {
+                return;
+            }
+
             EnsureStyles();
+            if (run.Mode == CombatRunMode.Paused)
+            {
+                pauseMenuOpen = true;
+            }
             if (run.Mode == CombatRunMode.InputModeSelection)
             {
                 DrawInputModeSelection();
+                return;
+            }
+
+            if (IsPauseMenuVisible)
+            {
+                DrawPauseMenu();
                 return;
             }
 
@@ -105,8 +240,526 @@ namespace CoffeeGame.UI
             }
 
             DrawPlayerHud();
-            DrawInputDiagnostic();
             DrawRunOverlay();
+        }
+
+        private bool IsPauseMenuVisible =>
+            pauseMenuOpen &&
+            (run.Mode == CombatRunMode.Paused
+                || run.Mode == CombatRunMode.InputRebinding
+                || run.Mode == CombatRunMode.InputSettings);
+
+        private void UpdateModernHud()
+        {
+            if (run.Mode == CombatRunMode.InputModeSelection)
+            {
+                HandleInputModeSelection();
+                modernView.Refresh(run, pauseMenuOpen && run.Mode == CombatRunMode.Paused);
+                return;
+            }
+
+            if (run.Mode == CombatRunMode.RivalEncounter)
+            {
+                if (!rivalEncounterActive)
+                {
+                    HandleRunStateChanged();
+                }
+
+                Vector2 rivalNavigation = input.Navigate;
+                bool rivalConfirmPressed = input.ConfirmPressed;
+                bool rivalAnswerFocused = modernView.IsRivalAnswerInputFocused;
+                bool rivalCancelPressed = ShouldRouteRivalCancel(
+                    input.CancelPressed,
+                    rivalAnswerFocused,
+                    input.LastUsedInputIsGamepad);
+                bool gamepadNavigationIntent = input.LastUsedInputIsGamepad
+                    && (rivalConfirmPressed
+                        || rivalCancelPressed
+                        || rivalNavigation.sqrMagnitude >= 0.25f);
+                bool releasedPointerFocus = gamepadNavigationIntent
+                    && modernView.ReleaseRivalAnswerInputFocus();
+                if (releasedPointerFocus && !rivalConfirmPressed)
+                {
+                    modernView.Refresh(run, false);
+                    modernView.RefreshRivalLearning(rivalLearningQuestion);
+                    return;
+                }
+
+                if (rivalCancelPressed)
+                {
+                    if (rivalLearningQuestion.State == RivalLearningQuestionState.Confirming)
+                    {
+                        rivalLearningQuestion.ReturnToEditing();
+                    }
+                    else
+                    {
+                        HandleRivalContinue();
+                    }
+                }
+                else if (ShouldRouteRivalPrimary(
+                    rivalConfirmPressed,
+                    modernView.IsRivalAnswerInputFocused))
+                {
+                    HandleRivalPrimary();
+                }
+
+                TryApplyCompletedRivalReward();
+                modernView.Refresh(run, false);
+                modernView.RefreshRivalLearning(rivalLearningQuestion);
+                return;
+            }
+
+            bool pauseCapableMode = run.Mode == CombatRunMode.Paused
+                || run.Mode == CombatRunMode.InputRebinding
+                || run.Mode == CombatRunMode.InputSettings;
+            if (pauseCapableMode && !pauseMenuOpen)
+            {
+                OpenPauseMenu(run.Mode == CombatRunMode.InputSettings
+                    ? CharacterMenuTab.System
+                    : CharacterMenuTab.Status);
+            }
+            else if (!pauseCapableMode && pauseMenuOpen)
+            {
+                pauseMenuOpen = false;
+                pauseTabNavigationLatch = 0;
+                navigationLatch = 0;
+            }
+
+            if (!input.IsRebinding)
+            {
+                if (run.Mode == CombatRunMode.Playing && input.SettingsPressed)
+                {
+                    run.Pause();
+                    OpenPauseMenu(CharacterMenuTab.System);
+                }
+                else if (run.Mode == CombatRunMode.Paused || run.Mode == CombatRunMode.InputSettings)
+                {
+                    if (input.SettingsPressed)
+                    {
+                        SelectModernTab(CharacterMenuTab.System);
+                    }
+                    else if (Time.frameCount > pauseOpenedFrame && (input.PausePressed || input.CancelPressed))
+                    {
+                        ResumeFromPauseMenu();
+                    }
+                    else
+                    {
+                        HandleModernMenuNavigation();
+                    }
+                }
+            }
+
+            modernView.Refresh(run, pauseMenuOpen && pauseCapableMode);
+        }
+
+        public static bool ShouldRouteRivalPrimary(bool confirmPressed, bool answerInputFocused)
+        {
+            return confirmPressed && !answerInputFocused;
+        }
+
+        public static bool ShouldRouteRivalCancel(
+            bool cancelPressed,
+            bool answerInputFocused,
+            bool lastInputWasGamepad)
+        {
+            return cancelPressed && (!answerInputFocused || lastInputWasGamepad);
+        }
+
+        private void HandleRunStateChanged()
+        {
+            if (run == null || rivalLearningQuestion == null)
+            {
+                return;
+            }
+
+            if (run.Mode == CombatRunMode.RivalEncounter)
+            {
+                if (rivalEncounterActive)
+                {
+                    return;
+                }
+
+                rivalEncounterActive = true;
+                _ = rivalLearningQuestion.BeginNewEncounterAsync();
+                return;
+            }
+
+            if (rivalEncounterActive)
+            {
+                rivalEncounterActive = false;
+                rivalLearningQuestion.CancelPendingOperation();
+            }
+        }
+
+        private void HandleRivalAnswerChanged(string answer)
+        {
+            rivalLearningQuestion?.UpdateDraft(answer);
+        }
+
+        private async void HandleRivalPrimary()
+        {
+            if (!rivalEncounterActive || rivalLearningQuestion == null)
+            {
+                return;
+            }
+
+            switch (rivalLearningQuestion.State)
+            {
+                case RivalLearningQuestionState.Editing:
+                    rivalLearningQuestion.RequestConfirmation();
+                    break;
+                case RivalLearningQuestionState.Confirming:
+                    await rivalLearningQuestion.SubmitConfirmedAnswerAsync();
+                    break;
+                case RivalLearningQuestionState.Pending:
+                    await rivalLearningQuestion.RecoverPendingResultAsync();
+                    break;
+                case RivalLearningQuestionState.Error:
+                    await rivalLearningQuestion.RetryPreparationAsync();
+                    break;
+            }
+        }
+
+        private void HandleRivalSecondary()
+        {
+            rivalLearningQuestion?.ReturnToEditing();
+        }
+
+        private void TryApplyCompletedRivalReward()
+        {
+            if (run?.Progression == null
+                || rivalLearningQuestion == null
+                || rivalLearningQuestion.State != RivalLearningQuestionState.Completed
+                || !rivalLearningQuestion.AuthoritativeOutcome.HasValue
+                || rivalLearningQuestion.GameRewardApplication.HasValue)
+            {
+                return;
+            }
+
+            PlayerLearningRewardApplication application = run.Progression.TryApplyLearningOutcome(
+                rivalLearningQuestion.AuthoritativeOutcome.Value,
+                RivalCharacterIds.WeaknessChallenger);
+            rivalLearningQuestion.RecordGameRewardApplication(application);
+        }
+
+        private void HandleRivalContinue()
+        {
+            if (!rivalEncounterActive || run == null)
+            {
+                return;
+            }
+
+            rivalEncounterActive = false;
+            rivalLearningQuestion?.CancelPendingOperation();
+            modernView?.ReleaseRivalGameplayFocus();
+            run.ContinueAfterRivalEncounter();
+        }
+
+        private void HandleModernMenuNavigation()
+        {
+            Vector2 navigation = input.Navigate;
+            int tabDirection = MenuNavigationAxisLatch.Read(navigation.x, ref pauseTabNavigationLatch);
+            if (tabDirection != 0)
+            {
+                int count = System.Enum.GetValues(typeof(CharacterMenuTab)).Length;
+                int next = ((int)selectedPauseMenuTab + tabDirection + count) % count;
+                SelectModernTab((CharacterMenuTab)next);
+            }
+
+            if ((CharacterMenuTab)selectedPauseMenuTab != CharacterMenuTab.System)
+            {
+                navigationLatch = 0;
+                if (tabDirection == 0)
+                {
+                    modernView.ScrollMenu(navigation.y, Time.unscaledDeltaTime);
+                }
+                return;
+            }
+
+            int verticalDirection = MenuNavigationAxisLatch.Read(navigation.y, ref navigationLatch);
+            if (verticalDirection != 0)
+            {
+                int rowDirection = -verticalDirection;
+                selectedSettingsRow = FindNextModernControlRow(selectedSettingsRow, rowDirection);
+                modernView.SetSelectedControlRow(selectedSettingsRow);
+            }
+
+            if (input.ConfirmPressed)
+            {
+                ActivateModernControlRow();
+            }
+        }
+
+        private int FindNextModernControlRow(int current, int direction)
+        {
+            int candidate = current;
+            do
+            {
+                candidate = (candidate + direction + SettingsRowCount) % SettingsRowCount;
+            }
+            while (!IsSettingsRowSelectable(candidate));
+            return candidate;
+        }
+
+        private void ActivateModernControlRow()
+        {
+            switch (selectedSettingsRow)
+            {
+                case 0:
+                    BeginRebind(GameInputSemantic.Jump);
+                    break;
+                case 1:
+                    BeginRebind(GameInputSemantic.Sword);
+                    break;
+                case 2:
+                    BeginRebind(GameInputSemantic.Special);
+                    break;
+                case 3:
+                    BeginRebind(GameInputSemantic.Magic);
+                    break;
+                case InputModeRow:
+                    BeginInputModeSelectionFromPause();
+                    break;
+                case SaveRow:
+                    HandleManualSave();
+                    break;
+                case ResetRow:
+                    HandleResetBindings();
+                    break;
+                case CloseRow:
+                    ResumeFromPauseMenu();
+                    break;
+                case PerformanceRow:
+                    HandlePerformancePreset();
+                    break;
+                case FrameStatsRow:
+                    HandleFrameStatsToggle();
+                    break;
+                case CoffeeLearningPrimaryRow:
+                    HandleCoffeeLearningPrimary();
+                    break;
+                case CoffeeLearningDisconnectRow:
+                    HandleCoffeeLearningDisconnect();
+                    break;
+                case CoffeeLearningCancelRow:
+                    HandleCoffeeLearningCancel();
+                    break;
+            }
+        }
+
+        private void OpenPauseMenu(CharacterMenuTab tab)
+        {
+            pauseMenuOpen = true;
+            pauseOpenedFrame = Time.frameCount;
+            pauseTabNavigationLatch = 0;
+            navigationLatch = 0;
+            SelectModernTab(tab);
+        }
+
+        private void SelectModernTab(CharacterMenuTab tab)
+        {
+            if ((CharacterMenuTab)selectedPauseMenuTab == CharacterMenuTab.System
+                && tab != CharacterMenuTab.System)
+            {
+                coffeeLearningConnection?.CancelPendingOrActiveAction();
+            }
+            selectedPauseMenuTab = (PauseMenuTab)tab;
+            navigationLatch = 0;
+            if (tab == CharacterMenuTab.System)
+            {
+                selectedSettingsRow = SupportsButtonRebind ? 0 : InputModeRow;
+                if (coffeeLearningConnection != null
+                    && coffeeLearningConnection.ShouldRefreshAccountIdentity)
+                {
+                    _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+                }
+            }
+            modernView.SetSelectedTab(tab);
+            modernView.RebuildMenuContent(run);
+            modernView.SetSelectedControlRow(selectedSettingsRow);
+        }
+
+        private void HandlePointerPause()
+        {
+            if (run.Mode != CombatRunMode.Playing)
+            {
+                return;
+            }
+            run.Pause();
+            OpenPauseMenu(CharacterMenuTab.Status);
+        }
+
+        private void HandlePointerTab(CharacterMenuTab tab)
+        {
+            if ((run.Mode == CombatRunMode.Paused || run.Mode == CombatRunMode.InputSettings)
+                && !input.IsRebinding)
+            {
+                SelectModernTab(tab);
+            }
+        }
+
+        private void ResumeFromPauseMenu()
+        {
+            coffeeLearningConnection?.CancelPendingOrActiveAction();
+            if (input.IsRebinding)
+            {
+                input.CancelInteractiveRebind();
+                return;
+            }
+            if (run.Mode == CombatRunMode.Paused)
+            {
+                run.Resume();
+            }
+            else if (run.Mode == CombatRunMode.InputSettings)
+            {
+                run.EndInputSettings();
+            }
+            pauseMenuOpen = false;
+        }
+
+        private void OpenPreBattleInputSettings()
+        {
+            if ((run.Mode != CombatRunMode.Ready && run.Mode != CombatRunMode.GameOver)
+                || input.IsRebinding
+                || !run.BeginInputSettings())
+            {
+                return;
+            }
+
+            OpenPauseMenu(CharacterMenuTab.System);
+        }
+
+        private void BeginInputModeSelectionFromPause()
+        {
+            if ((run.Mode != CombatRunMode.Paused && run.Mode != CombatRunMode.InputSettings)
+                || input.IsRebinding)
+            {
+                return;
+            }
+            selectedInputModeRow = GetInputModeRow(input.SelectedInputMode);
+            inputModeSelectionMessage = "入力方式を変更すると、受け付けるデバイスもその方式だけに切り替わります。";
+            run.BeginInputModeSelection();
+        }
+
+        private void HandleResetBindings()
+        {
+            if (!SupportsButtonRebind || input.IsRebinding)
+            {
+                return;
+            }
+            input.ResetBindingOverrides();
+            modernView.RebuildMenuContent(run);
+            modernView.SetSelectedControlRow(selectedSettingsRow);
+        }
+
+        private void HandleManualSave()
+        {
+            string profileMessage = saveProfileCommand != null
+                ? saveProfileCommand()
+                : "プロフィールの保存先を初期化できていません。";
+            bool bindingsSaved = input.SaveBindingOverridesToPlayerPrefs();
+            string bindingMessage = bindingsSaved
+                ? "ボタン設定も保存しました。"
+                : "ボタン設定を保存できませんでした。";
+            string message = $"{profileMessage} {bindingMessage}";
+            if (modernView != null)
+            {
+                modernView.SetSystemNotice(message);
+                modernView.SetSelectedControlRow(selectedSettingsRow);
+            }
+        }
+
+        private void HandlePerformancePreset()
+        {
+            GamePerformanceSettings.SelectNextPreset();
+            if (modernView != null)
+            {
+                modernView.SetSystemNotice($"描画設定を「{GamePerformanceSettings.CurrentPresetLabel}」に変更しました。");
+                modernView.RebuildMenuContent(run);
+                modernView.SetSelectedControlRow(selectedSettingsRow);
+            }
+        }
+
+        private void HandleFrameStatsToggle()
+        {
+            bool visible = GamePerformanceSettings.ToggleFrameStats();
+            if (modernView != null)
+            {
+                modernView.SetSystemNotice($"FPS表示を{(visible ? "ON" : "OFF")}にしました。");
+                modernView.RebuildMenuContent(run);
+                modernView.SetSelectedControlRow(selectedSettingsRow);
+            }
+        }
+
+        private async void HandleCoffeeLearningPrimary()
+        {
+            if (coffeeLearningConnection == null)
+            {
+                return;
+            }
+
+            if (coffeeLearningConnection.ConfirmationIntent == CoffeeLearningConfirmationIntent.Connect
+                || coffeeLearningConnection.ConfirmationIntent == CoffeeLearningConfirmationIntent.Reconnect)
+            {
+                await coffeeLearningConnection.ConfirmPrimaryActionAsync();
+                return;
+            }
+
+            coffeeLearningConnection.RequestPrimaryAction();
+        }
+
+        private async void HandleCoffeeLearningDisconnect()
+        {
+            if (coffeeLearningConnection == null)
+            {
+                return;
+            }
+
+            if (coffeeLearningConnection.ConfirmationIntent == CoffeeLearningConfirmationIntent.Disconnect)
+            {
+                await coffeeLearningConnection.ConfirmDisconnectActionAsync();
+                return;
+            }
+
+            coffeeLearningConnection.RequestDisconnectAction();
+        }
+
+        private void HandleCoffeeLearningCancel()
+        {
+            coffeeLearningConnection?.CancelPendingOrActiveAction();
+        }
+
+        private void HandleProgressionChanged()
+        {
+            if (modernView != null && pauseMenuOpen)
+            {
+                modernView.RebuildMenuContent(run);
+            }
+        }
+
+        private void SelectPauseMenuTab(PauseMenuTab tab)
+        {
+            if (modernView != null)
+            {
+                SelectModernTab((CharacterMenuTab)tab);
+            }
+            else
+            {
+                selectedPauseMenuTab = tab;
+            }
+        }
+
+        private void HandlePauseMenuNavigation()
+        {
+            if (modernView != null)
+            {
+                HandleModernMenuNavigation();
+            }
+        }
+
+        private void DrawPauseMenu()
+        {
+            // The active pause menu is rendered by CombatGameHudView (uGUI).
         }
 
         private void HandleInputModeSelection()
@@ -135,7 +788,15 @@ namespace CoffeeGame.UI
 
             if (input.ConfirmPressed)
             {
-                SelectInputMode(SelectableInputModes[selectedInputModeRow]);
+                InputMode selectedMode = SelectableInputModes[selectedInputModeRow];
+                if (input.LastUsedInputIsGamepad
+                    && input.HasConnectedGamepad
+                    && selectedMode == InputMode.KeyboardMouse)
+                {
+                    selectedInputModeRow = GetInputModeRow(InputMode.ControllerGamepad);
+                    selectedMode = InputMode.ControllerGamepad;
+                }
+                SelectInputMode(selectedMode);
             }
         }
 
@@ -224,6 +885,11 @@ namespace CoffeeGame.UI
                 selectedSettingsRow = SupportsButtonRebind ? 0 : InputModeRow;
                 navigationLatch = 0;
                 inputModeNavigationLatch = 0;
+                if (run.Mode == CombatRunMode.Ready
+                    && mode != InputMode.KeyboardMouse)
+                {
+                    OpenPreBattleInputSettings();
+                }
                 return;
             }
 
@@ -253,7 +919,7 @@ namespace CoffeeGame.UI
             PlayerProgression progression = run.Progression;
 
             GUI.Box(new Rect(16f, 16f, 350f, 151f), GUIContent.none);
-            GUI.Label(new Rect(28f, 24f, 320f, 24f), $"Lv.{progression.Level}   討伐 {run.Kills}/{run.GoalKills}", titleStyle);
+            GUI.Label(new Rect(28f, 24f, 320f, 24f), $"Lv.{progression.Level}   討伐 {run.Kills}", titleStyle);
             DrawBar(new Rect(28f, 56f, 220f, 15f), health.Normalized, new Color(0.82f, 0.18f, 0.26f), $"HP {health.Current}/{health.Maximum}");
             DrawBar(new Rect(28f, 80f, 220f, 15f), resources.MaxStamina <= 0f ? 0f : resources.Stamina / resources.MaxStamina, new Color(0.95f, 0.68f, 0.18f), $"ST {Mathf.FloorToInt(resources.Stamina)}/{Mathf.FloorToInt(resources.MaxStamina)}");
             DrawBar(new Rect(28f, 104f, 220f, 15f), resources.MaxMagicPoints <= 0f ? 0f : resources.MagicPoints / resources.MaxMagicPoints, new Color(0.2f, 0.65f, 0.95f), $"MP {resources.MagicPoints:0.0}/{resources.MaxMagicPoints:0}");
@@ -312,7 +978,7 @@ namespace CoffeeGame.UI
             GUI.Box(rect, GUIContent.none);
             string heading = run.Mode == CombatRunMode.Ready ? "COFFEEGAME — UNITY COMBAT SLICE" :
                 run.Mode == CombatRunMode.Paused ? "一時停止" :
-                run.Mode == CombatRunMode.Cleared ? "CLEAR" : "GAME OVER";
+                "GAME OVER";
             GUI.Label(new Rect(rect.x + 18f, rect.y + 24f, rect.width - 36f, 36f), heading, centeredStyle);
             GUI.Label(new Rect(rect.x + 18f, rect.y + 70f, rect.width - 36f, 28f), run.LastEvent, centeredStyle);
             GUI.Label(new Rect(rect.x + 18f, rect.y + 108f, rect.width - 36f, 46f),
@@ -374,13 +1040,27 @@ namespace CoffeeGame.UI
                 InputModeRow,
                 $"入力方式を選び直す（現在: {input.ActiveControllerProfileName}）",
                 BeginInputModeSelectionFromSettings);
-            DrawSettingsCommandButton(panel, 290f, ResetRow, "初期配置へ戻す", () => input.ResetBindingOverrides(), SupportsButtonRebind);
-            DrawSettingsCommandButton(panel, 330f, CloseRow, "設定を保存して閉じる", CloseInputSettings);
+            DrawSettingsCommandButton(panel, 290f, SaveRow, "プロフィールとボタン設定を保存", HandleManualSave);
+            DrawSettingsCommandButton(panel, 330f, ResetRow, "初期配置へ戻す", () => input.ResetBindingOverrides(), SupportsButtonRebind);
+            DrawSettingsCommandButton(panel, 370f, CloseRow, "設定を保存して閉じる", CloseInputSettings);
+
+            DrawSettingsCommandButton(
+                panel,
+                410f,
+                PerformanceRow,
+                $"描画プリセット: {GamePerformanceSettings.CurrentPresetLabel}",
+                HandlePerformancePreset);
+            DrawSettingsCommandButton(
+                panel,
+                450f,
+                FrameStatsRow,
+                $"FPS表示: {(GamePerformanceSettings.ShowFrameStats ? "ON" : "OFF")}",
+                HandleFrameStatsToggle);
 
             bool previousEnabled = GUI.enabled;
             GUI.enabled = input.IsRebinding;
             if (AcceptPointerCommand(GUI.Button(
-                    new Rect(panel.x + 14f, panel.y + 370f, panel.width - 28f, 27f),
+                    new Rect(panel.x + 14f, panel.y + 490f, panel.width - 28f, 27f),
                     "再割当を取り消す（Start/View・Esc）",
                     buttonStyle)))
             {
@@ -397,10 +1077,10 @@ namespace CoffeeGame.UI
                 _ =>
                     "キーボード／マウスの基本配置は現在固定です。変更したい場合は『入力方式を選び直す』からGamepadまたはSteam Desktop互換を選択してください。"
             };
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 406f, panel.width - 28f, 48f),
+            GUI.Label(new Rect(panel.x + 14f, panel.y + 526f, panel.width - 28f, 48f),
                 operationHelp,
                 smallStyle);
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 458f, panel.width - 28f, Mathf.Max(40f, panel.height - 470f)),
+            GUI.Label(new Rect(panel.x + 14f, panel.y + 578f, panel.width - 28f, Mathf.Max(40f, panel.height - 590f)),
                 input.ControllerCompatibilityHint,
                 smallStyle);
         }
@@ -491,6 +1171,9 @@ namespace CoffeeGame.UI
                 case InputModeRow:
                     BeginInputModeSelectionFromSettings();
                     break;
+                case SaveRow:
+                    HandleManualSave();
+                    break;
                 case ResetRow:
                     if (SupportsButtonRebind)
                     {
@@ -499,6 +1182,21 @@ namespace CoffeeGame.UI
                     break;
                 case CloseRow:
                     CloseInputSettings();
+                    break;
+                case PerformanceRow:
+                    HandlePerformancePreset();
+                    break;
+                case FrameStatsRow:
+                    HandleFrameStatsToggle();
+                    break;
+                case CoffeeLearningPrimaryRow:
+                    HandleCoffeeLearningPrimary();
+                    break;
+                case CoffeeLearningDisconnectRow:
+                    HandleCoffeeLearningDisconnect();
+                    break;
+                case CoffeeLearningCancelRow:
+                    HandleCoffeeLearningCancel();
                     break;
             }
         }
@@ -545,7 +1243,30 @@ namespace CoffeeGame.UI
 
         private bool IsSettingsRowSelectable(int row)
         {
-            return SupportsButtonRebind || row == InputModeRow || row == CloseRow;
+            if (row == CoffeeLearningPrimaryRow)
+            {
+                return coffeeLearningConnection != null
+                    && coffeeLearningConnection.CanUsePrimaryAction;
+            }
+
+            if (row == CoffeeLearningDisconnectRow)
+            {
+                return coffeeLearningConnection != null
+                    && coffeeLearningConnection.CanUseDisconnectAction;
+            }
+
+            if (row == CoffeeLearningCancelRow)
+            {
+                return coffeeLearningConnection != null
+                    && coffeeLearningConnection.CanUseCancelAction;
+            }
+
+            return SupportsButtonRebind ||
+                   row == InputModeRow ||
+                   row == SaveRow ||
+                   row == CloseRow ||
+                   row == PerformanceRow ||
+                   row == FrameStatsRow;
         }
 
         private void BeginInputModeSelectionFromSettings()
@@ -604,6 +1325,39 @@ namespace CoffeeGame.UI
             GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * Mathf.Clamp01(normalized), rect.height - 4f), Texture2D.whiteTexture);
             GUI.color = previous;
             GUI.Label(rect, label, GUI.skin.label);
+        }
+
+        private void OnDestroy()
+        {
+            if (modernView != null)
+            {
+                modernView.PauseRequested -= HandlePointerPause;
+                modernView.ResumeRequested -= ResumeFromPauseMenu;
+                modernView.StartRequested -= run.StartNewRun;
+                modernView.TabRequested -= HandlePointerTab;
+                modernView.RebindRequested -= BeginRebind;
+                modernView.InputModeSelectionRequested -= BeginInputModeSelectionFromPause;
+                modernView.PerformancePresetRequested -= HandlePerformancePreset;
+                modernView.FrameStatsToggleRequested -= HandleFrameStatsToggle;
+                modernView.SaveRequested -= HandleManualSave;
+                modernView.ResetBindingsRequested -= HandleResetBindings;
+                modernView.CancelRebindRequested -= input.CancelInteractiveRebind;
+                modernView.CoffeeLearningPrimaryRequested -= HandleCoffeeLearningPrimary;
+                modernView.CoffeeLearningDisconnectRequested -= HandleCoffeeLearningDisconnect;
+                modernView.CoffeeLearningCancelRequested -= HandleCoffeeLearningCancel;
+                modernView.RivalAnswerChanged -= HandleRivalAnswerChanged;
+                modernView.RivalPrimaryRequested -= HandleRivalPrimary;
+                modernView.RivalSecondaryRequested -= HandleRivalSecondary;
+                modernView.RivalContinueRequested -= HandleRivalContinue;
+            }
+            coffeeLearningConnection?.CancelPendingOrActiveAction();
+            rivalLearningQuestion?.Dispose();
+            rivalLearningQuestion = null;
+            if (run != null && run.Progression != null)
+            {
+                run.StateChanged -= HandleRunStateChanged;
+                run.Progression.Changed -= HandleProgressionChanged;
+            }
         }
 
         private void EnsureStyles()

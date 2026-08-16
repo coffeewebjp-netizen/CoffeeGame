@@ -71,7 +71,7 @@ namespace CoffeeGame.Combat
 
         private void Update()
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += Time.deltaTime;
             if (!strikeVisualEmitted && elapsed >= IaiCinematicTiming.StrikeTime)
             {
                 strikeVisualEmitted = true;

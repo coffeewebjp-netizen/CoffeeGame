@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace CoffeeGame.Domain
 {
@@ -61,7 +62,8 @@ namespace CoffeeGame.Domain
         [SerializeField, Min(0)] private int slimeRewardExperience = 1;
         [SerializeField, Min(0)] private int slimeRewardGold = 1;
         [SerializeField, Min(0)] private int slimeRewardJelly = 1;
-        [SerializeField, Min(1)] private int goalKills = 5;
+        [FormerlySerializedAs("goalKills")]
+        [SerializeField, Min(1)] private int rivalEncounterIntervalKills = 5;
 
         public int PlayerMaxHealth => playerMaxHealth;
         public int PlayerMaxMp => playerMaxMagic;
@@ -97,7 +99,7 @@ namespace CoffeeGame.Domain
         public float SlimeAttackRange => slimeAttackRange;
         public float SlimeAttackInterval => slimeAttackInterval;
         public float SlimeWindupSeconds => slimeAttackWindup;
-        public int GoalKills => goalKills;
+        public int RivalEncounterIntervalKills => rivalEncounterIntervalKills;
         public RewardBundle SlimeReward => new RewardBundle(
             slimeRewardExperience,
             slimeRewardGold,
@@ -154,7 +156,7 @@ namespace CoffeeGame.Domain
             RequireNonNegative(errors, nameof(slimeRewardExperience), slimeRewardExperience);
             RequireNonNegative(errors, nameof(slimeRewardGold), slimeRewardGold);
             RequireNonNegative(errors, nameof(slimeRewardJelly), slimeRewardJelly);
-            RequirePositive(errors, nameof(goalKills), goalKills);
+            RequirePositive(errors, nameof(rivalEncounterIntervalKills), rivalEncounterIntervalKills);
 
             if (runSpeed < walkSpeed)
             {
@@ -223,7 +225,7 @@ namespace CoffeeGame.Domain
             slimeRewardExperience = 1;
             slimeRewardGold = 1;
             slimeRewardJelly = 1;
-            goalKills = 5;
+            rivalEncounterIntervalKills = 5;
         }
 
         private static void RequirePositive(List<string> errors, string fieldName, int value)

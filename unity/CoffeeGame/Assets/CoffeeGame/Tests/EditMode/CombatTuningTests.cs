@@ -39,7 +39,7 @@ namespace CoffeeGame.Domain.Tests
             Assert.That(tuning.MagicMpRegenPerSecond, Is.EqualTo(0.45f).Within(0.0001f));
             Assert.That(tuning.SlimeSpeed, Is.EqualTo(0.68f).Within(0.0001f));
             Assert.That(tuning.SlimeAttackRange, Is.EqualTo(1.6f).Within(0.0001f));
-            Assert.That(tuning.GoalKills, Is.EqualTo(5));
+            Assert.That(tuning.RivalEncounterIntervalKills, Is.EqualTo(5));
             Assert.That(tuning.SlimeReward, Is.EqualTo(new RewardBundle(1, 1, 1)));
             Assert.That(tuning.IsValid, Is.True);
         }

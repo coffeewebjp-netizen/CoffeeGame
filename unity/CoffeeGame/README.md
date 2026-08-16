@@ -8,7 +8,7 @@ and CoffeeLearning integration do not depend on either visual implementation.
 
 ## Required editor
 
-- Unity `6000.3.21f1` (Unity 6.3 LTS)
+- Unity `6000.5.7f1`
 - Universal 3D / URP
 - Input System 1.20
 - Android Build Support, Android SDK & NDK Tools, and OpenJDK for Android builds
@@ -18,14 +18,14 @@ Open this folder from Unity Hub. On the first successful script import,
 operation is available from `CoffeeGAME > Setup first combat slice`.
 
 If setup reports that it changed input handling, restart the Unity Editor once
-before pressing Play. The project currently uses **Both**: gameplay and controller
-navigation use the new Input System, while the temporary IMGUI diagnostics panel
-keeps legacy mouse-click fallback. This can return to Input System-only when the
-panel is replaced by uGUI/UI Toolkit.
+before pressing Play. The project currently uses **Both**: gameplay, controller
+navigation, and the uGUI combat/pause interface use the new Input System. The
+launch-time input-mode chooser retains a small IMGUI compatibility surface.
 
 ## First milestone
 
-- A 9.6 x 5.4 metre grassland combat boundary in XZ space, with Y used for jump height
+- A 38.4 x 21.6 metre grassland combat boundary in XZ space, with Y used for jump height
+- A continuous scrolling stage organized as a 4 x 4 visual chunk grid; the first slice keeps all chunks loaded and reserves nearby-only streaming for a later performance pass
 - A generated painterly grass floor and distant rolling-hill panorama, kept visual-only outside the existing collision boundary
 - Directional HD-2D heroine and animated HD-2D slime rendered inside the 3D scene
 - Walk, run, jump, sword, air slash, plunge, spin slash, and ice magic
@@ -33,6 +33,9 @@ panel is replaced by uGUI/UI Toolkit.
 - Level 2 after three defeated slimes; result after five
 - Level, EXP, Gold, and materials survive a retry; HP, MP, ST, position, enemies,
   charge state, and projectiles reset with the run
+- A transparent portrait HUD and a true pause menu with Status, Items, System, and Party tabs
+- A two-axis battle camera with 360-degree yaw and safely clamped vertical pitch
+- Versioned local profile persistence with extensible keyed attributes and talent-selected growth
 - Runtime input diagnostics for Steam Controller / standard gamepads
 
 Default controls:
@@ -40,6 +43,8 @@ Default controls:
 | Action | Keyboard | Standard gamepad | Steam Desktop fallback |
 | --- | --- | --- | --- |
 | Move | WASD / arrows | Left stick / D-pad | Stick -> arrows |
+| Rotate camera horizontally | Z / C or hold right mouse and drag horizontally | Right stick X | Z / C |
+| Rotate camera vertically | V / R or hold right mouse and drag vertically | Right stick Y | V / R |
 | Jump | Space | South face button | A -> Enter |
 | Sword | F | Right trigger | RT -> Mouse Left |
 | Iai slash | Q | West face button | X -> PageUp |
@@ -62,9 +67,23 @@ positions the initial cursor; it is never activated automatically. Choose one of
 
 The selection press is release-gated, so the Enter/South press used to choose a
 mode cannot also start the run or trigger a battle action in the same frame. Open
-`ボタン設定` and choose `入力方式を選び直す` to change modes without restarting.
+`システム` and choose `入力方式を選び直す` to change modes without restarting.
 Keyboard/mouse combat bindings are currently fixed; interactive rebinding is
 available only for the Controller/Gamepad and Steam Desktop compatibility modes.
+
+The pause tabs are ordered `ステータス` → `持ち物` → `システム` → `仲間`.
+`システム` contains input-mode selection, battle-button rebinding, reset, a
+manual save command, performance presets, and an FPS-display toggle. Manual save
+writes the player profile and the current button overrides together and reports the
+result in the same panel. Performance defaults to `Keep Current`; Balanced, Smooth,
+and Quality are explicit opt-in presets, and the upper-right FPS/frame-time readout
+can be hidden independently.
+The Status and System surfaces share one persistent scroll area so switching tabs
+does not destroy their viewport. Status enumerates the keyed attribute snapshot and
+derived combat values; System visibly separates controller settings and save actions.
+The permanent scrollbar is draggable and accepts the mouse wheel/touch drag. On
+keyboard or controller, Up/Down scrolls Status, Items, and Party; System keeps
+Up/Down for selectable commands and automatically reveals the selected row.
 
 The settings screen can be completed without a mouse: View/Select opens it,
 Up/Down chooses a row, South confirms, and East normally cancels or closes it. Tab,
@@ -124,14 +143,32 @@ mapping shown above.
 
 ## HD-2D presentation
 
-Runtime loads the manifests below and creates individual sprites from fixed-size
-transparent PNGs. The visual resolves front/side/back relative to the camera,
-mirrors left-facing actions, preserves the final frame of one-shot animations,
-and sorts actors by projected camera depth.
+Runtime loads the manifests below and creates sprites from fixed-size transparent
+PNGs or multi-row atlases. Hero v5 resolves eight camera-relative sectors from five authored
+views (`down`, `downSide`, `side`, `upSide`, `up`) and mirrors the three left-facing
+sectors. A small angular hysteresis prevents diagonal/cardinal flicker. It preserves
+the final frame of one-shot animations and sorts actors by projected camera depth.
+
+The active heroine strips use one 768x768 / 540 PPU / pivot Y 0.0625 scale contract.
+Walk and Run v5 have six frames per authored direction; Jump v5 has four, including
+dedicated 45-degree front-right and rear-right art. Mirroring completes all eight
+runtime directions. Sword v4 has four frames and MagicCharge/MagicRelease v4 have
+three each. The 80 v5 cells are packed into 15 textures (3x2 for Walk/Run and 2x2
+for Jump) instead of loading 80 additional per-frame textures. No action-specific
+or direction-specific PPU compensation is permitted. Fall, Land, AirSlash, Plunge,
+spin, Hurt, and Defeated retain their existing art and use the same direction policy.
+
+Walk plays at 7.5 fps (a 0.8-second six-frame cycle) so opposing foot contacts do
+not flash past. Down and DownRight Run use corrected source sheets whose head and
+torso scale is locked to the matching Walk view. Export applies authored anatomical
+scale multipliers to crouched Run directions instead of stretching every pose to an
+upright 680px height; the runtime still uses the shared PPU/pivot contract rather
+than direction-specific runtime scale compensation.
 
 - `Assets/CoffeeGame/Resources/Art/HD2D/hero-hd2d.json`
 - `Assets/CoffeeGame/Resources/Art/HD2D/slime-hd2d.json`
 - `Assets/CoffeeGame/Resources/Art/HD2D/Hero/Frames`
+- `Assets/CoffeeGame/Resources/Art/HD2D/Hero/Atlases`
 - `Assets/CoffeeGame/Resources/Art/HD2D/Slime/Frames`
 
 The runtime fallback order is HD-2D, rigged 3D model, static sprite, then a
@@ -168,7 +205,10 @@ refreshed without changing gameplay code.
 - `Runtime/Actors`: 3D movement, health, and enemy behaviour
 - `Runtime/Combat`: combat state and projectiles
 - `Runtime/Presentation`: replaceable sprite/model visuals
+- `Runtime/Presentation/StageLayout.cs` owns the stage, actor, camera, and 4 x 4 chunk bounds used by the first scrolling-stage slice
+- `Runtime/Persistence`: versioned local profile JSON and atomic replacement
 - `Runtime/Run`: one-room lifecycle and reward application
+- `Runtime/UI`: safe-area uGUI HUD, pause/status presentation, and menu input coordination
 - `Integration`: CoffeeLearning bridge contract (offline mock for now)
 
 Do not add game rules to `SpriteCharacterVisual` or `ModelCharacterVisual`.

@@ -170,6 +170,8 @@ namespace CoffeeGame.Input
         private InputActionMap _battleMap;
         private InputActionMap _uiMap;
         private InputAction _move;
+        private InputAction _cameraYaw;
+        private InputAction _cameraPitch;
         private InputAction _jump;
         private InputAction _sword;
         private InputAction _special;
@@ -178,6 +180,7 @@ namespace CoffeeGame.Input
         private InputAction _navigate;
         private InputAction _confirm;
         private InputAction _cancel;
+        private InputAction _uiPause;
         private InputAction _battleSettings;
         private InputAction _uiSettings;
         private InputActionRebindingExtensions.RebindingOperation _rebindOperation;
@@ -195,20 +198,45 @@ namespace CoffeeGame.Input
         private InputControl _lastControl;
         private IDisposable _rawButtonSubscription;
         private InputMode _preferredInputMode;
+        private string _selectedBindingGroup = string.Empty;
 
         public Vector2 Move => !_suppressActionsUntilRelease && _move != null ? _move.ReadValue<Vector2>() : Vector2.zero;
+        public float CameraYaw =>
+            !_suppressActionsUntilRelease && _cameraYaw != null ? _cameraYaw.ReadValue<float>() : 0f;
+        public float CameraPitch =>
+            !_suppressActionsUntilRelease && _cameraPitch != null ? _cameraPitch.ReadValue<float>() : 0f;
+        public Vector2 CameraPointerDelta
+        {
+            get
+            {
+                if (_suppressActionsUntilRelease || Context != GameInputContext.Battle)
+                {
+                    return Vector2.zero;
+                }
+
+                Mouse mouse = Mouse.current;
+                return mouse != null && mouse.rightButton.isPressed
+                    ? mouse.delta.ReadValue()
+                    : Vector2.zero;
+            }
+        }
+        public float CameraPointerDeltaX => CameraPointerDelta.x;
         public Vector2 Navigate => !_suppressActionsUntilRelease && _navigate != null ? _navigate.ReadValue<Vector2>() : Vector2.zero;
         public bool JumpPressed => !_suppressActionsUntilRelease && _jump != null && _jump.WasPressedThisFrame();
         public bool SwordPressed => !_suppressActionsUntilRelease && _sword != null && _sword.WasPressedThisFrame();
         public bool SpecialPressed => !_suppressActionsUntilRelease && _special != null && _special.WasPressedThisFrame();
         public bool MagicPressed => !_suppressActionsUntilRelease && _magic != null && _magic.WasPressedThisFrame();
-        public bool PausePressed => !_suppressActionsUntilRelease && _pause != null && _pause.WasPressedThisFrame();
+        public bool PausePressed =>
+            !_suppressActionsUntilRelease &&
+            ((_pause != null && _pause.WasPressedThisFrame()) ||
+             (_uiPause != null && _uiPause.WasPressedThisFrame()));
         public bool ConfirmPressed => !_suppressActionsUntilRelease && _confirm != null && _confirm.WasPressedThisFrame();
         public bool CancelPressed => !_suppressActionsUntilRelease && _cancel != null && _cancel.WasPressedThisFrame();
         public bool SettingsPressed =>
             !_suppressActionsUntilRelease &&
             ((_battleSettings != null && _battleSettings.WasPressedThisFrame()) ||
-             (_uiSettings != null && _uiSettings.WasPressedThisFrame()));
+             (_uiSettings != null && _uiSettings.WasPressedThisFrame()) ||
+             IsAnyGamepadSettingsButtonPressed());
         public bool IsRebinding => _rebindOperation != null || _waitingForRebindButtonRelease;
         public bool IsWaitingForRebindButtonRelease => _waitingForRebindButtonRelease;
         public GameInputSemantic? RebindingSemantic => _rebindSemantic;
@@ -219,6 +247,7 @@ namespace CoffeeGame.Input
         public string LastTriggeredAction { get; private set; } = string.Empty;
         public string LastRebindMessage { get; private set; } = string.Empty;
         public InputDevice LastUsedDevice { get; private set; }
+        public bool LastUsedInputIsGamepad => LastUsedDevice is Gamepad;
         public InputDeviceDiagnostic DeviceDiagnostic { get; private set; } =
             new InputDeviceDiagnostic(null, null, string.Empty, false);
         public string CurrentDeviceDiagnostic => DeviceDiagnostic.ToString();
@@ -307,6 +336,7 @@ namespace CoffeeGame.Input
         {
             if (!IsRebinding)
             {
+                RefreshNativeGamepadProfileRecovery();
                 RefreshContextSwitchReleaseGate();
                 return;
             }
@@ -342,6 +372,35 @@ namespace CoffeeGame.Input
             {
                 _suppressActionsUntilRelease = false;
             }
+        }
+
+        /// <summary>
+        /// Restores the native Gamepad profile when a player intentionally uses a
+        /// connected Gamepad while Keyboard / Mouse is selected. This recovery is
+        /// independent of the currently masked action bindings, so changing to the
+        /// keyboard profile can never strand a still-connected controller.
+        /// </summary>
+        public bool RefreshNativeGamepadProfileRecovery()
+        {
+            EnsureInitialized();
+            if (SelectedInputMode != InputMode.KeyboardMouse ||
+                (Context != GameInputContext.Battle && Context != GameInputContext.UI) ||
+                !HasIntentionalNativeGamepadInput())
+            {
+                return false;
+            }
+
+            _selectedBindingGroup = GamepadGroup;
+            SelectedInputMode = InputMode.ControllerGamepad;
+            _preferredInputMode = InputMode.ControllerGamepad;
+            _actions.bindingMask = Context == GameInputContext.Battle
+                ? InputBinding.MaskByGroup(GamepadGroup)
+                : InputBinding.MaskByGroup(KeyboardGroup + ";" + GamepadGroup);
+            _suppressActionsUntilRelease = true;
+            LastRebindMessage = "Gamepad入力を検出したため、Controller / Gamepadへ切り替えました。";
+            SavePreferredInputModeToPlayerPrefs();
+            InputModeChanged?.Invoke(SelectedInputMode);
+            return true;
         }
 
         private void OnDestroy()
@@ -424,6 +483,7 @@ namespace CoffeeGame.Input
             }
 
             _actions.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            _selectedBindingGroup = bindingGroup;
             SelectedInputMode = mode;
             _preferredInputMode = mode;
             _suppressActionsUntilRelease = true;
@@ -440,6 +500,9 @@ namespace CoffeeGame.Input
         public void EnableBattle()
         {
             EnsureInitialized();
+            _actions.bindingMask = string.IsNullOrWhiteSpace(_selectedBindingGroup)
+                ? null
+                : InputBinding.MaskByGroup(_selectedBindingGroup);
             _uiMap.Disable();
             _battleMap.Enable();
             Context = GameInputContext.Battle;
@@ -464,6 +527,15 @@ namespace CoffeeGame.Input
         {
             EnsureInitialized();
             _battleMap.Disable();
+            // Menus accept both native keyboard and Gamepad so either device can
+            // recover the settings flow. Steam Desktop's synthetic Space=Cancel
+            // binding stays isolated unless that compatibility mode was selected.
+            string uiBindingGroups = KeyboardGroup + ";" + GamepadGroup;
+            if (SelectedInputMode == InputMode.SteamDesktopCompatibility)
+            {
+                uiBindingGroups += ";" + SteamDesktopGroup;
+            }
+            _actions.bindingMask = InputBinding.MaskByGroup(uiBindingGroups);
             _uiMap.Enable();
             Context = GameInputContext.UI;
             _suppressActionsUntilRelease = true;
@@ -488,6 +560,20 @@ namespace CoffeeGame.Input
             _battleMap?.Disable();
             _uiMap?.Disable();
             Context = GameInputContext.None;
+        }
+
+        private static bool IsAnyGamepadSettingsButtonPressed()
+        {
+            for (int index = 0; index < Gamepad.all.Count; index++)
+            {
+                Gamepad gamepad = Gamepad.all[index];
+                if (gamepad != null && gamepad.selectButton.wasPressedThisFrame)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public string GetBindingDisplayString(GameInputSemantic semantic)
@@ -921,6 +1007,12 @@ namespace CoffeeGame.Input
             _move = _battleMap.AddAction("Move", InputActionType.Value);
             _move.expectedControlType = "Vector2";
             AddMovementBindings(_move);
+            _cameraYaw = _battleMap.AddAction("CameraYaw", InputActionType.Value);
+            _cameraYaw.expectedControlType = "Axis";
+            AddCameraYawBindings(_cameraYaw);
+            _cameraPitch = _battleMap.AddAction("CameraPitch", InputActionType.Value);
+            _cameraPitch.expectedControlType = "Axis";
+            AddCameraPitchBindings(_cameraPitch);
             _jump = AddButton(_battleMap, "Jump", "<Keyboard>/space", "<Gamepad>/buttonSouth", "<Keyboard>/enter");
             _sword = AddButton(_battleMap, "Sword", "<Keyboard>/f", "<Gamepad>/rightTrigger", "<Mouse>/leftButton");
             _sword.AddBinding("<Mouse>/leftButton", groups: KeyboardGroup);
@@ -942,6 +1034,7 @@ namespace CoffeeGame.Input
             _cancel.AddBinding("<Keyboard>/escape", groups: MenuFallbackGroups);
             _cancel.AddBinding("<Keyboard>/space", groups: SteamDesktopGroup);
             _cancel.AddBinding("<Gamepad>/buttonEast", groups: GamepadGroup);
+            _uiPause = AddButton(_uiMap, "Pause", "<Keyboard>/escape", "<Gamepad>/start", "<Keyboard>/escape");
             _uiSettings = AddSettingsButton(_uiMap);
 
             SubscribeActions();
@@ -1020,6 +1113,28 @@ namespace CoffeeGame.Input
             action.AddBinding("<Gamepad>/dpad", groups: GamepadGroup);
         }
 
+        private static void AddCameraYawBindings(InputAction action)
+        {
+            var keys = action.AddCompositeBinding("1DAxis");
+            action.ChangeBinding(keys.bindingIndex).WithGroups(MenuFallbackGroups);
+            keys
+                .With("Negative", "<Keyboard>/z", groups: MenuFallbackGroups)
+                .With("Positive", "<Keyboard>/c", groups: MenuFallbackGroups);
+            action.AddBinding("<Gamepad>/rightStick/x", groups: GamepadGroup)
+                .WithProcessor("axisDeadzone(min=0.18,max=0.95)");
+        }
+
+        private static void AddCameraPitchBindings(InputAction action)
+        {
+            var keys = action.AddCompositeBinding("1DAxis");
+            action.ChangeBinding(keys.bindingIndex).WithGroups(MenuFallbackGroups);
+            keys
+                .With("Negative", "<Keyboard>/v", groups: MenuFallbackGroups)
+                .With("Positive", "<Keyboard>/r", groups: MenuFallbackGroups);
+            action.AddBinding("<Gamepad>/rightStick/y", groups: GamepadGroup)
+                .WithProcessor("axisDeadzone(min=0.18,max=0.95)");
+        }
+
         private InputAction ResolveAction(GameInputSemantic semantic)
         {
             return semantic switch
@@ -1040,6 +1155,10 @@ namespace CoffeeGame.Input
         {
             _move.performed += OnMove;
             _move.canceled += OnMove;
+            _cameraYaw.performed += OnCameraYaw;
+            _cameraYaw.canceled += OnCameraYaw;
+            _cameraPitch.performed += OnCameraPitch;
+            _cameraPitch.canceled += OnCameraPitch;
             _navigate.performed += OnNavigate;
             _navigate.canceled += OnNavigate;
             _jump.performed += OnJump;
@@ -1047,6 +1166,7 @@ namespace CoffeeGame.Input
             _special.performed += OnSpecial;
             _magic.performed += OnMagic;
             _pause.performed += OnPause;
+            _uiPause.performed += OnUiPause;
             _confirm.performed += OnConfirm;
             _cancel.performed += OnCancel;
             _battleSettings.performed += OnBattleSettings;
@@ -1062,6 +1182,10 @@ namespace CoffeeGame.Input
 
             _move.performed -= OnMove;
             _move.canceled -= OnMove;
+            _cameraYaw.performed -= OnCameraYaw;
+            _cameraYaw.canceled -= OnCameraYaw;
+            _cameraPitch.performed -= OnCameraPitch;
+            _cameraPitch.canceled -= OnCameraPitch;
             _navigate.performed -= OnNavigate;
             _navigate.canceled -= OnNavigate;
             _jump.performed -= OnJump;
@@ -1069,6 +1193,7 @@ namespace CoffeeGame.Input
             _special.performed -= OnSpecial;
             _magic.performed -= OnMagic;
             _pause.performed -= OnPause;
+            _uiPause.performed -= OnUiPause;
             _confirm.performed -= OnConfirm;
             _cancel.performed -= OnCancel;
             _battleSettings.performed -= OnBattleSettings;
@@ -1079,6 +1204,16 @@ namespace CoffeeGame.Input
         {
             RecordInput(context, "Battle/Move");
             MoveChanged?.Invoke(context.ReadValue<Vector2>());
+        }
+
+        private void OnCameraYaw(InputAction.CallbackContext context)
+        {
+            RecordInput(context, "Battle/CameraYaw");
+        }
+
+        private void OnCameraPitch(InputAction.CallbackContext context)
+        {
+            RecordInput(context, "Battle/CameraPitch");
         }
 
         private void OnJump(InputAction.CallbackContext context)
@@ -1113,6 +1248,12 @@ namespace CoffeeGame.Input
         private void OnPause(InputAction.CallbackContext context)
         {
             RecordInput(context, "Battle/Pause");
+            PauseTriggered?.Invoke();
+        }
+
+        private void OnUiPause(InputAction.CallbackContext context)
+        {
+            RecordInput(context, "UI/Pause");
             PauseTriggered?.Invoke();
         }
 
@@ -1592,6 +1733,28 @@ namespace CoffeeGame.Input
             return false;
         }
 
+        private static bool HasIntentionalNativeGamepadInput()
+        {
+            if (IsAnyGamepadButtonPressed())
+            {
+                return true;
+            }
+
+            const float intentionalStickMagnitude = 0.55f;
+            float thresholdSquared = intentionalStickMagnitude * intentionalStickMagnitude;
+            foreach (Gamepad gamepad in Gamepad.all)
+            {
+                if (gamepad != null &&
+                    (gamepad.leftStick.ReadValue().sqrMagnitude >= thresholdSquared ||
+                     gamepad.rightStick.ReadValue().sqrMagnitude >= thresholdSquared))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool IsAnySteamDesktopButtonPressed()
         {
             Keyboard keyboard = Keyboard.current;
@@ -1599,7 +1762,7 @@ namespace CoffeeGame.Input
             {
                 foreach (KeyControl key in keyboard.allKeys)
                 {
-                    if (key.isPressed)
+                    if (key != null && key.isPressed && !IsIgnorableKeyboardLatchKey(key))
                     {
                         return true;
                     }
@@ -1615,6 +1778,33 @@ namespace CoffeeGame.Input
                     mouse.backButton.isPressed);
         }
 
+        /// <summary>
+        /// Lock and IME latch keys stay "pressed" after Japanese text entry.
+        /// They must not keep the Battle/UI release gate closed.
+        /// </summary>
+        private static bool IsIgnorableKeyboardLatchKey(KeyControl key)
+        {
+            if (key == null)
+            {
+                return true;
+            }
+
+            switch (key.keyCode)
+            {
+                case Key.CapsLock:
+                case Key.NumLock:
+                case Key.ScrollLock:
+                case Key.OEM1:
+                case Key.OEM2:
+                case Key.OEM3:
+                case Key.OEM4:
+                case Key.OEM5:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static bool IsAnyRebindCandidatePressed(string bindingGroup)
         {
             return bindingGroup == SteamDesktopGroup
@@ -1622,7 +1812,25 @@ namespace CoffeeGame.Input
                 : IsAnyGamepadButtonPressed();
         }
 
-        private static bool IsAnyContextSwitchControlActuated()
+        private bool IsAnyContextSwitchControlActuated()
+        {
+            if (IsAnyNativeGamepadControlActuated())
+            {
+                return true;
+            }
+
+            // Native Gamepad battle must ignore leftover keyboard / IME state
+            // from the rival answer editor. Those keys are not battle actions.
+            if (SelectedInputMode == InputMode.ControllerGamepad
+                && Context == GameInputContext.Battle)
+            {
+                return false;
+            }
+
+            return IsAnySteamDesktopButtonPressed();
+        }
+
+        private static bool IsAnyNativeGamepadControlActuated()
         {
             if (IsAnyGamepadButtonPressed())
             {
@@ -1631,14 +1839,15 @@ namespace CoffeeGame.Input
 
             foreach (Gamepad gamepad in Gamepad.all)
             {
-                if (gamepad.leftStick.ReadValue().sqrMagnitude > 0.04f ||
-                    gamepad.rightStick.ReadValue().sqrMagnitude > 0.04f)
+                if (gamepad != null
+                    && (gamepad.leftStick.ReadValue().sqrMagnitude > 0.04f
+                        || gamepad.rightStick.ReadValue().sqrMagnitude > 0.04f))
                 {
                     return true;
                 }
             }
 
-            return IsAnySteamDesktopButtonPressed();
+            return false;
         }
 
         private void ClearRebindState()

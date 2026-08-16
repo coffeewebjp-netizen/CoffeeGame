@@ -18,6 +18,8 @@ namespace CoffeeGame.Actors
         public int Maximum => maxHealth;
         public bool IsAlive => Current > 0;
         public float Normalized => maxHealth <= 0 ? 0f : (float)Current / maxHealth;
+        public float IncomingDamageMultiplier { get; set; } = 1f;
+        public float EvasionChance { get; set; }
 
         public void Initialize(int maximum, float invulnerability = 0f)
         {
@@ -40,13 +42,22 @@ namespace CoffeeGame.Actors
                 return false;
             }
 
-            Current = Mathf.Max(0, Current - damage.Amount);
+            if (EvasionChance > 0f && UnityEngine.Random.value < Mathf.Clamp01(EvasionChance))
+            {
+                return false;
+            }
+
+            int adjustedAmount = Mathf.Max(
+                1,
+                Mathf.RoundToInt(damage.Amount * Mathf.Clamp(IncomingDamageMultiplier, 0.05f, 10f)));
+            var appliedDamage = new DamageInfo(adjustedAmount, damage.Source, damage.HitPoint, damage.Knockback);
+            Current = Mathf.Max(0, Current - adjustedAmount);
             invulnerableUntil = Time.time + invulnerabilitySeconds;
-            Damaged?.Invoke(this, damage);
+            Damaged?.Invoke(this, appliedDamage);
 
             if (Current == 0)
             {
-                Died?.Invoke(this, damage);
+                Died?.Invoke(this, appliedDamage);
             }
             return true;
         }
@@ -70,4 +81,3 @@ namespace CoffeeGame.Actors
         }
     }
 }
-

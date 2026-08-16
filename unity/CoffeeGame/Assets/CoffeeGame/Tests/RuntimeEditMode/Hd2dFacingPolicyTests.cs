@@ -34,6 +34,10 @@ namespace CoffeeGame.Presentation.Tests
         [TestCase(-1f, 0f, Hd2dFacingDirection.Down)]
         [TestCase(0f, 1f, Hd2dFacingDirection.Side)]
         [TestCase(0f, -1f, Hd2dFacingDirection.Side)]
+        [TestCase(1f, 1f, Hd2dFacingDirection.UpSide)]
+        [TestCase(1f, -1f, Hd2dFacingDirection.UpSide)]
+        [TestCase(-1f, 1f, Hd2dFacingDirection.DownSide)]
+        [TestCase(-1f, -1f, Hd2dFacingDirection.DownSide)]
         public void ResolveDirection_SelectsCameraRelativeAxis(
             float forward,
             float side,
@@ -48,13 +52,32 @@ namespace CoffeeGame.Presentation.Tests
         }
 
         [Test]
-        public void ResolveDirection_NearBoundaryRetainsSideOrAxialFamily()
+        public void ResolveDirection_LowerBoundaryUsesHysteresisBetweenAxialAndDiagonal()
         {
             Assert.That(
-                Hd2dFacingPolicy.ResolveDirection(0.72f, 1f, Hd2dFacingDirection.Side),
-                Is.EqualTo(Hd2dFacingDirection.Side));
+                Hd2dFacingPolicy.ResolveDirection(1f, 0.445f, Hd2dFacingDirection.Up),
+                Is.EqualTo(Hd2dFacingDirection.Up));
             Assert.That(
-                Hd2dFacingPolicy.ResolveDirection(0.72f, 1f, Hd2dFacingDirection.Up),
+                Hd2dFacingPolicy.ResolveDirection(1f, 0.445f, Hd2dFacingDirection.UpSide),
+                Is.EqualTo(Hd2dFacingDirection.UpSide));
+        }
+
+        [Test]
+        public void ResolveDirection_UpperBoundaryUsesHysteresisBetweenDiagonalAndSide()
+        {
+            Assert.That(
+                Hd2dFacingPolicy.ResolveDirection(0.445f, 1f, Hd2dFacingDirection.UpSide),
+                Is.EqualTo(Hd2dFacingDirection.UpSide));
+            Assert.That(
+                Hd2dFacingPolicy.ResolveDirection(0.445f, 1f, Hd2dFacingDirection.Side),
+                Is.EqualTo(Hd2dFacingDirection.Side));
+        }
+
+        [Test]
+        public void ResolveLegacyDirection_PreservesThreeViewManifests()
+        {
+            Assert.That(
+                Hd2dFacingPolicy.ResolveLegacyDirection(1f, 1f, Hd2dFacingDirection.Up),
                 Is.EqualTo(Hd2dFacingDirection.Up));
         }
 
@@ -110,11 +133,11 @@ namespace CoffeeGame.Presentation.Tests
         [TestCase(CharacterAction.Sword, -1f, true, false)]
         [TestCase(CharacterAction.AirSlash, 1f, false, true)]
         [TestCase(CharacterAction.AirSlash, -1f, true, false)]
-        public void HeroRightAuthoredAttackArt_PointsAlongGameplayFacing(
+        public void HeroSideArt_PointsAlongGameplayFacingAcrossLegacyIdleAndRightAuthoredActions(
             CharacterAction action,
             float cameraRightAmount,
-            bool expectedLocomotionFlip,
-            bool expectedAttackFlip)
+            bool expectedIdleFlip,
+            bool expectedActionFlip)
         {
             var cameraObject = new GameObject("Facing test camera");
             var actorObject = new GameObject("Facing test actor");
@@ -136,16 +159,16 @@ namespace CoffeeGame.Presentation.Tests
                 visual.SetFacing(gameplayFacing);
                 Assert.That(
                     visual.Renderer.flipX,
-                    Is.EqualTo(expectedLocomotionFlip),
-                    "Locomotion art must retain its image-left authoring contract.");
+                    Is.EqualTo(expectedIdleFlip),
+                    "The existing idle side frame retains its image-left authoring contract.");
 
                 visual.PlayAction(action, 0.34f);
 
                 Assert.That(visual.CurrentAction, Is.EqualTo(action));
                 Assert.That(
                     visual.Renderer.flipX,
-                    Is.EqualTo(expectedAttackFlip),
-                    $"{action} art is authored image-right and must invert the locomotion mirror.");
+                    Is.EqualTo(expectedActionFlip),
+                    $"{action} art is authored image-right and must invert the idle mirror contract.");
 
                 Vector3 localAttackDirection = visual.Renderer.flipX
                     ? Vector3.left
@@ -156,6 +179,37 @@ namespace CoffeeGame.Presentation.Tests
                     Vector3.Dot(worldAttackDirection, gameplayFacing.normalized),
                     Is.GreaterThan(0.999f),
                     "The rendered attack must point along the same direction used by combat targeting.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(actorObject);
+                Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
+        public void RuntimeDiagonalFacing_LoadsAuthoredUpRightAndMirrorsItsLeftCounterpart()
+        {
+            var cameraObject = new GameObject("Diagonal facing test camera");
+            var actorObject = new GameObject("Diagonal facing test actor");
+            var visualObject = new GameObject("Diagonal facing test visual");
+            visualObject.transform.SetParent(actorObject.transform, false);
+
+            try
+            {
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.transform.rotation = Quaternion.identity;
+                var visual = visualObject.AddComponent<DirectionalSpriteCharacterVisual>();
+                Assert.That(visual.TryInitialize("Art/HD2D/hero-hd2d", null, 1f, camera), Is.True);
+                visual.SetLocomotion(CharacterAction.Walk, 0.5f);
+
+                visual.SetFacing(camera.transform.forward + camera.transform.right);
+                Assert.That(visual.Renderer.sprite.name, Does.Contain("hero_walk_up_right_v5"));
+                Assert.That(visual.Renderer.flipX, Is.True);
+
+                visual.SetFacing(camera.transform.forward - camera.transform.right);
+                Assert.That(visual.Renderer.sprite.name, Does.Contain("hero_walk_up_right_v5"));
+                Assert.That(visual.Renderer.flipX, Is.False);
             }
             finally
             {

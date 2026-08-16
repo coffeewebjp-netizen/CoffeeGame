@@ -2,6 +2,7 @@ using System;
 using CoffeeGame.Actors;
 using CoffeeGame.Domain;
 using CoffeeGame.Presentation;
+using CoffeeGame.World;
 using UnityEngine;
 
 namespace CoffeeGame.Enemies
@@ -9,10 +10,6 @@ namespace CoffeeGame.Enemies
     [DisallowMultipleComponent]
     public sealed class SlimeController : MonoBehaviour
     {
-        private const float ArenaMinX = -4.35f;
-        private const float ArenaMaxX = 4.35f;
-        private const float ArenaMinZ = -2.30f;
-        private const float ArenaMaxZ = 2.30f;
         private const float AttackHeightTolerance = 0.72f;
 
         private CombatTuning tuning;
@@ -128,10 +125,7 @@ namespace CoffeeGame.Enemies
 
         private void ClampToArena()
         {
-            Vector3 position = transform.position;
-            position.x = Mathf.Clamp(position.x, ArenaMinX, ArenaMaxX);
-            position.z = Mathf.Clamp(position.z, ArenaMinZ, ArenaMaxZ);
-            transform.position = position;
+            transform.position = StageLayout.ClampActorPosition(transform.position);
         }
 
         private void HandleDamaged(Health _, DamageInfo damage)

@@ -216,10 +216,15 @@ namespace CoffeeGame.Presentation
                 horizontalFacingFlip);
             if (manifest.directional)
             {
-                nextFacing = Hd2dFacingPolicy.ResolveDirection(
-                    forwardAmount,
-                    sideAmount,
-                    facing);
+                nextFacing = manifest.eightDirectional
+                    ? Hd2dFacingPolicy.ResolveDirection(
+                        forwardAmount,
+                        sideAmount,
+                        facing)
+                    : Hd2dFacingPolicy.ResolveLegacyDirection(
+                        forwardAmount,
+                        sideAmount,
+                        facing);
             }
 
             bool directionChanged = nextFacing != facing;
@@ -486,6 +491,28 @@ namespace CoffeeGame.Presentation
             {
                 return exact;
             }
+            if (direction == Hd2dFacingDirection.DownSide)
+            {
+                if (clips.TryGetValue(ClipKey(action, Hd2dFacingDirection.Side), out RuntimeClip downSide))
+                {
+                    return downSide;
+                }
+                if (clips.TryGetValue(ClipKey(action, Hd2dFacingDirection.Down), out RuntimeClip downDiagonal))
+                {
+                    return downDiagonal;
+                }
+            }
+            else if (direction == Hd2dFacingDirection.UpSide)
+            {
+                if (clips.TryGetValue(ClipKey(action, Hd2dFacingDirection.Side), out RuntimeClip upSide))
+                {
+                    return upSide;
+                }
+                if (clips.TryGetValue(ClipKey(action, Hd2dFacingDirection.Up), out RuntimeClip upDiagonal))
+                {
+                    return upDiagonal;
+                }
+            }
             if (clips.TryGetValue(ClipKey(action, Hd2dFacingDirection.Down), out RuntimeClip actionDown))
             {
                 return actionDown;
@@ -540,7 +567,9 @@ namespace CoffeeGame.Presentation
                 // direction could otherwise mask it through fallback.
                 if (!TryLoadDeclaredStrip(action, "all", definition.all, loadedStrips, out error) ||
                     !TryLoadDeclaredStrip(action, "down", definition.down, loadedStrips, out error) ||
+                    !TryLoadDeclaredStrip(action, "downSide", definition.downSide, loadedStrips, out error) ||
                     !TryLoadDeclaredStrip(action, "side", definition.side, loadedStrips, out error) ||
+                    !TryLoadDeclaredStrip(action, "upSide", definition.upSide, loadedStrips, out error) ||
                     !TryLoadDeclaredStrip(action, "up", definition.up, loadedStrips, out error))
                 {
                     return false;
@@ -548,30 +577,52 @@ namespace CoffeeGame.Presentation
 
                 if (manifest.directional)
                 {
-                    if (!TryBuildDirectionalClip(
+                    bool builtCardinals = TryBuildDirectionalClip(
                             action,
                             Hd2dFacingDirection.Down,
                             definition.down ?? definition.all,
                             definition,
                             loadedStrips,
                             loadedClips,
-                            out error) ||
-                        !TryBuildDirectionalClip(
+                            out error) &&
+                        TryBuildDirectionalClip(
                             action,
                             Hd2dFacingDirection.Side,
                             definition.side ?? definition.all,
                             definition,
                             loadedStrips,
                             loadedClips,
-                            out error) ||
-                        !TryBuildDirectionalClip(
+                            out error) &&
+                        TryBuildDirectionalClip(
                             action,
                             Hd2dFacingDirection.Up,
                             definition.up ?? definition.all,
                             definition,
                             loadedStrips,
                             loadedClips,
-                            out error))
+                            out error);
+                    if (!builtCardinals)
+                    {
+                        return false;
+                    }
+
+                    if (manifest.eightDirectional &&
+                        (!TryBuildDirectionalClip(
+                            action,
+                            Hd2dFacingDirection.DownSide,
+                            definition.downSide ?? definition.all,
+                            definition,
+                            loadedStrips,
+                            loadedClips,
+                            out error) ||
+                         !TryBuildDirectionalClip(
+                            action,
+                            Hd2dFacingDirection.UpSide,
+                            definition.upSide ?? definition.all,
+                            definition,
+                            loadedStrips,
+                            loadedClips,
+                            out error)))
                     {
                         return false;
                     }
@@ -579,7 +630,8 @@ namespace CoffeeGame.Presentation
                 else
                 {
                     Hd2dSpriteStripDefinition effectiveStrip = definition.all ??
-                        definition.down ?? definition.side ?? definition.up;
+                        definition.down ?? definition.downSide ?? definition.side ??
+                        definition.upSide ?? definition.up;
                     if (!TryBuildDirectionalClip(
                         action,
                         Hd2dFacingDirection.Down,
@@ -642,13 +694,18 @@ namespace CoffeeGame.Presentation
                 return false;
             }
 
-            bool directionSpecificSideStrip = direction == Hd2dFacingDirection.Side &&
-                definition.side != null && ReferenceEquals(strip, definition.side);
+            bool directionSpecificHorizontalStrip =
+                (direction == Hd2dFacingDirection.DownSide &&
+                    definition.downSide != null && ReferenceEquals(strip, definition.downSide)) ||
+                (direction == Hd2dFacingDirection.Side &&
+                    definition.side != null && ReferenceEquals(strip, definition.side)) ||
+                (direction == Hd2dFacingDirection.UpSide &&
+                    definition.upSide != null && ReferenceEquals(strip, definition.upSide));
             // Non-directional actors historically mirror every clip so their
             // attacks can still point left/right. Directional "all" strips are
             // neutral unless the manifest marks them as horizontal.
             bool usesHorizontalFacing = !manifest.directional ||
-                strip.useHorizontalFacing || directionSpecificSideStrip;
+                strip.useHorizontalFacing || directionSpecificHorizontalStrip;
             loadedClips[ClipKey(action, direction)] = new RuntimeClip(
                 frames,
                 definition.framesPerSecond,
@@ -679,7 +736,10 @@ namespace CoffeeGame.Presentation
                 if (!HasLoadedClip(loadedClips, required, Hd2dFacingDirection.Down) ||
                     (manifest.directional &&
                         (!HasLoadedClip(loadedClips, required, Hd2dFacingDirection.Side) ||
-                         !HasLoadedClip(loadedClips, required, Hd2dFacingDirection.Up))))
+                         !HasLoadedClip(loadedClips, required, Hd2dFacingDirection.Up))) ||
+                    (manifest.directional && manifest.eightDirectional &&
+                        (!HasLoadedClip(loadedClips, required, Hd2dFacingDirection.DownSide) ||
+                         !HasLoadedClip(loadedClips, required, Hd2dFacingDirection.UpSide))))
                 {
                     error = $"required action '{required}' is missing a runtime direction";
                     return false;
@@ -752,10 +812,10 @@ namespace CoffeeGame.Presentation
                 return null;
             }
 
-            int row = strip.rowFromTop;
-            if (row < 0 || row >= rows)
+            if ((strip.frameRows == null || strip.frameRows.Length == 0) &&
+                (strip.rowFromTop < 0 || strip.rowFromTop >= rows))
             {
-                Debug.LogWarning($"HD-2D sheet '{resourcePath}' has invalid row {row}.", this);
+                Debug.LogWarning($"HD-2D sheet '{resourcePath}' has invalid row {strip.rowFromTop}.", this);
                 return null;
             }
 
@@ -769,11 +829,12 @@ namespace CoffeeGame.Presentation
             var frames = new Sprite[frameCount];
             for (int frame = 0; frame < frameCount; frame++)
             {
+                int row = strip.GetRowFromTop(frame);
                 int column = strip.GetColumn(frame);
-                if (column < 0 || column >= columns)
+                if (row < 0 || row >= rows || column < 0 || column >= columns)
                 {
                     Debug.LogWarning(
-                        $"HD-2D sheet '{resourcePath}' has invalid column {column} in row {row}.",
+                        $"HD-2D sheet '{resourcePath}' has invalid cell {row}:{column}.",
                         this);
                     return null;
                 }
@@ -1114,8 +1175,10 @@ namespace CoffeeGame.Presentation
                     spriteTransform.localScale = Vector3.one * (1f + 0.035f * Mathf.Sin(actionElapsed * 24f));
                     break;
                 case CharacterAction.MagicCharge:
-                    spriteTransform.localPosition = baseSpritePosition + Vector3.up * (0.012f * pulse);
-                    spriteTransform.localScale = Vector3.one * (1f + 0.012f * pulse);
+                    // The authored charge frame already has a complete head and
+                    // explicit frame padding. Keep it anchored and at its
+                    // authored scale so the charge pose cannot push the hair
+                    // into a camera crop or introduce a visible scale pop.
                     break;
                 case CharacterAction.SpinRelease:
                     float iaiDirection = spriteRenderer.flipX ? -1f : 1f;
@@ -1174,7 +1237,7 @@ namespace CoffeeGame.Presentation
 
             float frequency = activeState == CharacterAction.Run ? 7.5f : 5f;
             float amplitude = activeState == CharacterAction.Run ? 0.014f : 0.008f;
-            // The authored two-frame cycles now supply the leg motion. Keep
+            // The authored four-frame cycles now supply the leg motion. Keep
             // only a restrained vertical weight shift here so the procedural
             // pose does not fight the alternating contact and passing frames.
             float stride = 0.5f - 0.5f * Mathf.Cos(Time.time * frequency * Mathf.PI * 2f);
@@ -1223,7 +1286,7 @@ namespace CoffeeGame.Presentation
 
         private static int ClipKey(CharacterAction action, Hd2dFacingDirection direction)
         {
-            return ((int)action * 4) + (int)direction;
+            return ((int)action * 8) + (int)direction;
         }
 
         private static string NormalizeResourcePath(string path)

@@ -230,7 +230,8 @@ namespace CoffeeGame.Editor
 
             var desiredPivot = new Vector2(0.5f, 0f);
             TextureImporterPlatformSettings android = importer.GetPlatformTextureSettings("Android");
-            bool changed = !IsSpriteImporterReady(importer, pixelsPerUnit, android);
+            int maxTextureSize = GetHd2dMaxTextureSize(path);
+            bool changed = !IsSpriteImporterReady(importer, pixelsPerUnit, android, maxTextureSize);
 
             var textureSettings = new TextureImporterSettings();
             importer.ReadTextureSettings(textureSettings);
@@ -246,11 +247,12 @@ namespace CoffeeGame.Editor
             importer.filterMode = FilterMode.Bilinear;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.npotScale = TextureImporterNPOTScale.None;
+            importer.maxTextureSize = maxTextureSize;
             importer.sRGBTexture = true;
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
             importer.compressionQuality = 100;
             android.overridden = true;
-            android.maxTextureSize = 2048;
+            android.maxTextureSize = maxTextureSize;
             // Every HD-2D frame uses alpha. ASTC keeps that alpha on Android
             // while avoiding the much larger uncompressed RGBA footprint.
             android.format = TextureImporterFormat.ASTC_6x6;
@@ -281,7 +283,8 @@ namespace CoffeeGame.Editor
                     !IsSpriteImporterReady(
                         importer,
                         GetSpritePixelsPerUnit(path),
-                        importer.GetPlatformTextureSettings("Android")))
+                        importer.GetPlatformTextureSettings("Android"),
+                        GetHd2dMaxTextureSize(path)))
                 {
                     return false;
                 }
@@ -295,7 +298,8 @@ namespace CoffeeGame.Editor
         private static bool IsSpriteImporterReady(
             TextureImporter importer,
             float pixelsPerUnit,
-            TextureImporterPlatformSettings android)
+            TextureImporterPlatformSettings android,
+            int maxTextureSize)
         {
             if (importer == null || android == null)
             {
@@ -315,11 +319,12 @@ namespace CoffeeGame.Editor
                 importer.filterMode == FilterMode.Bilinear &&
                 importer.wrapMode == TextureWrapMode.Clamp &&
                 importer.npotScale == TextureImporterNPOTScale.None &&
+                importer.maxTextureSize == maxTextureSize &&
                 importer.sRGBTexture &&
                 importer.textureCompression == TextureImporterCompression.CompressedHQ &&
                 importer.compressionQuality == 100 &&
                 android.overridden &&
-                android.maxTextureSize == 2048 &&
+                android.maxTextureSize == maxTextureSize &&
                 android.format == TextureImporterFormat.ASTC_6x6 &&
                 android.compressionQuality == 100 &&
                 !android.crunchedCompression;
@@ -336,6 +341,13 @@ namespace CoffeeGame.Editor
                 return 540f;
             }
             return path.Contains("/Slime/", StringComparison.OrdinalIgnoreCase) ? 220f : 360f;
+        }
+
+        private static int GetHd2dMaxTextureSize(string path)
+        {
+            return path.Contains("/HD2D/Hero/Atlases/", StringComparison.OrdinalIgnoreCase)
+                ? 4096
+                : 2048;
         }
 
         private static void ConfigureAudio(string path, bool streaming)

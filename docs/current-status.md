@@ -1,6 +1,6 @@
 # CoffeeGAME 開発状況
 
-更新日: 2026-08-09
+更新日: 2026-08-11
 
 この文書は、CoffeeGAMEの現在のゴール、採用済みの設計、実装済み範囲、実機確認結果、未実装項目を一か所で把握するための引継ぎ資料です。個別仕様の詳細は末尾の関連資料を参照してください。
 
@@ -41,9 +41,11 @@ CoffeeGAMEは、ブラウザ試作からUnity製Windows／Androidアプリへ本
 - MPを使う溜め付き氷魔法
 - スライムの追跡、攻撃予兆、攻撃、被弾、撃破
 - スライム1体ごとのEXP 1、Gold 1、Slime Jelly 1の一度だけの付与
-- 3体撃破でLevel 2、5体撃破でクリア
+- 3体撃破でLevel 2。5体クリアは撤去済み。5体撃破ごとに戦闘を止め、承認済み立ち絵のライバルが直近14日の苦手問題を1問出す。キーボード回答は編集・確認後にCoffeeLearningへ送信し、結果確認または戦闘復帰できる
 - HP、MP、ST、EXP、Gold、素材のHUD
 - リトライ時のProfileとRunの分離
+- ID付き能力値、才能別Level成長、Level／EXP／Gold／素材／才能ポイント／ライバル親密度・仲間状態／受取済み報酬のprofile v2ローカル保存（v1読込移行あり）
+- 力／素早さ／技／運／体力から、攻撃・移動・クリティカル・回避・居合速度・ST・防御を別Calculatorで導出
 
 現在の調整数値は [first-combat-slice.md](first-combat-slice.md) にあります。
 
@@ -51,13 +53,22 @@ CoffeeGAMEは、ブラウザ試作からUnity製Windows／Androidアプリへ本
 
 - 最初の戦闘エリアを、反復する草地床と空・丘・遠い木立の草原背景で表示
 - 草原の遠景は描画専用で、従来の9.6 x 5.4メートルの戦闘境界とジャンプ衝突は維持
-- 主人公21枚、スライム6枚の個別透過PNG
-- 正面／横／背面の方向解決と左右反転
+- 主人公220枚（v5の歩行30／走行30／ジャンプ20を含む）、スライム6枚の個別透過原画。v5は実行時15枚のatlasへ集約
+- 正面／右斜め前／横／右斜め後／背面の5 authored viewと左右反転による8方向解決
+- 22.5度／67.5度境界とhysteresisによるcardinal／diagonal切替のちらつき抑制
+- 768x768、540 PPU、共通pivot／足元契約でaction間・方向間の見かけscaleを統一
+- 歩行6frame、走行6frame、ジャンプ4frame、通常斬り4frame、氷魔法の詠唱3frame／放出3frameを5 authored viewに実装
+- 歩行は7.5fps／0.8秒cycle。下向き・右斜め前走行はWalkと頭／胴体scaleを揃え、近接camera風の拡大を除去
 - 移動、ジャンプ、落下、着地、通常斬り、空中斬り、急降下、居合斬り、魔法、被弾、敗北の表示状態
 - 氷魔法は安全マージン付きの詠唱姿勢から専用の放出姿勢へ遷移し、収束する氷片と飛翔光跡を表示
 - 草原に非衝突の前景草・石、控えめなBloom／色調／ビネットを加え、キャラとVFXの奥行きを強化
 - カメラ奥行きによるSpriteの前後ソート
 - manifest不正や画像欠落時の段階的fallback
+- 左上の透過顔画像付きuGUI HUD
+- 透過全身画像と全能力を表示するポーズ画面（ステータス／持ち物／システム／仲間）。常時見えるscrollbar、mouse wheel／drag／touch、keyboard／controller上下scrollに対応
+- 戦闘中に右Stick／右Mouse dragで水平360度・垂直clamp回転でき、KeyboardではZ／CとV／Rを使える追従カメラ
+- 画面ポーズボタン、safe area、keyboard／Gamepad／pointer／touchのメニュー導線
+- 右上のFPS／frame time表示と、システム画面の現状維持・Balanced・Smooth・Quality描画preset
 
 表示優先順は次のとおりです。
 
@@ -96,6 +107,7 @@ Steamのレイアウト画面に表示される「Aボタン」等はCoffeeGAME�
 | 物理／仮想入力 | CoffeeGAMEの動作 |
 | --- | --- |
 | 左Stick／D-pad | 移動、メニュー選択 |
+| 右Stick | 戦闘カメラを水平360度／垂直clamp回転 |
 | A／South | ジャンプ、メニュー決定 |
 | B／East | メニュー取消。戦闘アクションなし |
 | X／West | 居合斬り |
@@ -105,7 +117,7 @@ Steamのレイアウト画面に表示される「Aボタン」等はCoffeeGAME�
 | View／Select | ボタン設定 |
 | LB／RB | 現在未使用 |
 
-ゲーム内のボタン設定では、Jump、Sword、Special、Magicを再割当できます。同じボタンを指定した場合は既存の動作と交換し、保存値は次回起動でも復元します。
+ポーズ画面の `システム` では、Jump、Sword、Special、Magicを再割当できます。同じボタンを指定した場合は既存の動作と交換し、保存値は次回起動でも復元します。`セーブする` はプレイヤープロフィールと現在のボタン設定をまとめて保存し、結果を同じ画面へ表示します。描画presetは初期値を「現状維持」とし、Balanced（1080p/60fps）、Smooth（native/120fps）、Quality（native/60fps）を明示的に選べます。FPS表示も個別に切り替えられます。
 
 ### Steam Controllerの実測結果
 
@@ -134,11 +146,12 @@ Steamのレイアウト画面に表示される「Aボタン」等はCoffeeGAME�
 - Input System `1.20`
 - Blender `4.5.10 LTS`
 
-### 2026-08-09の最終確認
+### 2026-08-11の最終確認
 
-- Unity EditMode tests: **75 / 75 passed**
-- Windows player build: **Success**
-- HD-2D runtime: heroine／slimeともに初期化成功
+- HD-2D asset validator: **Hero 220 / Slime 6 / Hero atlas 15、contract passed**
+- Unity EditMode tests: **145 / 145 passed**
+- Windows player build: **Success（377,099,288 bytes）**（2026-08-15、日本語IMEのEnterを明示提出から分離、実API成功レスポンス修正、苦手問題typed回答、報酬・親密度・profile v2を含む）
+- Windows player smoke: profileとheroine HD-2D v5の初期化例外なし。下向きRun scale／Walk 7.5fps補正を含む再buildを15秒headless起動し、`HD-2D visual initialized: heroine` を確認。slime resource／manifestはasset validatorとEditMode testsで検証
 - Steam Input: 仮想Xbox 360 Gamepadとして列挙成功
 - Windows実行ファイル: `unity/CoffeeGame/Builds/Windows/CoffeeGAME.exe`
 
@@ -146,7 +159,7 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 
 ## CoffeeLearning連携
 
-連携の境界とデータ契約は設計済みですが、APIとゲーム画面は未実装です。
+contract v1の実HTTP bridge、WindowsのDPAPI資格情報、ブラウザ接続設定、アカウント表示、苦手問題の取得・出題・typed回答確認・送信・pending結果回復、AI判定feedback表示、正解時のGold／EXP／才能ポイント／親密度報酬と仲間化・profile v2永続化まで実装済みです。CoffeeLearning側の正解は通常OKと同じWordの`okCount`加算を結果IDで一度だけ行います。音声入力とAndroid Keystoreは未実装です。
 
 ### CoffeeGAMEからCoffeeLearning
 
@@ -180,7 +193,7 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 ### 優先度が高いもの
 
 - Steam Controllerで最終ボタン配置を試遊し、A／RT／X／Yの役割を確定する
-- HD-2D主人公の顔、頭身、アクション間の見た目差を追加調整する
+- 新しい6／4／3frame animationの遷移速度、斬撃hit timing、魔法effect量を実機試遊で追加調整する
 - 斬撃、居合斬り、氷魔法、被弾の手触りを実プレイで調整する
 - 回避アクションをUnity版へ追加する
 - Android Build Support、SDK、NDK、OpenJDKを導入して実機APKを作る
@@ -197,7 +210,6 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 
 ### アカウントと連携
 
-- version付きProfile save
 - Googleアカウント連携とWindows／Android間のクラウド同期
 - CoffeeLearningのmock bridge
 - CoffeeLearning専用API、認証、日次ポイント受取
@@ -208,7 +220,7 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 2. HD-2Dと戦闘フィードバックを、同じ縦スライスの範囲で調整する
 3. Android toolchainを導入し、早期に開発APKを実機確認する
 4. 回避、敵追加、ドロップ用途を加えて縦スライスを完成させる
-5. Profile saveとGoogleアカウント同期の境界を実装する
+5. ローカルProfileをGoogleアカウント同期へ接続する境界を実装する
 6. CoffeeLearning mockから始め、確定済みの台帳契約へ接続する
 
 ## 主要ファイル
@@ -218,6 +230,7 @@ Unity Hubとbatch Editorを同時に起動すると、異なるUnity Licensing C
 - [roadmap.md](roadmap.md): 実装順
 - [first-combat-slice.md](first-combat-slice.md): 戦闘仕様と調整数値
 - [steam-controller-setup.md](steam-controller-setup.md): Steam Controller設定
+- [player-profile-and-pause-ui.md](player-profile-and-pause-ui.md): 能力値、才能成長、ローカルsave、HUD／ポーズUI契約
 - [coffeelearning-integration.md](coffeelearning-integration.md): CoffeeLearning連携契約
 - [3d-character-pipeline.md](3d-character-pipeline.md): 将来3D化の資産契約
 - [../art/hd2d/README.md](../art/hd2d/README.md): HD-2D素材生成・検証

@@ -15,10 +15,10 @@ namespace CoffeeGame.Run
         InputModeSelection,
         Ready,
         Playing,
+        RivalEncounter,
         Paused,
         InputSettings,
         InputRebinding,
-        Cleared,
         GameOver
     }
 
@@ -52,7 +52,7 @@ namespace CoffeeGame.Run
         public CombatRunMode Mode { get; private set; } = CombatRunMode.Ready;
         public PlayerProgression Progression { get; private set; } = new PlayerProgression();
         public int Kills { get; private set; }
-        public int GoalKills => tuning != null ? tuning.GoalKills : 5;
+        public int RivalEncounterIntervalKills => tuning != null ? tuning.RivalEncounterIntervalKills : 5;
         public string LastEvent { get; private set; } = "A / Enter / Startで開始";
         public Health PlayerHealth => playerHealth;
         public PlayerResources PlayerResources => playerResources;
@@ -129,17 +129,14 @@ namespace CoffeeGame.Run
             spawnSequence = 0;
             resetSlimeSequence?.Invoke();
             Kills = 0;
-            int levelBonus = Progression.Level - 1;
-            playerHealth.Initialize(tuning.PlayerMaxHealth + 4 * levelBonus, 0.68f);
-            playerResources.Initialize(tuning.MaxStamina, tuning.PlayerMaxMp + 2 * levelBonus, tuning.MagicMpRegenPerSecond);
             playerMotor.ResetMotor(new Vector3(-1.6f, 0.05f, 0f));
             playerMotor.CanMove = true;
-            playerCombat.AttackBonus = levelBonus;
+            ApplyProgressionTuning();
             playerCombat.ResetCombat();
 
             Mode = CombatRunMode.Playing;
             input.EnableBattle();
-            LastEvent = "スライムを5体倒そう";
+            LastEvent = "スライムを倒そう";
             audioDirector.StartMusic();
             SpawnNextSlime();
             StateChanged?.Invoke();
@@ -157,7 +154,7 @@ namespace CoffeeGame.Run
                 return;
             }
 
-            if (Mode == CombatRunMode.Ready || Mode == CombatRunMode.Cleared || Mode == CombatRunMode.GameOver)
+            if (Mode == CombatRunMode.Ready || Mode == CombatRunMode.GameOver)
             {
                 if (input.ConfirmPressed)
                 {
@@ -166,13 +163,16 @@ namespace CoffeeGame.Run
                 return;
             }
 
+            if (Mode == CombatRunMode.RivalEncounter)
+            {
+                // The rival question owns explicit edit/confirm/submit input. A held confirm
+                // from combat must never skip the encounter or submit an answer implicitly.
+                return;
+            }
+
             if (Mode == CombatRunMode.Playing && input.PausePressed)
             {
                 Pause();
-            }
-            else if (Mode == CombatRunMode.Paused && input.ConfirmPressed)
-            {
-                Resume();
             }
         }
 
@@ -187,7 +187,7 @@ namespace CoffeeGame.Run
             playerMotor.CanMove = false;
             input.EnableUI();
             Time.timeScale = 0f;
-            LastEvent = "一時停止中 — A / Enter / Startで再開";
+            LastEvent = "一時停止中 — Start / Esc / 取消で再開";
             StateChanged?.Invoke();
         }
 
@@ -371,7 +371,7 @@ namespace CoffeeGame.Run
 
         private void SpawnNextSlime()
         {
-            if (Mode != CombatRunMode.Playing || Kills >= tuning.GoalKills)
+            if (Mode != CombatRunMode.Playing)
             {
                 return;
             }
@@ -380,7 +380,7 @@ namespace CoffeeGame.Run
             string claimId = $"enemy:{runId}:slime:{spawnSequence}";
             currentSlime = spawnSlime(claimId);
             currentSlime.Defeated += HandleSlimeDefeated;
-            LastEvent = $"スライム {Kills + 1}/{tuning.GoalKills}";
+            LastEvent = $"スライム {Kills + 1}";
             StateChanged?.Invoke();
         }
 
@@ -406,25 +406,55 @@ namespace CoffeeGame.Run
             int gainedLevels = Progression.Level - previousLevel;
             if (gainedLevels > 0)
             {
-                playerHealth.IncreaseMaximum(4 * gainedLevels, true);
-                playerResources.IncreaseMagicMaximum(2 * gainedLevels, true);
-                playerHealth.RestoreFull();
-                playerResources.Refill();
-                playerCombat.AttackBonus = Progression.Level - 1;
+                ApplyProgressionTuning();
                 audioDirector.Play(CombatSound.LevelUp, 0.9f);
                 LastEvent = $"LEVEL UP!  Lv.{Progression.Level}";
             }
 
             currentSlime.Defeated -= HandleSlimeDefeated;
-            if (Kills >= tuning.GoalKills)
-            {
-                StartCoroutine(FinishAfterDelay(slime));
-            }
-            else
-            {
-                spawnRoutine = StartCoroutine(RespawnAfterDelay(slime));
-            }
+            spawnRoutine = IsRivalEncounterMilestone(Kills, RivalEncounterIntervalKills)
+                ? StartCoroutine(EnterRivalEncounterAfterDelay(slime))
+                : StartCoroutine(RespawnAfterDelay(slime));
             StateChanged?.Invoke();
+        }
+
+        public static bool IsRivalEncounterMilestone(int kills, int intervalKills)
+        {
+            return kills > 0 && intervalKills > 0 && kills % intervalKills == 0;
+        }
+
+        public void ContinueAfterRivalEncounter()
+        {
+            if (Mode != CombatRunMode.RivalEncounter)
+            {
+                return;
+            }
+
+            Time.timeScale = 1f;
+            Mode = CombatRunMode.Playing;
+            playerMotor.CanMove = true;
+            input.EnableBattle();
+            LastEvent = "ライバルは次の勝負を予告して去っていった";
+            SpawnNextSlime();
+            StateChanged?.Invoke();
+        }
+
+        private void ApplyProgressionTuning()
+        {
+            int levelBonus = Progression.Level - 1;
+            PlayerDerivedStats derived = PlayerDerivedStatCalculator.Calculate(Progression.Status);
+            playerHealth.Initialize(tuning.PlayerMaxHealth + 4 * levelBonus, 0.68f);
+            playerHealth.IncomingDamageMultiplier = derived.IncomingDamageMultiplier;
+            playerHealth.EvasionChance = derived.EvasionChance;
+            playerResources.Initialize(
+                tuning.MaxStamina * derived.MaxStaminaMultiplier,
+                tuning.PlayerMaxMp + 2 * levelBonus,
+                tuning.MagicMpRegenPerSecond);
+            playerMotor.SpeedMultiplier = derived.MovementSpeedMultiplier;
+            playerCombat.AttackBonus = levelBonus;
+            playerCombat.AttackMultiplier = derived.AttackMultiplier;
+            playerCombat.CriticalChance = derived.CriticalChance;
+            playerCombat.SpecialChargeSpeedMultiplier = derived.SpecialChargeSpeedMultiplier;
         }
 
         private IEnumerator RespawnAfterDelay(SlimeController defeated)
@@ -439,20 +469,27 @@ namespace CoffeeGame.Run
             SpawnNextSlime();
         }
 
-        private IEnumerator FinishAfterDelay(SlimeController defeated)
+        private IEnumerator EnterRivalEncounterAfterDelay(SlimeController defeated)
         {
-            yield return new WaitForSeconds(0.52f);
+            yield return new WaitForSeconds(0.58f);
             if (defeated != null)
             {
                 Destroy(defeated.gameObject);
             }
             currentSlime = null;
-            Mode = CombatRunMode.Cleared;
+            spawnRoutine = null;
+
+            if (Mode != CombatRunMode.Playing)
+            {
+                yield break;
+            }
+
+            Mode = CombatRunMode.RivalEncounter;
             playerMotor.CanMove = false;
             playerCombat.CancelPendingActions();
             input.EnableUI();
-            audioDirector.Play(CombatSound.Victory, 1f);
-            LastEvent = "CLEAR — A / Enter / Startで再挑戦";
+            Time.timeScale = 0f;
+            LastEvent = "ライバルが現れた — 苦手問題に挑戦";
             StateChanged?.Invoke();
         }
 

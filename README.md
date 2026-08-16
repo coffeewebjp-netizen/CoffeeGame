@@ -24,7 +24,7 @@ HD-2D directional sprite
 - 通常斬り、空中斬り、急降下攻撃
 - 溜め付き回転斬り、溜め付き氷魔法
 - スライム1体につきEXP 1、Gold 1、Slime Jelly 1
-- 3体でLevel 2、5体でクリア
+- 3体でLevel 2。クリア条件は一時撤去し、5体撃破ごとに最初のライバル登場画面へ移行
 - WindowsのSteam ControllerとAndroidを想定した論理入力
 - BGM、刀・風切り・魔法・戦闘効果音
 
@@ -55,10 +55,12 @@ HD-2D directional sprite
 HD-2D素材の一覧は次で確認できます。
 
 - `art/hd2d/previews/hero-frames-v1.png`
+- `art/hd2d/previews/hero-animation-v4.png`
+- `art/hd2d/previews/hero-animation-v5.png`
 - `art/hd2d/previews/slime-frames-v1.png`
 
 Unityの起動方法と入力仕様は`unity/CoffeeGame/README.md`、画像の生成・再出力方法は`art/hd2d/README.md`を参照してください。
 
 現在の実装済み範囲、検証結果、Steam Controllerの実測、未実装項目は`docs/current-status.md`に集約しています。
 
-このPCではUnity Hubとbatch Editorを同時に起動すると`Unity.Licensing.Client.exe`が競合することがあります。Hubを閉じ、Unityプロセスを一本だけ起動する条件では、EditModeテスト75件とWindowsビルドを完走できています。
+このPCではUnity Hubとbatch Editorを同時に起動すると`Unity.Licensing.Client.exe`が競合することがあります。Hubを閉じ、Unityプロセスを一本だけ起動する条件では、EditModeテスト145件とWindowsビルドを完走できています。

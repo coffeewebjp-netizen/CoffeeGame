@@ -30,6 +30,7 @@ namespace CoffeeGame.Combat
         private AudioDirector audioDirector;
         private ChargeKind chargeKind;
         private float chargeRemaining;
+        private float activeChargeDuration;
         private float attackCooldown;
         private bool airSlashUsed;
         private bool plungeWasActive;
@@ -37,6 +38,9 @@ namespace CoffeeGame.Combat
         private GameObject activeIaiEffect;
 
         public int AttackBonus { get; set; }
+        public float AttackMultiplier { get; set; } = 1f;
+        public float CriticalChance { get; set; }
+        public float SpecialChargeSpeedMultiplier { get; set; } = 1f;
         public bool IsCharging => chargeKind != ChargeKind.None;
         public float ChargeNormalized { get; private set; }
         public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? "氷魔法" : string.Empty;
@@ -66,6 +70,7 @@ namespace CoffeeGame.Combat
             CancelPendingActions();
             chargeKind = ChargeKind.None;
             chargeRemaining = 0f;
+            activeChargeDuration = 0f;
             attackCooldown = 0f;
             airSlashUsed = false;
             plungeWasActive = false;
@@ -86,6 +91,7 @@ namespace CoffeeGame.Combat
             }
             chargeKind = ChargeKind.None;
             chargeRemaining = 0f;
+            activeChargeDuration = 0f;
             ChargeNormalized = 0f;
             for (int index = activeProjectiles.Count - 1; index >= 0; index--)
             {
@@ -155,7 +161,7 @@ namespace CoffeeGame.Combat
             }
 
             bool airborne = !motor.IsGrounded;
-            int damage = (airborne ? tuning.AirSlashDamage : tuning.SwordDamage) + AttackBonus;
+            int damage = CalculateDamage(airborne ? tuning.AirSlashDamage : tuning.SwordDamage);
             float range = airborne ? tuning.AirSlashRange : tuning.SwordRange;
             attackCooldown = tuning.SwordCooldown;
             visual?.PlayAction(airborne ? CharacterAction.AirSlash : CharacterAction.Sword, tuning.SwordCooldown);
@@ -184,10 +190,11 @@ namespace CoffeeGame.Combat
             }
 
             chargeKind = ChargeKind.Special;
-            chargeRemaining = tuning.SpecialChargeSeconds;
+            activeChargeDuration = tuning.SpecialChargeSeconds / Mathf.Clamp(SpecialChargeSpeedMultiplier, 0.2f, 10f);
+            chargeRemaining = activeChargeDuration;
             ChargeNormalized = 0f;
             motor.MovementScale = 0.15f;
-            visual?.PlayAction(CharacterAction.SpinCharge, tuning.SpecialChargeSeconds);
+            visual?.PlayAction(CharacterAction.SpinCharge, activeChargeDuration);
             audioDirector?.Play(CombatSound.SpinCharge, 0.55f);
         }
 
@@ -199,7 +206,8 @@ namespace CoffeeGame.Combat
             }
 
             chargeKind = ChargeKind.Magic;
-            chargeRemaining = tuning.MagicChargeSeconds;
+            activeChargeDuration = tuning.MagicChargeSeconds;
+            chargeRemaining = activeChargeDuration;
             ChargeNormalized = 0f;
             motor.MovementScale = 0.22f;
             visual?.PlayAction(CharacterAction.MagicCharge, tuning.MagicChargeSeconds);
@@ -209,7 +217,7 @@ namespace CoffeeGame.Combat
 
         private void TickCharge(float deltaTime)
         {
-            float duration = chargeKind == ChargeKind.Special ? tuning.SpecialChargeSeconds : tuning.MagicChargeSeconds;
+            float duration = activeChargeDuration;
             chargeRemaining = Mathf.Max(0f, chargeRemaining - deltaTime);
             ChargeNormalized = duration <= 0f ? 1f : 1f - chargeRemaining / duration;
             if (chargeRemaining > 0f)
@@ -220,6 +228,7 @@ namespace CoffeeGame.Combat
             ChargeKind completed = chargeKind;
             chargeKind = ChargeKind.None;
             ChargeNormalized = 0f;
+            activeChargeDuration = 0f;
             motor.MovementScale = 1f;
 
             if (completed == ChargeKind.Special)
@@ -246,15 +255,15 @@ namespace CoffeeGame.Combat
 
         private IEnumerator ResolveIaiStrike()
         {
-            yield return new WaitForSecondsRealtime(IaiCinematicTiming.StrikeTime);
+            yield return new WaitForSeconds(IaiCinematicTiming.StrikeTime);
             int hitCount = DamageTargets(
                 tuning.SpecialRange,
-                tuning.SpecialDamage + AttackBonus,
+                CalculateDamage(tuning.SpecialDamage),
                 true,
                 false);
             audioDirector?.Play(CombatSound.SpinRelease, hitCount > 0 ? 1f : 0.72f);
 
-            yield return new WaitForSecondsRealtime(
+            yield return new WaitForSeconds(
                 IaiCinematicTiming.Duration - IaiCinematicTiming.StrikeTime);
             if (motor != null)
             {
@@ -271,7 +280,7 @@ namespace CoffeeGame.Combat
             var projectileObject = new GameObject("Ice bolt");
             projectileObject.transform.position = transform.position + Vector3.up * 0.72f + motor.Facing * 0.38f;
             IceProjectile projectile = projectileObject.AddComponent<IceProjectile>();
-            projectile.Initialize(motor.Facing, tuning.MagicDamage + AttackBonus, tuning.MagicProjectileSpeed, gameObject);
+            projectile.Initialize(motor.Facing, CalculateDamage(tuning.MagicDamage), tuning.MagicProjectileSpeed, gameObject);
             projectile.Destroyed += HandleProjectileDestroyed;
             activeProjectiles.Add(projectile);
             audioDirector?.Play(CombatSound.IceRelease, 0.92f);
@@ -308,6 +317,18 @@ namespace CoffeeGame.Combat
             return hitCount;
         }
 
+        private int CalculateDamage(int baseDamage)
+        {
+            int damage = Mathf.Max(
+                1,
+                Mathf.RoundToInt((baseDamage + AttackBonus) * Mathf.Clamp(AttackMultiplier, 0.2f, 10f)));
+            if (CriticalChance > 0f && UnityEngine.Random.value < Mathf.Clamp01(CriticalChance))
+            {
+                damage = Mathf.Max(1, Mathf.RoundToInt(damage * 1.5f));
+            }
+            return damage;
+        }
+
         private void HandlePlungeStarted()
         {
             plungeWasActive = true;
@@ -322,7 +343,7 @@ namespace CoffeeGame.Combat
             }
 
             plungeWasActive = false;
-            int hitCount = DamageTargets(tuning.PlungeRadius, tuning.PlungeDamage + AttackBonus, true, false);
+            int hitCount = DamageTargets(tuning.PlungeRadius, CalculateDamage(tuning.PlungeDamage), true, false);
             audioDirector?.Play(hitCount > 0 ? CombatSound.SwordHit : CombatSound.Impact, hitCount > 0 ? 1f : 0.7f);
             CombatVfxFactory.SpawnRing(position, tuning.PlungeRadius, new Color(0.8f, 0.9f, 1f), 0.34f);
         }

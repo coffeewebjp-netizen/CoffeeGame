@@ -5,9 +5,12 @@ using CoffeeGame.Combat;
 using CoffeeGame.Domain;
 using CoffeeGame.Enemies;
 using CoffeeGame.Input;
+using CoffeeGame.Integration;
+using CoffeeGame.Persistence;
 using CoffeeGame.Presentation;
 using CoffeeGame.Run;
 using CoffeeGame.UI;
+using CoffeeGame.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -39,6 +42,7 @@ namespace CoffeeGame.Bootstrap
             new Vector3(2.25f, 0.05f, -1.15f),
             new Vector3(0.95f, 0.05f, 0.75f)
         };
+        private static readonly ILearningBridge UnavailableLearningBridge = new NullLearningBridge();
 
         [SerializeField] private CharacterVisualBackend visualBackend = CharacterVisualBackend.Hd2d;
 
@@ -48,6 +52,10 @@ namespace CoffeeGame.Bootstrap
         private Health playerHealth;
         private int slimeSpawnIndex;
         private PlayerProgression sessionProgression;
+        private PlayerProfileStore profileStore;
+        private CoffeeLearningConnectionPresenter coffeeLearningConnection;
+
+        public ILearningBridge LearningBridge => coffeeLearningConnection?.LearningBridge ?? UnavailableLearningBridge;
 
         private void Awake()
         {
@@ -58,6 +66,23 @@ namespace CoffeeGame.Bootstrap
             }
 
             BuildCombatSlice();
+        }
+
+        private void OnApplicationQuit()
+        {
+            coffeeLearningConnection?.CancelPendingOrActiveAction();
+            SavePlayerProfile();
+        }
+
+        private void OnDestroy()
+        {
+            if (sessionProgression != null)
+            {
+                sessionProgression.Changed -= SavePlayerProfile;
+            }
+
+            coffeeLearningConnection?.Dispose();
+            coffeeLearningConnection = null;
         }
 
         private void BuildCombatSlice()
@@ -78,12 +103,13 @@ namespace CoffeeGame.Bootstrap
             Hd2dScenePresentation.Create(runtimeRoot, sceneCamera);
 
             GameInputReader input = gameObject.AddComponent<GameInputReader>();
+            coffeeLearningConnection = CoffeeLearningConnectionComposition.CreateProduction();
             AudioDirector audioDirector = gameObject.AddComponent<AudioDirector>();
             audioDirector.Initialize();
 
             PlayerParts player = CreatePlayer(input, audioDirector);
             playerHealth = player.Health;
-            sessionProgression ??= new PlayerProgression();
+            EnsurePlayerProfileLoaded();
 
             var runController = gameObject.AddComponent<CombatRunController>();
             runController.Initialize(
@@ -99,10 +125,63 @@ namespace CoffeeGame.Bootstrap
                 () => slimeSpawnIndex = 0);
 
             CombatSliceHud hud = gameObject.AddComponent<CombatSliceHud>();
-            hud.Initialize(runController, input);
+            hud.Initialize(runController, input, SavePlayerProfileManually, coffeeLearningConnection);
+            _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
+            cameraRig.SetBounds(
+                StageLayout.CameraMinX,
+                StageLayout.CameraMaxX,
+                StageLayout.CameraMinZ,
+                StageLayout.CameraMaxZ);
+            CameraOrbitInputDriver orbitInput = sceneCamera.gameObject.AddComponent<CameraOrbitInputDriver>();
+            orbitInput.Initialize(cameraRig, input);
+        }
+
+        private void EnsurePlayerProfileLoaded()
+        {
+            if (sessionProgression != null)
+            {
+                return;
+            }
+
+            profileStore = new PlayerProfileStore();
+            sessionProgression = profileStore.LoadOrCreate(out string message);
+            sessionProgression.Changed += SavePlayerProfile;
+            Debug.Log($"CoffeeGAME profile: {message}");
+        }
+
+        private void SavePlayerProfile()
+        {
+            if (!TrySavePlayerProfile(out string message))
+            {
+                Debug.LogWarning($"CoffeeGAME profile: {message}");
+            }
+        }
+
+        private string SavePlayerProfileManually()
+        {
+            bool saved = TrySavePlayerProfile(out string message);
+            if (saved)
+            {
+                Debug.Log($"CoffeeGAME profile: {message}");
+            }
+            else
+            {
+                Debug.LogWarning($"CoffeeGAME profile: {message}");
+            }
+            return message;
+        }
+
+        private bool TrySavePlayerProfile(out string message)
+        {
+            if (profileStore == null || sessionProgression == null)
+            {
+                message = "プロフィール保存がまだ初期化されていません。";
+                return false;
+            }
+            return profileStore.TrySave(sessionProgression, out message);
         }
 
         private Camera CreateCamera()
@@ -172,14 +251,30 @@ namespace CoffeeGame.Bootstrap
         private void CreateGrasslandArena()
         {
             Material floorMaterial = GrasslandArenaVisuals.CreateGroundMaterial();
-            CreateCube("Grassland ground", new Vector3(0f, -0.12f, 1.5f), new Vector3(14f, 0.24f, 11f), floorMaterial);
+            CreateCube(
+                "Grassland ground",
+                new Vector3(0f, -0.12f, 0f),
+                new Vector3(StageLayout.Width, 0.24f, StageLayout.Depth),
+                floorMaterial);
             GrasslandArenaVisuals.CreateBackdrop(runtimeRoot);
             GrasslandArenaVisuals.CreateDepthAccents(runtimeRoot);
 
-            CreateInvisibleBoundary("North jump boundary", new Vector3(0f, 1.5f, 2.78f), new Vector3(9.8f, 3f, 0.22f));
-            CreateInvisibleBoundary("South jump boundary", new Vector3(0f, 1.5f, -2.78f), new Vector3(9.8f, 3f, 0.22f));
-            CreateInvisibleBoundary("East jump boundary", new Vector3(4.88f, 1.5f, 0f), new Vector3(0.22f, 3f, 5.4f));
-            CreateInvisibleBoundary("West jump boundary", new Vector3(-4.88f, 1.5f, 0f), new Vector3(0.22f, 3f, 5.4f));
+            CreateInvisibleBoundary(
+                "North jump boundary",
+                new Vector3(0f, 1.5f, StageLayout.MaxZ),
+                new Vector3(StageLayout.Width, 3f, 0.22f));
+            CreateInvisibleBoundary(
+                "South jump boundary",
+                new Vector3(0f, 1.5f, StageLayout.MinZ),
+                new Vector3(StageLayout.Width, 3f, 0.22f));
+            CreateInvisibleBoundary(
+                "East jump boundary",
+                new Vector3(StageLayout.MaxX, 1.5f, 0f),
+                new Vector3(0.22f, 3f, StageLayout.Depth));
+            CreateInvisibleBoundary(
+                "West jump boundary",
+                new Vector3(StageLayout.MinX, 1.5f, 0f),
+                new Vector3(0.22f, 3f, StageLayout.Depth));
         }
 
         private PlayerParts CreatePlayer(GameInputReader input, AudioDirector audioDirector)

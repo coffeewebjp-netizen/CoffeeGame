@@ -15,6 +15,61 @@ using System.Runtime.InteropServices;
 
 public static class Hd2dAlphaBounds
 {
+    public static Rectangle FindAll(Bitmap bitmap, Rectangle search, byte alphaThreshold)
+    {
+        Rectangle imageBounds = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+        search.Intersect(imageBounds);
+        if (search.Width <= 0 || search.Height <= 0)
+            throw new ArgumentOutOfRangeException("search");
+
+        using (Bitmap normalized = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format32bppArgb))
+        {
+            using (Graphics graphics = Graphics.FromImage(normalized))
+            {
+                graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                graphics.DrawImageUnscaled(bitmap, 0, 0);
+            }
+
+            BitmapData data = normalized.LockBits(imageBounds, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            try
+            {
+                int rowBytes = Math.Abs(data.Stride);
+                byte[] row = new byte[rowBytes];
+                int minX = search.Right;
+                int minY = search.Bottom;
+                int maxX = -1;
+                int maxY = -1;
+                for (int y = search.Top; y < search.Bottom; y++)
+                {
+                    Marshal.Copy(IntPtr.Add(data.Scan0, y * data.Stride), row, 0, rowBytes);
+                    for (int x = search.Left; x < search.Right; x++)
+                    {
+                        if (row[x * 4 + 3] <= alphaThreshold)
+                            continue;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+
+                if (maxX < minX || maxY < minY)
+                    throw new InvalidOperationException("The selected cell contains no visible pixels.");
+
+                const int padding = 3;
+                minX = Math.Max(search.Left, minX - padding);
+                minY = Math.Max(search.Top, minY - padding);
+                maxX = Math.Min(search.Right - 1, maxX + padding);
+                maxY = Math.Min(search.Bottom - 1, maxY + padding);
+                return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+            }
+            finally
+            {
+                normalized.UnlockBits(data);
+            }
+        }
+    }
+
     public static Rectangle Find(Bitmap bitmap, Rectangle search, byte alphaThreshold)
     {
         Rectangle imageBounds = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
@@ -289,12 +344,19 @@ function Export-Hd2dFrame {
         [int]$BottomMargin = 44,
         [int]$KeepComponents = 1,
         [switch]$RemoveMagentaSpill,
-        [double]$ScaleOverride = 0
+        [switch]$UseAllComponents,
+        [double]$ScaleOverride = 0,
+        [double]$ScaleMultiplier = 1.0
     )
 
     $source = [System.Drawing.Bitmap]::FromFile($SourcePath)
     try {
-        $visible = [Hd2dAlphaBounds]::Find($source, $SearchRect, 3)
+        $visible = if ($UseAllComponents) {
+            [Hd2dAlphaBounds]::FindAll($source, $SearchRect, 3)
+        }
+        else {
+            [Hd2dAlphaBounds]::Find($source, $SearchRect, 3)
+        }
         $scale = if ($ScaleOverride -gt 0) {
             $ScaleOverride
         }
@@ -303,6 +365,7 @@ function Export-Hd2dFrame {
                 $ContentWidth / [double]$visible.Width,
                 $ContentHeight / [double]$visible.Height)
         }
+        $scale *= [Math]::Max(0.01, $ScaleMultiplier)
         $width = [Math]::Max(1, [int][Math]::Round($visible.Width * $scale))
         $height = [Math]::Max(1, [int][Math]::Round($visible.Height * $scale))
         $x = [int][Math]::Round(($CanvasSize - $width) / 2.0)
@@ -355,12 +418,13 @@ function Export-Hd2dContactSheet {
     param(
         [Parameter(Mandatory)] [string]$InputDirectory,
         [Parameter(Mandatory)] [string]$OutputPath,
+        [string]$Filter = "*.png",
         [int]$Columns = 5,
         [int]$CellWidth = 240,
         [int]$CellHeight = 250
     )
 
-    $files = @(Get-ChildItem -LiteralPath $InputDirectory -Filter "*.png" | Sort-Object Name)
+    $files = @(Get-ChildItem -LiteralPath $InputDirectory -Filter $Filter | Sort-Object Name)
     if ($files.Count -eq 0) { return }
 
     $rows = [int][Math]::Ceiling($files.Count / [double]$Columns)
@@ -420,10 +484,134 @@ function Export-Hd2dContactSheet {
     }
 }
 
+function Export-Hd2dGeneratedGrid {
+    param(
+        [Parameter(Mandatory)] [string]$SourcePath,
+        [Parameter(Mandatory)] [int]$Columns,
+        [Parameter(Mandatory)] [int]$Rows,
+        [Parameter(Mandatory)] [string[]]$FrameNames,
+        [Parameter(Mandatory)] [string]$OutputDirectory,
+        [int]$HorizontalCellInset = 0,
+        [int]$VerticalCellInset = 0,
+        [int]$OuterInset = 0,
+        [hashtable]$FrameInsets = $null,
+        [switch]$UseAllComponents,
+        [int]$KeepComponents = 4,
+        [double]$ScaleMultiplier = 1.0
+    )
+
+    if (-not (Test-Path -LiteralPath $SourcePath)) {
+        throw "Generated source sheet is missing: $SourcePath"
+    }
+    if ($FrameNames.Count -ne $Columns * $Rows) {
+        throw "Frame name count $($FrameNames.Count) does not match the $Columns x $Rows grid for $SourcePath."
+    }
+
+    $image = [System.Drawing.Image]::FromFile($SourcePath)
+    try {
+        if (($image.Width % $Columns) -ne 0 -or ($image.Height % $Rows) -ne 0) {
+            throw "Source dimensions $($image.Width) x $($image.Height) do not divide evenly into $Columns x ${Rows}: $SourcePath"
+        }
+        $cellWidth = [int]($image.Width / $Columns)
+        $cellHeight = [int]($image.Height / $Rows)
+    }
+    finally {
+        $image.Dispose()
+    }
+
+    for ($index = 0; $index -lt $FrameNames.Count; $index++) {
+        $column = $index % $Columns
+        $row = [int][Math]::Floor($index / $Columns)
+        $leftInset = if ($column -eq 0) { $OuterInset } else { $HorizontalCellInset }
+        $rightInset = if ($column -eq $Columns - 1) { $OuterInset } else { $HorizontalCellInset }
+        $topInset = if ($row -eq 0) { $OuterInset } else { $VerticalCellInset }
+        $bottomInset = if ($row -eq $Rows - 1) { $OuterInset } else { $VerticalCellInset }
+        if ($FrameInsets -ne $null -and $FrameInsets.ContainsKey($FrameNames[$index])) {
+            $customInsets = $FrameInsets[$FrameNames[$index]]
+            $leftInset = $customInsets[0]
+            $topInset = $customInsets[1]
+            $rightInset = $customInsets[2]
+            $bottomInset = $customInsets[3]
+        }
+        $cell = [System.Drawing.Rectangle]::new(
+            $column * $cellWidth + $leftInset,
+            $row * $cellHeight + $topInset,
+            $cellWidth - $leftInset - $rightInset,
+            $cellHeight - $topInset - $bottomInset)
+        $exportArguments = @{
+            SourcePath = $SourcePath
+            SearchRect = $cell
+            OutputPath = (Join-Path $OutputDirectory $FrameNames[$index])
+            KeepComponents = $KeepComponents
+            ScaleMultiplier = $ScaleMultiplier
+        }
+        if ($UseAllComponents) {
+            $exportArguments.UseAllComponents = $true
+        }
+        Export-Hd2dFrame @exportArguments
+    }
+}
+
+function Export-Hd2dFrameAtlas {
+    param(
+        [Parameter(Mandatory)] [string]$InputDirectory,
+        [Parameter(Mandatory)] [string[]]$FrameNames,
+        [Parameter(Mandatory)] [int]$Columns,
+        [Parameter(Mandatory)] [int]$Rows,
+        [Parameter(Mandatory)] [string]$OutputPath,
+        [int]$CellSize = 768
+    )
+
+    if ($FrameNames.Count -ne $Columns * $Rows) {
+        throw "Atlas frame count $($FrameNames.Count) does not match $Columns x $Rows for $OutputPath."
+    }
+
+    $atlas = [System.Drawing.Bitmap]::new(
+        $Columns * $CellSize,
+        $Rows * $CellSize,
+        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    try {
+        $graphics = [System.Drawing.Graphics]::FromImage($atlas)
+        try {
+            $graphics.Clear([System.Drawing.Color]::Transparent)
+            $graphics.CompositingMode = [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
+            for ($index = 0; $index -lt $FrameNames.Count; $index++) {
+                $framePath = Join-Path $InputDirectory $FrameNames[$index]
+                if (-not (Test-Path -LiteralPath $framePath)) {
+                    throw "Atlas source frame is missing: $framePath"
+                }
+                $frame = [System.Drawing.Image]::FromFile($framePath)
+                try {
+                    if ($frame.Width -ne $CellSize -or $frame.Height -ne $CellSize) {
+                        throw "Atlas source must be ${CellSize}x${CellSize}: $framePath"
+                    }
+                    $column = $index % $Columns
+                    $row = [int][Math]::Floor($index / $Columns)
+                    $graphics.DrawImageUnscaled($frame, $column * $CellSize, $row * $CellSize)
+                }
+                finally {
+                    $frame.Dispose()
+                }
+            }
+        }
+        finally {
+            $graphics.Dispose()
+        }
+
+        $directory = Split-Path -Parent $OutputPath
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+        $atlas.Save($OutputPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally {
+        $atlas.Dispose()
+    }
+}
+
 $sheetRoot = Join-Path $WorkspaceRoot "art\hd2d\sheets"
 $referenceRoot = Join-Path $WorkspaceRoot "art\hd2d\reference"
 $heroOutput = Join-Path $WorkspaceRoot "art\hd2d\frames\hero"
 $slimeOutput = Join-Path $WorkspaceRoot "art\hd2d\frames\slime"
+$heroAtlasOutput = Join-Path $WorkspaceRoot "art\hd2d\atlases\hero"
 
 $heroFrames = @(
     @{ Source = (Join-Path $referenceRoot "heroine-turnaround-v1.png"); Rect = [System.Drawing.Rectangle]::new(35, 0, 445, 946); Name = "hero_idle_down.png"; Scale = 0.77 },
@@ -456,10 +644,20 @@ for ($index = 0; $index -lt 6; $index++) {
     $column = $index % 3
     $row = [int][Math]::Floor($index / 3)
     $cell = [System.Drawing.Rectangle]::new($column * 418, $row * 627, 418, 627)
+    $actionCell = $cell
+    $actionScale = 1.285
+    if ($actionNames[$index] -eq "hero_magic_down.png") {
+        # The magic pose's hair starts above the nominal second-row boundary at
+        # y=627. Searching only that grid cell clipped 33 source pixels from the
+        # crown and then padded the already-truncated silhouette. Include the
+        # complete authored pose and scale it with explicit canvas headroom.
+        $actionCell = [System.Drawing.Rectangle]::new(836, 560, 418, 694)
+        $actionScale = 1.22
+    }
     Export-Hd2dFrame -SourcePath (Join-Path $sheetRoot "heroine-actions-v1.png") `
-        -SearchRect $cell -OutputPath (Join-Path $heroOutput $actionNames[$index]) `
+        -SearchRect $actionCell -OutputPath (Join-Path $heroOutput $actionNames[$index]) `
         -KeepComponents $(if ($actionNames[$index] -eq "hero_magic_down.png") { 2 } else { 1 }) `
-        -ScaleOverride 1.285
+        -ScaleOverride $actionScale
     Export-Hd2dFrame -SourcePath (Join-Path $sheetRoot "heroine-states-v1.png") `
         -SearchRect $cell -OutputPath (Join-Path $heroOutput $stateNames[$index]) `
         -ScaleOverride 1.285
@@ -469,6 +667,121 @@ Export-Hd2dFrame -SourcePath (Join-Path $referenceRoot "hero-magic-release-v2.pn
     -SearchRect ([System.Drawing.Rectangle]::new(0, 0, 1254, 1254)) `
     -OutputPath (Join-Path $heroOutput "hero_magic_release_v2.png") `
     -KeepComponents 16
+
+$generatedHeroFrameCount = 0
+$generatedDirections = @("down", "down_right", "right", "up_right", "up")
+$runV5ScaleMultipliers = @{
+    # Preserve body/head scale instead of expanding every crouched Run pose to
+    # the same 680px silhouette height as an upright Walk pose.
+    down = 1.0
+    down_right = 0.84
+    right = 0.72
+    up_right = 0.81
+    up = 0.87
+}
+
+foreach ($direction in $generatedDirections) {
+    $locomotionNames = @()
+    foreach ($action in @("walk", "run")) {
+        for ($frame = 1; $frame -le 4; $frame++) {
+            $locomotionNames += "hero_${action}_${direction}_$('{0:D2}' -f $frame)_v4.png"
+        }
+    }
+    $locomotionFrameInsets = @{}
+    if ($direction -eq "right") {
+        # The final right-facing run pose reaches 28 source pixels into the
+        # previous nominal cell. Expand only this search; dominant-component
+        # selection rejects the neighbouring pose while restoring the boot.
+        $locomotionFrameInsets["hero_run_right_04_v4.png"] = @(-64, 0, 0, 0)
+    }
+    Export-Hd2dGeneratedGrid `
+        -SourcePath (Join-Path $sheetRoot "heroine-locomotion-${direction}-v2.png") `
+        -Columns 4 -Rows 2 -FrameNames $locomotionNames `
+        -OutputDirectory $heroOutput -FrameInsets $locomotionFrameInsets `
+        -KeepComponents 4
+    $generatedHeroFrameCount += $locomotionNames.Count
+
+    $swordNames = @()
+    for ($frame = 1; $frame -le 4; $frame++) {
+        $swordNames += "hero_sword_${direction}_$('{0:D2}' -f $frame)_v4.png"
+    }
+    Export-Hd2dGeneratedGrid `
+        -SourcePath (Join-Path $sheetRoot "heroine-sword-${direction}-v2.png") `
+        -Columns 2 -Rows 2 -FrameNames $swordNames `
+        -OutputDirectory $heroOutput -KeepComponents 4
+    $generatedHeroFrameCount += $swordNames.Count
+
+    $magicNames = @()
+    foreach ($action in @("magic_charge", "magic_release")) {
+        for ($frame = 1; $frame -le 3; $frame++) {
+            $magicNames += "hero_${action}_${direction}_$('{0:D2}' -f $frame)_v4.png"
+        }
+    }
+    $magicFrameInsets = @{}
+    if ($direction -eq "down_right") {
+        # A sliver of the following pose crosses the first release cell's
+        # right border. Keep the complete heroine/crystal but exclude that
+        # unrelated sleeve/boot fragment before all-effect-component export.
+        $magicFrameInsets["hero_magic_release_down_right_01_v4.png"] = @(0, 0, 52, 0)
+    }
+    Export-Hd2dGeneratedGrid `
+        -SourcePath (Join-Path $sheetRoot "heroine-magic-${direction}-v2.png") `
+        -Columns 3 -Rows 2 -FrameNames $magicNames `
+        -OutputDirectory $heroOutput -FrameInsets $magicFrameInsets `
+        -UseAllComponents -KeepComponents 32
+    $generatedHeroFrameCount += $magicNames.Count
+}
+
+# v5 keeps the authored 6-frame gait and 4-frame directional jump as normalized
+# 768px cells, then packs each action/direction into one runtime texture. This
+# raises pose density without returning to one Resources texture per frame.
+foreach ($direction in $generatedDirections) {
+    foreach ($action in @("walk", "run")) {
+        $locomotionV5Names = @()
+        for ($frame = 1; $frame -le 6; $frame++) {
+            $locomotionV5Names += "hero_${action}_${direction}_$('{0:D2}' -f $frame)_v5.png"
+        }
+        # The first frontal v5 Run sheets used close-camera foreshortening,
+        # making the head/torso visibly larger than Idle and Walk. The v4
+        # source edits preserve the same six phases at the Walk camera scale.
+        $sourceVersion = if ($action -eq "run" -and $direction -in @("down", "down_right")) {
+            "v4"
+        }
+        else {
+            "v3"
+        }
+        $scaleMultiplier = if ($action -eq "run") {
+            [double]$runV5ScaleMultipliers[$direction]
+        }
+        else {
+            1.0
+        }
+        Export-Hd2dGeneratedGrid `
+            -SourcePath (Join-Path $sheetRoot "heroine-${action}-${direction}-${sourceVersion}.png") `
+            -Columns 3 -Rows 2 -FrameNames $locomotionV5Names `
+            -OutputDirectory $heroOutput -KeepComponents 4 `
+            -ScaleMultiplier $scaleMultiplier
+        Export-Hd2dFrameAtlas `
+            -InputDirectory $heroOutput -FrameNames $locomotionV5Names `
+            -Columns 3 -Rows 2 `
+            -OutputPath (Join-Path $heroAtlasOutput "hero_${action}_${direction}_v5.png")
+        $generatedHeroFrameCount += $locomotionV5Names.Count
+    }
+
+    $jumpV5Names = @()
+    for ($frame = 1; $frame -le 4; $frame++) {
+        $jumpV5Names += "hero_jump_${direction}_$('{0:D2}' -f $frame)_v5.png"
+    }
+    Export-Hd2dGeneratedGrid `
+        -SourcePath (Join-Path $sheetRoot "heroine-jump-${direction}-v2.png") `
+        -Columns 2 -Rows 2 -FrameNames $jumpV5Names `
+        -OutputDirectory $heroOutput -KeepComponents 4
+    Export-Hd2dFrameAtlas `
+        -InputDirectory $heroOutput -FrameNames $jumpV5Names `
+        -Columns 2 -Rows 2 `
+        -OutputPath (Join-Path $heroAtlasOutput "hero_jump_${direction}_v5.png")
+    $generatedHeroFrameCount += $jumpV5Names.Count
+}
 
 $slimeNames = @(
     "slime_idle.png", "slime_squash.png", "slime_hop.png",
@@ -486,15 +799,26 @@ for ($index = 0; $index -lt 6; $index++) {
 
 $unityHero = Join-Path $WorkspaceRoot "unity\CoffeeGame\Assets\CoffeeGame\Resources\Art\HD2D\Hero\Frames"
 $unitySlime = Join-Path $WorkspaceRoot "unity\CoffeeGame\Assets\CoffeeGame\Resources\Art\HD2D\Slime\Frames"
+$unityHeroAtlases = Join-Path $WorkspaceRoot "unity\CoffeeGame\Assets\CoffeeGame\Resources\Art\HD2D\Hero\Atlases"
 New-Item -ItemType Directory -Path $unityHero -Force | Out-Null
 New-Item -ItemType Directory -Path $unitySlime -Force | Out-Null
-Copy-Item -Path (Join-Path $heroOutput "*.png") -Destination $unityHero -Force
+New-Item -ItemType Directory -Path $unityHeroAtlases -Force | Out-Null
+Get-ChildItem -LiteralPath $heroOutput -Filter "*.png" |
+    Where-Object { $_.Name -notmatch '_v5\.png$' } |
+    Copy-Item -Destination $unityHero -Force
 Copy-Item -Path (Join-Path $slimeOutput "*.png") -Destination $unitySlime -Force
+Copy-Item -Path (Join-Path $heroAtlasOutput "*.png") -Destination $unityHeroAtlases -Force
 
 $previewRoot = Join-Path $WorkspaceRoot "art\hd2d\previews"
 Export-Hd2dContactSheet -InputDirectory $heroOutput `
     -OutputPath (Join-Path $previewRoot "hero-frames-v1.png") -Columns 5
+Export-Hd2dContactSheet -InputDirectory $heroOutput `
+    -OutputPath (Join-Path $previewRoot "hero-animation-v4.png") `
+    -Filter "*_v4.png" -Columns 9 -CellWidth 180 -CellHeight 200
+Export-Hd2dContactSheet -InputDirectory $heroOutput `
+    -OutputPath (Join-Path $previewRoot "hero-animation-v5.png") `
+    -Filter "*_v5.png" -Columns 8 -CellWidth 190 -CellHeight 210
 Export-Hd2dContactSheet -InputDirectory $slimeOutput `
     -OutputPath (Join-Path $previewRoot "slime-frames-v1.png") -Columns 3
 
-Write-Host "Exported $($heroFrames.Count + $actionNames.Count + $stateNames.Count + 1) hero frames and $($slimeNames.Count) slime frames."
+Write-Host "Exported $($heroFrames.Count + $actionNames.Count + $stateNames.Count + 1 + $generatedHeroFrameCount) hero frames and $($slimeNames.Count) slime frames."

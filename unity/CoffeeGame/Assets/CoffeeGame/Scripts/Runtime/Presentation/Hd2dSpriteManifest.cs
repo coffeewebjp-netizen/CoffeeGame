@@ -15,6 +15,7 @@ namespace CoffeeGame.Presentation
         public int version = 1;
         public string characterId;
         public bool directional = true;
+        public bool eightDirectional;
         public string fallbackSpritePath;
         public float pixelsPerUnit = 256f;
         public float pivotX = 0.5f;
@@ -79,6 +80,12 @@ namespace CoffeeGame.Presentation
                 return false;
             }
 
+            if (eightDirectional && !directional)
+            {
+                reason = "eightDirectional requires directional rendering";
+                return false;
+            }
+
             if (!IsFinite(pixelsPerUnit) || pixelsPerUnit <= 1f)
             {
                 reason = "pixelsPerUnit must be greater than one";
@@ -137,7 +144,9 @@ namespace CoffeeGame.Presentation
                 bool hasStrip = false;
                 if (!ValidateStrip(clip.all, action, "all", ref hasStrip, out reason) ||
                     !ValidateStrip(clip.down, action, "down", ref hasStrip, out reason) ||
+                    !ValidateStrip(clip.downSide, action, "downSide", ref hasStrip, out reason) ||
                     !ValidateStrip(clip.side, action, "side", ref hasStrip, out reason) ||
+                    !ValidateStrip(clip.upSide, action, "upSide", ref hasStrip, out reason) ||
                     !ValidateStrip(clip.up, action, "up", ref hasStrip, out reason))
                 {
                     return false;
@@ -149,10 +158,14 @@ namespace CoffeeGame.Presentation
                     return false;
                 }
 
+                bool missingCardinalDirection = clip.down == null || clip.side == null || clip.up == null;
+                bool missingDiagonalDirection = clip.downSide == null || clip.upSide == null;
                 if (directional && clip.all == null &&
-                    (clip.down == null || clip.side == null || clip.up == null))
+                    (missingCardinalDirection || (eightDirectional && missingDiagonalDirection)))
                 {
-                    reason = $"directional action '{action}' must define all, or down/side/up strips";
+                    reason = eightDirectional
+                        ? $"eight-directional action '{action}' must define all, or down/downSide/side/upSide/up strips"
+                        : $"directional action '{action}' must define all, or down/side/up strips";
                     return false;
                 }
             }
@@ -247,19 +260,36 @@ namespace CoffeeGame.Presentation
                 reason = $"{label} must have positive columns and rows";
                 return false;
             }
-            if (strip.rowFromTop < 0 || strip.rowFromTop >= strip.rows)
+            bool hasFrameRows = strip.frameRows != null && strip.frameRows.Length > 0;
+            bool hasFrameColumns = strip.frameColumns != null && strip.frameColumns.Length > 0;
+            if (hasFrameRows && !hasFrameColumns)
+            {
+                reason = $"{label} cannot define frameRows without frameColumns";
+                return false;
+            }
+            if (hasFrameRows && strip.frameRows.Length != strip.frameColumns.Length)
+            {
+                reason = $"{label} frameRows and frameColumns must have the same length";
+                return false;
+            }
+            if (!hasFrameRows && (strip.rowFromTop < 0 || strip.rowFromTop >= strip.rows))
             {
                 reason = $"{label} row {strip.rowFromTop} is outside its {strip.rows} rows";
                 return false;
             }
 
-            if (strip.frameColumns != null && strip.frameColumns.Length > 0)
+            if (hasFrameColumns)
             {
                 for (int i = 0; i < strip.frameColumns.Length; i++)
                 {
                     if (strip.frameColumns[i] < 0 || strip.frameColumns[i] >= strip.columns)
                     {
                         reason = $"{label} frame column {strip.frameColumns[i]} is outside its {strip.columns} columns";
+                        return false;
+                    }
+                    if (hasFrameRows && (strip.frameRows[i] < 0 || strip.frameRows[i] >= strip.rows))
+                    {
+                        reason = $"{label} frame row {strip.frameRows[i]} is outside its {strip.rows} rows";
                         return false;
                     }
                 }
@@ -290,14 +320,18 @@ namespace CoffeeGame.Presentation
         public bool holdLastFrame = true;
         public Hd2dSpriteStripDefinition all;
         public Hd2dSpriteStripDefinition down;
+        public Hd2dSpriteStripDefinition downSide;
         public Hd2dSpriteStripDefinition side;
+        public Hd2dSpriteStripDefinition upSide;
         public Hd2dSpriteStripDefinition up;
 
         public void NormalizeJsonPlaceholders()
         {
             all = NormalizeStrip(all);
             down = NormalizeStrip(down);
+            downSide = NormalizeStrip(downSide);
             side = NormalizeStrip(side);
+            upSide = NormalizeStrip(upSide);
             up = NormalizeStrip(up);
         }
 
@@ -336,6 +370,9 @@ namespace CoffeeGame.Presentation
         public int firstColumn;
         public int frameCount = 1;
         public int[] frameColumns;
+        // Optional companion to frameColumns for atlases which continue onto
+        // multiple rows. When omitted, every selected column uses rowFromTop.
+        public int[] frameRows;
 
         public bool HasResourceContract =>
             !string.IsNullOrWhiteSpace(resourcePath) ||
@@ -355,6 +392,16 @@ namespace CoffeeGame.Presentation
             }
 
             return firstColumn + Mathf.Clamp(frameIndex, 0, Mathf.Max(1, frameCount) - 1);
+        }
+
+        public int GetRowFromTop(int frameIndex)
+        {
+            if (frameRows != null && frameRows.Length > 0)
+            {
+                return frameRows[Mathf.Clamp(frameIndex, 0, frameRows.Length - 1)];
+            }
+
+            return rowFromTop;
         }
     }
 

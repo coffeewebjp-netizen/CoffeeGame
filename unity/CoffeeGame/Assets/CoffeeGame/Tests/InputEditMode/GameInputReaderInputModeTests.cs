@@ -155,6 +155,75 @@ namespace CoffeeGame.Input.Tests
             Assert.That(reader.LastRebindMessage, Does.Contain("現在固定"));
         }
 
+        [Test]
+        public void KeyboardMouseProfile_AllowsGamepadToOpenAndOperateRecoveryMenus()
+        {
+            Gamepad gamepad = InputSystem.AddDevice<Gamepad>();
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            reader.BeginInputModeSelection();
+            Assert.That(
+                reader.TrySelectInputMode(InputMode.KeyboardMouse, out string message),
+                Is.True,
+                message);
+
+            reader.EnableBattle();
+            reader.RefreshContextSwitchReleaseGate();
+            Press(gamepad.selectButton);
+            Assert.That(reader.SettingsPressed, Is.True,
+                "Gamepad Select must remain an escape hatch even while keyboard battle bindings are active.");
+            Release(gamepad.selectButton);
+
+            reader.EnableUI();
+            reader.RefreshContextSwitchReleaseGate();
+            Assert.That(reader.Actions.bindingMask.HasValue, Is.True);
+            Assert.That(reader.Actions.bindingMask.Value.groups, Is.EqualTo("Keyboard;Gamepad"),
+                "Recovery UI accepts native keyboard and Gamepad, but not Steam Desktop aliases.");
+            Press(keyboard.spaceKey);
+            Assert.That(reader.CancelPressed, Is.False,
+                "Typing a normal space must not activate Steam Desktop's synthetic cancel binding.");
+            Release(keyboard.spaceKey);
+            Press(gamepad.dpad.down);
+            Assert.That(reader.Navigate.y, Is.LessThan(-0.5f));
+            Release(gamepad.dpad.down);
+            Press(gamepad.buttonSouth);
+            Assert.That(reader.ConfirmPressed, Is.True);
+
+            Release(gamepad.buttonSouth);
+            reader.BeginInputModeSelection();
+            Assert.That(reader.TrySelectInputMode(InputMode.ControllerGamepad, out message), Is.True, message);
+            reader.EnableBattle();
+            reader.RefreshContextSwitchReleaseGate();
+            Press(gamepad.leftStick.up);
+            Assert.That(reader.Move.y, Is.GreaterThan(0.5f),
+                "Controller gameplay must be restored after changing away from Keyboard/Mouse.");
+        }
+
+        [Test]
+        public void KeyboardMouseProfile_IntentionalGamepadInputRestoresControllerBattleProfile()
+        {
+            Gamepad gamepad = InputSystem.AddDevice<Gamepad>();
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            reader.BeginInputModeSelection();
+            Assert.That(
+                reader.TrySelectInputMode(InputMode.KeyboardMouse, out string message),
+                Is.True,
+                message);
+            reader.EnableBattle();
+            reader.RefreshContextSwitchReleaseGate();
+
+            Set(gamepad.leftStick, new Vector2(0f, 0.8f));
+
+            Assert.That(reader.RefreshNativeGamepadProfileRecovery(), Is.True);
+            Assert.That(reader.SelectedInputMode, Is.EqualTo(InputMode.ControllerGamepad));
+            AssertSingleBindingGroup(reader, GameInputReader.GamepadBindingGroup);
+
+            Set(gamepad.leftStick, Vector2.zero);
+            reader.RefreshContextSwitchReleaseGate();
+            Set(gamepad.leftStick, new Vector2(0f, 0.8f));
+            Assert.That(reader.Move.y, Is.GreaterThan(0.5f),
+                "The next Gamepad input must control battle after automatic recovery.");
+        }
+
         private static void AssertSingleBindingGroup(GameInputReader reader, string expectedGroup)
         {
             Assert.That(reader.Actions.bindingMask.HasValue, Is.True);

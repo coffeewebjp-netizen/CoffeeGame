@@ -1,6 +1,8 @@
 {
   "name": "CoffeeGame.Integration",
   "rootNamespace": "CoffeeGame.Integration",
-  "references": [],
+  "references": [
+    "CoffeeGame.Domain"
+  ],
   "autoReferenced": true
 }
