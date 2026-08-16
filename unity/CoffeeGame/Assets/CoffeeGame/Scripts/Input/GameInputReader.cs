@@ -32,7 +32,8 @@ namespace CoffeeGame.Input
         Unselected,
         KeyboardMouse,
         ControllerGamepad,
-        SteamDesktopCompatibility
+        SteamDesktopCompatibility,
+        TouchOnScreen
     }
 
     [Serializable]
@@ -111,9 +112,11 @@ namespace CoffeeGame.Input
         private const string KeyboardGroup = "Keyboard";
         public const string GamepadBindingGroup = "Gamepad";
         public const string SteamDesktopBindingGroup = "SteamDesktop";
+        public const string TouchBindingGroup = "Touch";
         public const string InputModePlayerPrefsKey = "CoffeeGame.Input.Mode.v1";
         private const string GamepadGroup = GamepadBindingGroup;
         private const string SteamDesktopGroup = SteamDesktopBindingGroup;
+        private const string TouchGroup = TouchBindingGroup;
 
         [SerializeField] private bool enableBattleOnEnable = true;
         [SerializeField] private bool loadSavedBindingsOnAwake = true;
@@ -199,12 +202,67 @@ namespace CoffeeGame.Input
         private IDisposable _rawButtonSubscription;
         private InputMode _preferredInputMode;
         private string _selectedBindingGroup = string.Empty;
+        private Vector2 _touchMove;
+        private Vector2 _touchCamera;
+        private bool _touchJumpPressed;
+        private bool _touchSwordPressed;
+        private bool _touchSpecialPressed;
+        private bool _touchMagicPressed;
+        private bool _touchPausePressed;
+        private bool _touchConfirmPressed;
+        private bool _touchCancelPressed;
 
-        public Vector2 Move => !_suppressActionsUntilRelease && _move != null ? _move.ReadValue<Vector2>() : Vector2.zero;
-        public float CameraYaw =>
-            !_suppressActionsUntilRelease && _cameraYaw != null ? _cameraYaw.ReadValue<float>() : 0f;
-        public float CameraPitch =>
-            !_suppressActionsUntilRelease && _cameraPitch != null ? _cameraPitch.ReadValue<float>() : 0f;
+        public Vector2 Move
+        {
+            get
+            {
+                if (_suppressActionsUntilRelease)
+                {
+                    return Vector2.zero;
+                }
+
+                if (UsesTouchOverlay)
+                {
+                    return _touchMove;
+                }
+
+                return _move != null ? _move.ReadValue<Vector2>() : Vector2.zero;
+            }
+        }
+        public float CameraYaw
+        {
+            get
+            {
+                if (_suppressActionsUntilRelease)
+                {
+                    return 0f;
+                }
+
+                if (UsesTouchOverlay)
+                {
+                    return _touchCamera.x;
+                }
+
+                return _cameraYaw != null ? _cameraYaw.ReadValue<float>() : 0f;
+            }
+        }
+        public float CameraPitch
+        {
+            get
+            {
+                if (_suppressActionsUntilRelease)
+                {
+                    return 0f;
+                }
+
+                if (UsesTouchOverlay)
+                {
+                    return _touchCamera.y;
+                }
+
+                return _cameraPitch != null ? _cameraPitch.ReadValue<float>() : 0f;
+            }
+        }
         public Vector2 CameraPointerDelta
         {
             get
@@ -221,17 +279,40 @@ namespace CoffeeGame.Input
             }
         }
         public float CameraPointerDeltaX => CameraPointerDelta.x;
-        public Vector2 Navigate => !_suppressActionsUntilRelease && _navigate != null ? _navigate.ReadValue<Vector2>() : Vector2.zero;
-        public bool JumpPressed => !_suppressActionsUntilRelease && _jump != null && _jump.WasPressedThisFrame();
-        public bool SwordPressed => !_suppressActionsUntilRelease && _sword != null && _sword.WasPressedThisFrame();
-        public bool SpecialPressed => !_suppressActionsUntilRelease && _special != null && _special.WasPressedThisFrame();
-        public bool MagicPressed => !_suppressActionsUntilRelease && _magic != null && _magic.WasPressedThisFrame();
+        public Vector2 Navigate
+        {
+            get
+            {
+                if (_suppressActionsUntilRelease)
+                {
+                    return Vector2.zero;
+                }
+
+                if (UsesTouchOverlay)
+                {
+                    return _touchMove;
+                }
+
+                return _navigate != null ? _navigate.ReadValue<Vector2>() : Vector2.zero;
+            }
+        }
+        public bool JumpPressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchJumpPressed) || (_jump != null && _jump.WasPressedThisFrame()));
+        public bool SwordPressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchSwordPressed) || (_sword != null && _sword.WasPressedThisFrame()));
+        public bool SpecialPressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchSpecialPressed) || (_special != null && _special.WasPressedThisFrame()));
+        public bool MagicPressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchMagicPressed) || (_magic != null && _magic.WasPressedThisFrame()));
         public bool PausePressed =>
             !_suppressActionsUntilRelease &&
-            ((_pause != null && _pause.WasPressedThisFrame()) ||
+            ((UsesTouchOverlay && _touchPausePressed) ||
+             (_pause != null && _pause.WasPressedThisFrame()) ||
              (_uiPause != null && _uiPause.WasPressedThisFrame()));
-        public bool ConfirmPressed => !_suppressActionsUntilRelease && _confirm != null && _confirm.WasPressedThisFrame();
-        public bool CancelPressed => !_suppressActionsUntilRelease && _cancel != null && _cancel.WasPressedThisFrame();
+        public bool ConfirmPressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchConfirmPressed) || (_confirm != null && _confirm.WasPressedThisFrame()));
+        public bool CancelPressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchCancelPressed) || (_cancel != null && _cancel.WasPressedThisFrame()));
         public bool SettingsPressed =>
             !_suppressActionsUntilRelease &&
             ((_battleSettings != null && _battleSettings.WasPressedThisFrame()) ||
@@ -258,9 +339,12 @@ namespace CoffeeGame.Input
         public InputMode SelectedInputMode { get; private set; } = InputMode.Unselected;
         public InputMode PreferredInputModeForSelection => _preferredInputMode != InputMode.Unselected
             ? _preferredInputMode
-            : HasConnectedGamepad
-                ? InputMode.ControllerGamepad
-                : InputMode.KeyboardMouse;
+            : Application.isMobilePlatform
+                ? InputMode.TouchOnScreen
+                : HasConnectedGamepad
+                    ? InputMode.ControllerGamepad
+                    : InputMode.KeyboardMouse;
+        public bool UsesTouchOverlay => SelectedInputMode == InputMode.TouchOnScreen;
         public bool HasConnectedGamepad => Gamepad.all.Count > 0;
         public bool HasUnsupportedControllerDevice => FindUnsupportedControllerDevice() != null;
         public bool UsesSteamDesktopFallback => SelectedInputMode == InputMode.SteamDesktopCompatibility;
@@ -275,6 +359,7 @@ namespace CoffeeGame.Input
             InputMode.KeyboardMouse => "Keyboard / Mouse",
             InputMode.ControllerGamepad => "Controller / Gamepad",
             InputMode.SteamDesktopCompatibility => "Steam Desktop互換（Keyboard/Mouse変換）",
+            InputMode.TouchOnScreen => "タッチ（画面操作）",
             _ => "入力方式を選択してください"
         };
         public string ActiveControllerProfileName => ActiveInputProfileName;
@@ -359,6 +444,11 @@ namespace CoffeeGame.Input
                 _waitingForRebindButtonRelease = false;
                 StartInteractiveRebindOperation();
             }
+        }
+
+        private void LateUpdate()
+        {
+            ClearQueuedTouchPresses();
         }
 
         /// <summary>
@@ -477,6 +567,10 @@ namespace CoffeeGame.Input
                     bindingGroup = SteamDesktopGroup;
                     message = "Steam Desktop互換を使用します。SteamがKeyboard/Mouseへ変換した入力だけを受け付けます。";
                     break;
+                case InputMode.TouchOnScreen:
+                    bindingGroup = TouchGroup;
+                    message = "画面タッチを使用します。左スティックで移動、右側のボタンでジャンプと攻撃です。";
+                    break;
                 default:
                     message = "使用する入力方式を選択してください。";
                     return false;
@@ -495,6 +589,59 @@ namespace CoffeeGame.Input
 
             InputModeChanged?.Invoke(SelectedInputMode);
             return true;
+        }
+
+        public void SetTouchMove(Vector2 move)
+        {
+            _touchMove = Vector2.ClampMagnitude(move, 1f);
+        }
+
+        public void SetTouchCamera(Vector2 camera)
+        {
+            _touchCamera = camera;
+        }
+
+        public void QueueTouchPress(GameInputSemantic semantic)
+        {
+            switch (semantic)
+            {
+                case GameInputSemantic.Jump:
+                    _touchJumpPressed = true;
+                    break;
+                case GameInputSemantic.Sword:
+                    _touchSwordPressed = true;
+                    break;
+                case GameInputSemantic.Special:
+                    _touchSpecialPressed = true;
+                    break;
+                case GameInputSemantic.Magic:
+                    _touchMagicPressed = true;
+                    break;
+                case GameInputSemantic.Pause:
+                    _touchPausePressed = true;
+                    break;
+                case GameInputSemantic.Confirm:
+                    _touchConfirmPressed = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void QueueTouchCancel()
+        {
+            _touchCancelPressed = true;
+        }
+
+        public void ClearQueuedTouchPresses()
+        {
+            _touchJumpPressed = false;
+            _touchSwordPressed = false;
+            _touchSpecialPressed = false;
+            _touchMagicPressed = false;
+            _touchPausePressed = false;
+            _touchConfirmPressed = false;
+            _touchCancelPressed = false;
         }
 
         public void EnableBattle()
@@ -521,6 +668,7 @@ namespace CoffeeGame.Input
             ReenableConnectedGamepads();
 
             if (HasConnectedGamepad
+                && SelectedInputMode != InputMode.TouchOnScreen
                 && (SelectedInputMode == InputMode.ControllerGamepad
                     || SelectedInputMode == InputMode.Unselected
                     || _preferredInputMode == InputMode.ControllerGamepad))

@@ -25,6 +25,7 @@ namespace CoffeeGame.Editor
         [MenuItem("CoffeeGAME/Build/Android development APK", priority = 21)]
         public static void BuildAndroid()
         {
+            ApplyLocalAndroidToolchain();
             CoffeeGameProjectSetup.SetupFirstCombatSliceOrThrow();
             EnsureCombatSceneExists();
             if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android))
@@ -64,6 +65,33 @@ namespace CoffeeGame.Editor
                 throw new FileNotFoundException(
                     "CoffeeGAME combat scene is missing after project setup.",
                     CoffeeGameProjectSetup.ScenePath);
+            }
+        }
+
+        private static void ApplyLocalAndroidToolchain()
+        {
+            string repoRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", ".."));
+            string tools = Path.Combine(repoRoot, ".tools", "android");
+            string sdk = Path.Combine(tools, "SDK");
+            string ndk = Path.Combine(tools, "NDK");
+            string jdk = Path.Combine(tools, "OpenJDK");
+
+            if (Directory.Exists(sdk))
+            {
+                EditorPrefs.SetString("AndroidSdkRoot", sdk);
+                EditorPrefs.SetBool("SdkUseEmbedded", false);
+            }
+
+            if (Directory.Exists(ndk))
+            {
+                EditorPrefs.SetString("AndroidNdkRoot", ndk);
+                EditorPrefs.SetBool("NdkUseEmbedded", false);
+            }
+
+            if (File.Exists(Path.Combine(jdk, "bin", "java.exe")))
+            {
+                EditorPrefs.SetString("JdkPath", jdk);
+                EditorPrefs.SetBool("JdkUseEmbedded", false);
             }
         }
 

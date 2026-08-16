@@ -14,6 +14,7 @@ Desktop.ini
 # Local scratch and validation copies
 /Temp/
 /TempUnity*/
+/.tools/
 
 # Unity generated state
 /unity/CoffeeGame/[Ll]ibrary/

@@ -34,7 +34,8 @@ namespace CoffeeGame.UI
         {
             InputMode.KeyboardMouse,
             InputMode.ControllerGamepad,
-            InputMode.SteamDesktopCompatibility
+            InputMode.SteamDesktopCompatibility,
+            InputMode.TouchOnScreen
         };
         private static readonly string[] PauseMenuTabLabels =
         {
@@ -70,6 +71,7 @@ namespace CoffeeGame.UI
         private int inputModeNavigationLatch;
         private string inputModeSelectionMessage = string.Empty;
         private CombatGameHudView modernView;
+        private OnScreenTouchControls touchControls;
         private int pauseOpenedFrame = -1;
         private Func<string> saveProfileCommand;
         private CoffeeLearningConnectionPresenter coffeeLearningConnection;
@@ -93,6 +95,8 @@ namespace CoffeeGame.UI
             heroStatusSprite = Resources.Load<Sprite>(HeroStatusSpriteResource);
             modernView = gameObject.AddComponent<CombatGameHudView>();
             modernView.Initialize(input, coffeeLearningConnection);
+            touchControls = gameObject.AddComponent<OnScreenTouchControls>();
+            touchControls.Initialize(input);
             modernView.PauseRequested += HandlePointerPause;
             modernView.ResumeRequested += ResumeFromPauseMenu;
             modernView.StartRequested += run.StartNewRun;
@@ -123,6 +127,8 @@ namespace CoffeeGame.UI
             {
                 return;
             }
+
+            RefreshTouchOverlay();
 
             if (modernView != null)
             {
@@ -363,6 +369,19 @@ namespace CoffeeGame.UI
             bool lastInputWasGamepad)
         {
             return cancelPressed && (!answerInputFocused || lastInputWasGamepad);
+        }
+
+        private void RefreshTouchOverlay()
+        {
+            if (touchControls == null || input == null || run == null)
+            {
+                return;
+            }
+
+            bool showPad = input.UsesTouchOverlay
+                && run.Mode == CombatRunMode.Playing
+                && !pauseMenuOpen;
+            touchControls.SetVisible(showPad);
         }
 
         private void HandleRunStateChanged()
@@ -803,7 +822,7 @@ namespace CoffeeGame.UI
         private void DrawInputModeSelection()
         {
             float width = Mathf.Min(660f, Screen.width - 32f);
-            const float height = 472f;
+            const float height = 560f;
             Rect panel = new Rect(
                 (Screen.width - width) * 0.5f,
                 Mathf.Max(16f, (Screen.height - height) * 0.5f),
@@ -846,13 +865,22 @@ namespace CoffeeGame.UI
                 "Steam Desktop互換で続ける",
                 "SteamがA/X/Y/RTなどをEnter/PageUp/PageDown/Mouseへ変換している場合だけ使います。",
                 true);
+            DrawInputModeButton(
+                panel,
+                338f,
+                3,
+                "タッチ（画面操作）",
+                "スマホ向け。左スティックで移動、右側の跳／刀／居合／氷、右側ドラッグでカメラ。",
+                true);
 
             string status = string.IsNullOrEmpty(inputModeSelectionMessage)
-                ? "おすすめ: Steamへ登録してライブラリから起動し、『コントローラー（Gamepad）』を選択。"
+                ? (Application.isMobilePlatform
+                    ? "この端末では『タッチ（画面操作）』を選ぶと画面の仮想パッドで遊べます。"
+                    : "おすすめ: Steamへ登録してライブラリから起動し、『コントローラー（Gamepad）』を選択。")
                 : inputModeSelectionMessage;
-            GUI.Label(new Rect(panel.x + 20f, panel.y + 348f, panel.width - 40f, 52f), status, smallStyle);
-            GUI.Label(new Rect(panel.x + 20f, panel.y + 410f, panel.width - 40f, 42f),
-                "操作: ↑↓／左スティックで選択、Enter／Southで決定。マウスで直接クリックもできます。",
+            GUI.Label(new Rect(panel.x + 20f, panel.y + 428f, panel.width - 40f, 52f), status, smallStyle);
+            GUI.Label(new Rect(panel.x + 20f, panel.y + 490f, panel.width - 40f, 42f),
+                "操作: ↑↓／左スティックで選択、Enter／Southで決定。タップやマウスでも選べます。",
                 centeredStyle);
         }
 

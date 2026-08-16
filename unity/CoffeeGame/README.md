@@ -64,6 +64,9 @@ positions the initial cursor; it is never activated automatically. Choose one of
 - **Steam Desktop compatibility**: an explicit fallback for a Steam Desktop
   Layout which converts controller input into keyboard/mouse events. It is never
   selected merely because no Gamepad was found.
+- **タッチ（画面操作）**: Android / touch overlay. Left virtual stick moves,
+  the right pad fires Jump / Sword / Iai / Ice, and a right-side drag orbits
+  the camera. This is the default chooser cursor on mobile.
 
 The selection press is release-gated, so the Enter/South press used to choose a
 mode cannot also start the run or trigger a battle action in the same frame. Open
