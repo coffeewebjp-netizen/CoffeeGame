@@ -53,6 +53,7 @@ namespace CoffeeGame.Bootstrap
         private int slimeSpawnIndex;
         private PlayerProgression sessionProgression;
         private PlayerProfileStore profileStore;
+        private CombatRunController runController;
         private CoffeeLearningConnectionPresenter coffeeLearningConnection;
 
         public ILearningBridge LearningBridge => coffeeLearningConnection?.LearningBridge ?? UnavailableLearningBridge;
@@ -66,6 +67,14 @@ namespace CoffeeGame.Bootstrap
             }
 
             BuildCombatSlice();
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                TryApplyCloudProfile();
+            }
         }
 
         private void OnApplicationQuit()
@@ -112,7 +121,7 @@ namespace CoffeeGame.Bootstrap
             playerHealth = player.Health;
             EnsurePlayerProfileLoaded();
 
-            var runController = gameObject.AddComponent<CombatRunController>();
+            runController = gameObject.AddComponent<CombatRunController>();
             runController.Initialize(
                 tuning,
                 sessionProgression,
@@ -159,6 +168,7 @@ namespace CoffeeGame.Bootstrap
             profileStore = new PlayerProfileStore(CloudSaveSettings.ResolveProfilePath());
             sessionProgression = profileStore.LoadOrCreate(out string message);
             sessionProgression.Changed += SavePlayerProfile;
+            TryApplyCloudProfile();
             Debug.Log($"CoffeeGAME profile: {message}");
         }
 
@@ -227,18 +237,18 @@ namespace CoffeeGame.Bootstrap
                 return "プロフィール保存がまだ初期化されていません。";
             }
 
-            if (AndroidCloudFolder.HasFolder
-                && CloudSaveSettings.TryImportFromAndroidFolder(profileStore, out string cloudMessage))
+            if (TryApplyCloudProfile(out string cloudMessage))
             {
                 return cloudMessage + "\n" + profileStore.DescribeSavedFile();
             }
 
-            if (!PlayerProfilePortability.TryImport(profileStore, out _, out string message))
+            if (!PlayerProfilePortability.TryImport(profileStore, out PlayerProgression imported, out string message))
             {
-                return message;
+                return string.IsNullOrEmpty(cloudMessage) ? message : cloudMessage + "\n" + message;
             }
 
-            return message;
+            ApplyImportedProgression(imported);
+            return message + "\nLv." + sessionProgression.Level;
         }
 
         private string UseGoogleDriveSave()
@@ -280,13 +290,71 @@ namespace CoffeeGame.Bootstrap
             return "端末ローカルへ戻しました。 " + CloudSaveSettings.StatusLabel;
         }
 
+        private bool TryApplyCloudProfile()
+        {
+            return TryApplyCloudProfile(out _);
+        }
+
+        private bool TryApplyCloudProfile(out string message)
+        {
+            message = string.Empty;
+            if (profileStore == null || sessionProgression == null || !AndroidCloudFolder.HasFolder)
+            {
+                return false;
+            }
+
+            if (!CloudSaveSettings.TryImportFromAndroidFolder(profileStore, out message))
+            {
+                return false;
+            }
+
+            PlayerProgression imported = new PlayerProfileStore(profileStore.ProfilePath).LoadOrCreate(out string loadMessage);
+            if (loadMessage.IndexOf("初期化", StringComparison.Ordinal) >= 0)
+            {
+                message = loadMessage;
+                return false;
+            }
+
+            ApplyImportedProgression(imported);
+            message = message + "\n反映: Lv." + sessionProgression.Level;
+            return true;
+        }
+
+        private void ApplyImportedProgression(PlayerProgression imported)
+        {
+            if (imported == null || sessionProgression == null)
+            {
+                return;
+            }
+
+            sessionProgression.ReplaceFrom(imported);
+            runController?.ApplyLoadedProgression();
+        }
+
         private void RebindProfileStore()
         {
             profileStore = new PlayerProfileStore(CloudSaveSettings.ResolveProfilePath());
-            if (sessionProgression != null)
+            if (sessionProgression == null)
             {
-                TrySavePlayerProfile(out _);
+                return;
             }
+
+            if (TryApplyCloudProfile())
+            {
+                return;
+            }
+
+            if (System.IO.File.Exists(profileStore.ProfilePath))
+            {
+                PlayerProgression loaded = profileStore.LoadOrCreate(out string loadMessage);
+                if (loadMessage.IndexOf("初期化", StringComparison.Ordinal) < 0)
+                {
+                    ApplyImportedProgression(loaded);
+                    return;
+                }
+            }
+
+            TrySavePlayerProfile(out _);
         }
 
         private Camera CreateCamera()

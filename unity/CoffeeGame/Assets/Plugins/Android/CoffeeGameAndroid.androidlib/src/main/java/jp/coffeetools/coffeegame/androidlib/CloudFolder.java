@@ -72,7 +72,7 @@ public final class CloudFolder {
             Uri document = DocumentsContract.buildDocumentUriUsingTree(
                 tree,
                 DocumentsContract.getTreeDocumentId(tree));
-            Uri existing = findChild(context, tree, name);
+            Uri existing = findNamedFile(context, tree, DocumentsContract.getTreeDocumentId(tree), name, 3);
             Uri target = existing != null
                 ? existing
                 : DocumentsContract.createDocument(context.getContentResolver(), document, "application/json", name);
@@ -105,7 +105,7 @@ public final class CloudFolder {
             Uri document = DocumentsContract.buildDocumentUriUsingTree(
                 tree,
                 DocumentsContract.getTreeDocumentId(tree));
-            Uri existing = findChild(context, tree, name);
+            Uri existing = findNamedFile(context, tree, DocumentsContract.getTreeDocumentId(tree), name, 3);
             if (existing == null) {
                 return null;
             }
@@ -147,15 +147,19 @@ public final class CloudFolder {
         return Uri.parse(raw);
     }
 
-    private static Uri findChild(Context context, Uri tree, String name) {
-        Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(
-            tree,
-            DocumentsContract.getTreeDocumentId(tree));
+    private static Uri findNamedFile(
+        Context context,
+        Uri tree,
+        String parentDocumentId,
+        String name,
+        int remainingDepth) {
+        Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, parentDocumentId);
         Cursor cursor = context.getContentResolver().query(
             children,
             new String[] {
                 DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
             },
             null,
             null,
@@ -165,10 +169,25 @@ public final class CloudFolder {
         }
 
         try {
+            java.util.ArrayList<String> directories = new java.util.ArrayList<>();
             while (cursor.moveToNext()) {
+                String documentId = cursor.getString(0);
                 String displayName = cursor.getString(1);
-                if (name.equals(displayName)) {
-                    return DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(0));
+                String mime = cursor.getString(2);
+                if (name.equals(displayName)
+                    && !DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+                    return DocumentsContract.buildDocumentUriUsingTree(tree, documentId);
+                }
+
+                if (remainingDepth > 0 && DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+                    directories.add(documentId);
+                }
+            }
+
+            for (String directoryId : directories) {
+                Uri nested = findNamedFile(context, tree, directoryId, name, remainingDepth - 1);
+                if (nested != null) {
+                    return nested;
                 }
             }
         } finally {

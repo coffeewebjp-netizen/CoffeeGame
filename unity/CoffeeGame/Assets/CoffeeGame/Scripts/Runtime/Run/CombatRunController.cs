@@ -439,6 +439,18 @@ namespace CoffeeGame.Run
             StateChanged?.Invoke();
         }
 
+        public void ApplyLoadedProgression()
+        {
+            if (tuning == null || playerHealth == null || playerResources == null || playerCombat == null)
+            {
+                return;
+            }
+
+            ApplyProgressionTuning();
+            LastEvent = $"セーブを反映しました  Lv.{Progression.Level}";
+            StateChanged?.Invoke();
+        }
+
         private void ApplyProgressionTuning()
         {
             int levelBonus = Progression.Level - 1;

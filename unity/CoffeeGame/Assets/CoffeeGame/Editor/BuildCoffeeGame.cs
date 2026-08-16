@@ -80,18 +80,21 @@ namespace CoffeeGame.Editor
             {
                 EditorPrefs.SetString("AndroidSdkRoot", sdk);
                 EditorPrefs.SetBool("SdkUseEmbedded", false);
+                UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath = sdk;
             }
 
             if (Directory.Exists(ndk))
             {
                 EditorPrefs.SetString("AndroidNdkRoot", ndk);
                 EditorPrefs.SetBool("NdkUseEmbedded", false);
+                UnityEditor.Android.AndroidExternalToolsSettings.ndkRootPath = ndk;
             }
 
             if (File.Exists(Path.Combine(jdk, "bin", "java.exe")))
             {
                 EditorPrefs.SetString("JdkPath", jdk);
                 EditorPrefs.SetBool("JdkUseEmbedded", false);
+                UnityEditor.Android.AndroidExternalToolsSettings.jdkRootPath = jdk;
             }
         }
 

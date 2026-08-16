@@ -138,7 +138,7 @@ namespace CoffeeGame.Persistence
 
                 PlayerPrefs.SetString(KindPlayerPrefsKey, KindAndroidSaf);
                 PlayerPrefs.Save();
-                message = "フォルダ画面を開きました。Google Drive の CoffeeGAME 用フォルダを選んでください。選んだあと、もう一度セーブするを押してください。";
+                message = "フォルダ画面を開きました。PCと同じ CoffeeGAME フォルダ（中に CoffeeGAME-player-profile.json がある場所）を選んでください。ゲームに戻ると自動で読みます。";
                 return true;
             }
             catch (Exception exception)
@@ -185,9 +185,11 @@ namespace CoffeeGame.Persistence
                 return false;
             }
 
-            if (!AndroidCloudFolder.TryRead(PlayerProfilePortability.PortableFileName, out string json, out string error))
+            if (!AndroidCloudFolder.TryRead(PlayerProfilePortability.PortableFileName, out string json, out string error)
+                && !AndroidCloudFolder.TryRead("player-profile.json", out json, out error))
             {
-                message = "Driveフォルダから読めませんでした: " + error + " / " + AndroidCloudFolder.Label;
+                message = "Driveフォルダから読めませんでした: " + error + " / " + AndroidCloudFolder.Label
+                    + " / 探しているファイル: " + PlayerProfilePortability.PortableFileName;
                 return false;
             }
 

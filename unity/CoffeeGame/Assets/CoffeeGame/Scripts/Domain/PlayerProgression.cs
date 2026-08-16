@@ -53,7 +53,7 @@ namespace CoffeeGame.Domain
     /// </summary>
     public sealed class PlayerProgression
     {
-        private readonly RewardLedger rewardLedger;
+        private RewardLedger rewardLedger;
         private readonly Func<string, TalentGrowthProfile> growthProfileResolver;
         private readonly Dictionary<string, int> rivalAffinityById =
             new Dictionary<string, int>(StringComparer.Ordinal);
@@ -154,6 +154,40 @@ namespace CoffeeGame.Domain
         public int TalentPoints { get; private set; }
 
         public PlayerStatus Status { get; private set; }
+
+        public void ReplaceFrom(PlayerProgression other)
+        {
+            if (other == null)
+            {
+                throw new ArgumentNullException(nameof(other));
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return;
+            }
+
+            Level = other.Level;
+            Experience = other.Experience;
+            Gold = other.Gold;
+            SlimeJelly = other.SlimeJelly;
+            TalentPoints = other.TalentPoints;
+            Status = other.Status;
+            rewardLedger = new RewardLedger(other.CreateClaimedRewardSnapshot());
+            rivalAffinityById.Clear();
+            foreach (RivalAffinityEntry entry in other.CreateRivalAffinitySnapshot())
+            {
+                rivalAffinityById[entry.RivalId] = entry.Affinity;
+            }
+
+            recruitedRivalIds.Clear();
+            foreach (string rivalId in other.CreateRecruitedRivalSnapshot())
+            {
+                recruitedRivalIds.Add(rivalId);
+            }
+
+            Changed?.Invoke();
+        }
 
         public int ClaimedRewardCount => rewardLedger.Count;
 

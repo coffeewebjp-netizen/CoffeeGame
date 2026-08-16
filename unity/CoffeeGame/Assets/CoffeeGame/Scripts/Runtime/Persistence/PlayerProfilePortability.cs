@@ -95,7 +95,7 @@ namespace CoffeeGame.Persistence
                 return false;
             }
 
-            message = "セーブを取り込みました。レベルや学習報酬を確実に揃えるため、アプリを一度閉じて開き直してください。";
+            message = "セーブを取り込みました。Lv." + progression.Level;
             return true;
         }
 

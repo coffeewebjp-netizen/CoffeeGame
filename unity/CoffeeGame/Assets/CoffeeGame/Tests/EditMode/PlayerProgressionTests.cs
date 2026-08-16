@@ -5,6 +5,18 @@ namespace CoffeeGame.Domain.Tests
     public sealed class PlayerProgressionTests
     {
         [Test]
+        public void ReplaceFrom_CopiesLevelGoldAndStatusIntoTheLiveObject()
+        {
+            var live = new PlayerProgression();
+            var imported = new PlayerProgression(13, 17, 180, 175);
+            live.ReplaceFrom(imported);
+            Assert.That(live.Level, Is.EqualTo(13));
+            Assert.That(live.Experience, Is.EqualTo(17));
+            Assert.That(live.Gold, Is.EqualTo(180));
+            Assert.That(live.SlimeJelly, Is.EqualTo(175));
+        }
+
+        [Test]
         public void NewPlayer_StartsAtLevelOneWithThreeXpRequirement()
         {
             var progression = new PlayerProgression();
