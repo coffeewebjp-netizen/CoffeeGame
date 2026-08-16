@@ -30,4 +30,6 @@ It is **not** a finished game mesh. Judge whether this Blender path is worth scu
 | `look-previews/look-34.jpg` | 3D-style three-quarter still (judge this) |
 | `look-previews/look-right.jpg` | 3D-style profile still |
 | `look-previews/look-bust.jpg` | 3D-style face still |
+| `look-previews/move/walk3d_right.gif` | Approved-look side walk loop |
+| `look-previews/move/walk3d_34.gif` | Approved-look three-quarter walk loop |
 | `build_girl1_prototype.py` | Rebuild script |
