@@ -52,14 +52,40 @@ def main():
     image_empty("Look.Right", LOOK / "look-right.jpg", (1.25, 0.0, 0.81), (math.radians(90), 0, math.radians(90)), 1.62)
 
     arm = bpy.data.objects.get("HeroineRigV4")
-    walk = next((a for a in bpy.data.actions if a.name.endswith("|Walk")), None)
+    walk = next((a for a in bpy.data.actions if a.name.endswith("|Run")), None)
+    if walk is None:
+        walk = next((a for a in bpy.data.actions if a.name.endswith("|Walk")), None)
+    start = 1
+    end = 32
     if arm is not None and walk is not None:
         if arm.animation_data is None:
             arm.animation_data_create()
+        # Blender 4.5 slotted actions: assigning Walk without the Walk slot
+        # leaves the FBX default (AirSlash) and the pose never changes.
+        arm.animation_data.action = None
+        for track in list(arm.animation_data.nla_tracks):
+            arm.animation_data.nla_tracks.remove(track)
         arm.animation_data.action = walk
-        bpy.context.scene.frame_start = int(walk.frame_range[0])
-        bpy.context.scene.frame_end = int(walk.frame_range[1])
-        bpy.context.scene.frame_current = int(walk.frame_range[0])
+        suitable = list(getattr(arm.animation_data, "action_suitable_slots", []) or [])
+        walk_slot = next((s for s in suitable if "Walk" in str(getattr(s, "identifier", s))), None)
+        if walk_slot is None and suitable:
+            walk_slot = suitable[0]
+        if walk_slot is not None:
+            arm.animation_data.action_slot = walk_slot
+        track = arm.animation_data.nla_tracks.new()
+        track.name = "Walk"
+        strip = track.strips.new("Walk", 1, walk)
+        if hasattr(strip, "action_slot") and walk_slot is not None:
+            strip.action_slot = walk_slot
+        strip.frame_end = walk.frame_range[1]
+        strip.repeat = 8
+        arm.animation_data.action = None
+        start = int(walk.frame_range[0])
+        end = int(walk.frame_range[1])
+        bpy.context.scene.frame_start = start
+        bpy.context.scene.frame_end = end
+        bpy.context.scene.frame_current = start
+        bpy.context.scene.sync_mode = "NONE"
 
     bpy.ops.object.light_add(type="AREA", location=(1.8, -2.4, 2.4))
     bpy.context.object.data.energy = 400
@@ -76,10 +102,21 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND))
     bpy.context.scene.render.image_settings.file_format = "JPEG"
     bpy.context.scene.render.image_settings.quality = 92
+    thigh = arm.pose.bones.get("Thigh.R") if arm is not None else None
+    bpy.context.scene.frame_set(start if walk else 1)
+    bpy.context.view_layer.update()
+    r1 = tuple(round(x, 4) for x in thigh.rotation_quaternion) if thigh else None
     bpy.context.scene.render.filepath = str(RENDER)
     bpy.ops.render.render(write_still=True)
+    mid = start + 12 if walk else 13
+    bpy.context.scene.frame_set(mid)
+    bpy.context.view_layer.update()
+    r2 = tuple(round(x, 4) for x in thigh.rotation_quaternion) if thigh else None
+    bpy.context.scene.render.filepath = str(RENDER.with_name("compare-walk-mid.jpg"))
+    bpy.ops.render.render(write_still=True)
+    bpy.context.scene.frame_set(start if walk else 1)
     bpy.ops.wm.save_mainfile()
-    print("Wrote", BLEND, "walk", walk.name if walk else None)
+    print("Wrote", BLEND, "walk", walk.name if walk else None, "thigh", r1, "->", r2)
 
 
 if __name__ == "__main__":
