@@ -52,7 +52,7 @@ PCで遊べる小さな縦スライスを作り、Androidでも起動確認す�
 
 使うもの:
 
-- `haxslasher/index.html`
+- `archive/haxslasher/index.html`
 
 作業:
 

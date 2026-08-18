@@ -35,8 +35,8 @@ HD-2D directional sprite
 - `art/3d`: Blenderモデル、FBX、制作記録。将来3D化用
 - `tools/hd2d`: HD-2D個別フレームの決定的な書き出し処理
 - `tools/blender`: 3Dモデル生成・検証処理
-- `haxslasher`: 操作感を検証した旧ブラウザ版
-- `docs`: 構想、ロードマップ、CoffeeLearning連携、戦闘仕様
+- `docs`: 構想、ロードマップ、CoffeeLearning連携、戦闘仕様。入口は `docs/DESIGN_INDEX.md`
+- `archive/haxslasher`: 操作感を検証した旧ブラウザ版。通常は読まない
 
 ## 重要な設計境界
 
@@ -61,6 +61,6 @@ HD-2D素材の一覧は次で確認できます。
 
 Unityの起動方法と入力仕様は`unity/CoffeeGame/README.md`、画像の生成・再出力方法は`art/hd2d/README.md`を参照してください。
 
-現在の実装済み範囲、検証結果、Steam Controllerの実測、未実装項目は`docs/current-status.md`に集約しています。
+設計の入口は`docs/DESIGN_INDEX.md`です。実装済み範囲、検証結果、Steam Controllerの実測、未実装項目は`docs/current-status.md`に集約しています。
 
 このPCではUnity Hubとbatch Editorを同時に起動すると`Unity.Licensing.Client.exe`が競合することがあります。Hubを閉じ、Unityプロセスを一本だけ起動する条件では、EditModeテスト145件とWindowsビルドを完走できています。

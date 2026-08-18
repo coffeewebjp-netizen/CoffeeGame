@@ -18,7 +18,7 @@ CoffeeGAMEは、ブラウザ試作からUnity製Windows／Androidアプリへ本
       rigged 3D model fallback
 ```
 
-ブラウザ版は操作感と仕様を決めた旧プロトタイプとして残します。今後の機能追加は原則として `unity/CoffeeGame` へ行います。
+ブラウザ版は操作感と仕様を決めた旧プロトタイプとして `archive/haxslasher/` に残します。今後の機能追加は原則として `unity/CoffeeGame` へ行います。通常の作業では `archive/` を読まないでください。入口は [DESIGN_INDEX.md](DESIGN_INDEX.md) です。
 
 ## 最終ゴール
 

@@ -1,6 +1,6 @@
 # CoffeeGAME Unity migration
 
-This is the production successor to the browser prototype in `../../haxslasher`.
+This is the production successor to the archived browser prototype in `../../archive/haxslasher`.
 The project keeps movement, collision, jump height, and combat in a 3D world,
 while the active presentation is directional HD-2D artwork. Rigged Blender/FBX
 models remain available as a future-3D fallback. Combat, progression, save data,

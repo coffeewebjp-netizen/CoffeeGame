@@ -4,7 +4,7 @@
 
 ## 起動
 
-まずは `index.html` をブラウザで開きます。ローカルファイルの制限が出る場合は、このリポジトリのルートで次を実行し、`http://localhost:8000/haxslasher/` を開きます。
+まずは `index.html` をブラウザで開きます。ローカルファイルの制限が出る場合は、このリポジトリのルートで次を実行し、`http://localhost:8000/archive/haxslasher/` を開きます。
 
 ```powershell
 python -m http.server 8000
@@ -96,7 +96,7 @@ Steam Controllerで操作できるのにGamepad APIへ機器が出ない場合�
 報酬・レベル・ゲージの自動確認は次で実行できます。
 
 ```powershell
-node .\haxslasher\smoke-test.cjs
+node .\archive\haxslasher\smoke-test.cjs
 ```
 
 ## MVPの外側
