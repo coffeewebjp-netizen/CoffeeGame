@@ -8,9 +8,9 @@ using UnityEngine;
 
 namespace CoffeeGame.UI
 {
-    [DisallowMultipleComponent]
-    public sealed class CombatSliceHud : MonoBehaviour
+    public sealed partial class CombatSliceHud : MonoBehaviour
     {
+
         private enum PauseMenuTab
         {
             Status,
@@ -19,22 +19,9 @@ namespace CoffeeGame.UI
             Companions
         }
 
+
         private const string HeroStatusSpriteResource = "Art/UI/Hero/hero_fullbody_ui";
-        private const int InputModeRow = 4;
-        private const int SaveRow = 5;
-        private const int ExportProfileRow = 6;
-        private const int ImportProfileRow = 7;
-        private const int CloudDriveRow = 8;
-        private const int CloudFolderRow = 9;
-        private const int CloudLocalRow = 10;
-        private const int ResetRow = 11;
-        private const int CloseRow = 12;
-        private const int PerformanceRow = 13;
-        private const int FrameStatsRow = 14;
-        private const int CoffeeLearningPrimaryRow = 15;
-        private const int CoffeeLearningDisconnectRow = 16;
-        private const int CoffeeLearningCancelRow = 17;
-        private const int SettingsRowCount = 18;
+
         private static readonly InputMode[] SelectableInputModes =
         {
             InputMode.KeyboardMouse,
@@ -42,6 +29,7 @@ namespace CoffeeGame.UI
             InputMode.SteamDesktopCompatibility,
             InputMode.TouchOnScreen
         };
+
         private static readonly string[] PauseMenuTabLabels =
         {
             "ステータス",
@@ -50,43 +38,81 @@ namespace CoffeeGame.UI
             "仲間"
         };
 
+
         private CombatRunController run;
+
         private GameInputReader input;
+
         private GUIStyle titleStyle;
+
         private GUIStyle labelStyle;
+
         private GUIStyle smallStyle;
+
         private GUIStyle centeredStyle;
+
         private GUIStyle buttonStyle;
+
         private GUIStyle selectedButtonStyle;
+
         private GUIStyle pauseTitleStyle;
+
         private GUIStyle pauseSubtitleStyle;
+
         private GUIStyle pauseTabStyle;
+
         private GUIStyle selectedPauseTabStyle;
+
         private GUIStyle statusNameStyle;
+
         private GUIStyle statusValueStyle;
+
         private GUIStyle mutedCenteredStyle;
+
         private Sprite heroStatusSprite;
+
         private bool showInputSettings;
+
         private bool pauseMenuOpen;
+
         private PauseMenuTab selectedPauseMenuTab;
+
         private int pauseTabNavigationLatch;
+
         private int selectedSettingsRow;
+
         private int navigationLatch;
+
         private int selectedInputModeRow;
+
         private int inputModeNavigationLatch;
+
         private string inputModeSelectionMessage = string.Empty;
+
         private CombatGameHudView modernView;
+
         private OnScreenTouchControls touchControls;
+
         private int pauseOpenedFrame = -1;
+
         private Func<string> saveProfileCommand;
+
         private Func<string> exportProfileCommand;
+
         private Func<string> importProfileCommand;
+
         private Func<string> cloudDriveCommand;
+
         private Func<string> cloudFolderCommand;
+
         private Func<string> cloudLocalCommand;
+
         private CoffeeLearningConnectionPresenter coffeeLearningConnection;
+
         private RivalLearningQuestionSession rivalLearningQuestion;
+
         private bool rivalEncounterActive;
+
 
         public void Initialize(
             CombatRunController runController,
@@ -146,6 +172,7 @@ namespace CoffeeGame.UI
             run.Progression.Changed += HandleProgressionChanged;
             HandleRunStateChanged();
         }
+
 
         private void Update()
         {
@@ -237,6 +264,7 @@ namespace CoffeeGame.UI
             }
         }
 
+
         private void OnGUI()
         {
             if (run == null || input == null)
@@ -277,11 +305,13 @@ namespace CoffeeGame.UI
             DrawRunOverlay();
         }
 
+
         private bool IsPauseMenuVisible =>
             pauseMenuOpen &&
             (run.Mode == CombatRunMode.Paused
                 || run.Mode == CombatRunMode.InputRebinding
                 || run.Mode == CombatRunMode.InputSettings);
+
 
         private void UpdateModernHud()
         {
@@ -294,52 +324,7 @@ namespace CoffeeGame.UI
 
             if (run.Mode == CombatRunMode.RivalEncounter)
             {
-                if (!rivalEncounterActive)
-                {
-                    HandleRunStateChanged();
-                }
-
-                Vector2 rivalNavigation = input.Navigate;
-                bool rivalConfirmPressed = input.ConfirmPressed;
-                bool rivalAnswerFocused = modernView.IsRivalAnswerInputFocused;
-                bool rivalCancelPressed = ShouldRouteRivalCancel(
-                    input.CancelPressed,
-                    rivalAnswerFocused,
-                    input.LastUsedInputIsGamepad);
-                bool gamepadNavigationIntent = input.LastUsedInputIsGamepad
-                    && (rivalConfirmPressed
-                        || rivalCancelPressed
-                        || rivalNavigation.sqrMagnitude >= 0.25f);
-                bool releasedPointerFocus = gamepadNavigationIntent
-                    && modernView.ReleaseRivalAnswerInputFocus();
-                if (releasedPointerFocus && !rivalConfirmPressed)
-                {
-                    modernView.Refresh(run, false);
-                    modernView.RefreshRivalLearning(rivalLearningQuestion);
-                    return;
-                }
-
-                if (rivalCancelPressed)
-                {
-                    if (rivalLearningQuestion.State == RivalLearningQuestionState.Confirming)
-                    {
-                        rivalLearningQuestion.ReturnToEditing();
-                    }
-                    else
-                    {
-                        HandleRivalContinue();
-                    }
-                }
-                else if (ShouldRouteRivalPrimary(
-                    rivalConfirmPressed,
-                    modernView.IsRivalAnswerInputFocused))
-                {
-                    HandleRivalPrimary();
-                }
-
-                TryApplyCompletedRivalReward();
-                modernView.Refresh(run, false);
-                modernView.RefreshRivalLearning(rivalLearningQuestion);
+                UpdateRivalEncounter();
                 return;
             }
 
@@ -386,18 +371,6 @@ namespace CoffeeGame.UI
             modernView.Refresh(run, pauseMenuOpen && pauseCapableMode);
         }
 
-        public static bool ShouldRouteRivalPrimary(bool confirmPressed, bool answerInputFocused)
-        {
-            return confirmPressed && !answerInputFocused;
-        }
-
-        public static bool ShouldRouteRivalCancel(
-            bool cancelPressed,
-            bool answerInputFocused,
-            bool lastInputWasGamepad)
-        {
-            return cancelPressed && (!answerInputFocused || lastInputWasGamepad);
-        }
 
         private void RefreshTouchOverlay()
         {
@@ -412,202 +385,6 @@ namespace CoffeeGame.UI
             touchControls.SetVisible(showPad);
         }
 
-        private void HandleRunStateChanged()
-        {
-            if (run == null || rivalLearningQuestion == null)
-            {
-                return;
-            }
-
-            if (run.Mode == CombatRunMode.RivalEncounter)
-            {
-                if (rivalEncounterActive)
-                {
-                    return;
-                }
-
-                rivalEncounterActive = true;
-                _ = rivalLearningQuestion.BeginNewEncounterAsync();
-                return;
-            }
-
-            if (rivalEncounterActive)
-            {
-                rivalEncounterActive = false;
-                rivalLearningQuestion.CancelPendingOperation();
-            }
-        }
-
-        private void HandleRivalAnswerChanged(string answer)
-        {
-            rivalLearningQuestion?.UpdateDraft(answer);
-        }
-
-        private async void HandleRivalPrimary()
-        {
-            if (!rivalEncounterActive || rivalLearningQuestion == null)
-            {
-                return;
-            }
-
-            switch (rivalLearningQuestion.State)
-            {
-                case RivalLearningQuestionState.Editing:
-                    rivalLearningQuestion.RequestConfirmation();
-                    break;
-                case RivalLearningQuestionState.Confirming:
-                    await rivalLearningQuestion.SubmitConfirmedAnswerAsync();
-                    break;
-                case RivalLearningQuestionState.Pending:
-                    await rivalLearningQuestion.RecoverPendingResultAsync();
-                    break;
-                case RivalLearningQuestionState.Error:
-                    await rivalLearningQuestion.RetryPreparationAsync();
-                    break;
-            }
-        }
-
-        private void HandleRivalSecondary()
-        {
-            rivalLearningQuestion?.ReturnToEditing();
-        }
-
-        private void TryApplyCompletedRivalReward()
-        {
-            if (run?.Progression == null
-                || rivalLearningQuestion == null
-                || rivalLearningQuestion.State != RivalLearningQuestionState.Completed
-                || !rivalLearningQuestion.AuthoritativeOutcome.HasValue
-                || rivalLearningQuestion.GameRewardApplication.HasValue)
-            {
-                return;
-            }
-
-            PlayerLearningRewardApplication application = run.Progression.TryApplyLearningOutcome(
-                rivalLearningQuestion.AuthoritativeOutcome.Value,
-                RivalCharacterIds.WeaknessChallenger);
-            rivalLearningQuestion.RecordGameRewardApplication(application);
-        }
-
-        private void HandleRivalContinue()
-        {
-            if (!rivalEncounterActive || run == null)
-            {
-                return;
-            }
-
-            rivalEncounterActive = false;
-            rivalLearningQuestion?.CancelPendingOperation();
-            modernView?.ReleaseRivalGameplayFocus();
-            run.ContinueAfterRivalEncounter();
-        }
-
-        private void HandleModernMenuNavigation()
-        {
-            Vector2 navigation = input.Navigate;
-            int tabDirection = MenuNavigationAxisLatch.Read(navigation.x, ref pauseTabNavigationLatch);
-            if (tabDirection != 0)
-            {
-                int count = System.Enum.GetValues(typeof(CharacterMenuTab)).Length;
-                int next = ((int)selectedPauseMenuTab + tabDirection + count) % count;
-                SelectModernTab((CharacterMenuTab)next);
-            }
-
-            if ((CharacterMenuTab)selectedPauseMenuTab != CharacterMenuTab.System)
-            {
-                navigationLatch = 0;
-                if (tabDirection == 0)
-                {
-                    modernView.ScrollMenu(navigation.y, Time.unscaledDeltaTime);
-                }
-                return;
-            }
-
-            int verticalDirection = MenuNavigationAxisLatch.Read(navigation.y, ref navigationLatch);
-            if (verticalDirection != 0)
-            {
-                int rowDirection = -verticalDirection;
-                selectedSettingsRow = FindNextModernControlRow(selectedSettingsRow, rowDirection);
-                modernView.SetSelectedControlRow(selectedSettingsRow);
-            }
-
-            if (input.ConfirmPressed)
-            {
-                ActivateModernControlRow();
-            }
-        }
-
-        private int FindNextModernControlRow(int current, int direction)
-        {
-            int candidate = current;
-            do
-            {
-                candidate = (candidate + direction + SettingsRowCount) % SettingsRowCount;
-            }
-            while (!IsSettingsRowSelectable(candidate));
-            return candidate;
-        }
-
-        private void ActivateModernControlRow()
-        {
-            switch (selectedSettingsRow)
-            {
-                case 0:
-                    BeginRebind(GameInputSemantic.Jump);
-                    break;
-                case 1:
-                    BeginRebind(GameInputSemantic.Sword);
-                    break;
-                case 2:
-                    BeginRebind(GameInputSemantic.Special);
-                    break;
-                case 3:
-                    BeginRebind(GameInputSemantic.Magic);
-                    break;
-                case InputModeRow:
-                    BeginInputModeSelectionFromPause();
-                    break;
-                case SaveRow:
-                    HandleManualSave();
-                    break;
-                case ExportProfileRow:
-                    HandleExportProfile();
-                    break;
-                case ImportProfileRow:
-                    HandleImportProfile();
-                    break;
-                case CloudDriveRow:
-                    HandleCloudDrive();
-                    break;
-                case CloudFolderRow:
-                    HandleCloudFolder();
-                    break;
-                case CloudLocalRow:
-                    HandleCloudLocal();
-                    break;
-                case ResetRow:
-                    HandleResetBindings();
-                    break;
-                case CloseRow:
-                    ResumeFromPauseMenu();
-                    break;
-                case PerformanceRow:
-                    HandlePerformancePreset();
-                    break;
-                case FrameStatsRow:
-                    HandleFrameStatsToggle();
-                    break;
-                case CoffeeLearningPrimaryRow:
-                    HandleCoffeeLearningPrimary();
-                    break;
-                case CoffeeLearningDisconnectRow:
-                    HandleCoffeeLearningDisconnect();
-                    break;
-                case CoffeeLearningCancelRow:
-                    HandleCoffeeLearningCancel();
-                    break;
-            }
-        }
 
         private void OpenPauseMenu(CharacterMenuTab tab)
         {
@@ -617,6 +394,7 @@ namespace CoffeeGame.UI
             navigationLatch = 0;
             SelectModernTab(tab);
         }
+
 
         private void SelectModernTab(CharacterMenuTab tab)
         {
@@ -629,7 +407,7 @@ namespace CoffeeGame.UI
             navigationLatch = 0;
             if (tab == CharacterMenuTab.System)
             {
-                selectedSettingsRow = SupportsButtonRebind ? 0 : InputModeRow;
+                selectedSettingsRow = SupportsButtonRebind ? 0 : CombatHudSettingsRows.InputMode;
                 if (coffeeLearningConnection != null
                     && coffeeLearningConnection.ShouldRefreshAccountIdentity)
                 {
@@ -641,6 +419,7 @@ namespace CoffeeGame.UI
             modernView.SetSelectedControlRow(selectedSettingsRow);
         }
 
+
         private void HandlePointerPause()
         {
             if (run.Mode != CombatRunMode.Playing)
@@ -651,6 +430,7 @@ namespace CoffeeGame.UI
             OpenPauseMenu(CharacterMenuTab.Status);
         }
 
+
         private void HandlePointerTab(CharacterMenuTab tab)
         {
             if ((run.Mode == CombatRunMode.Paused || run.Mode == CombatRunMode.InputSettings)
@@ -659,6 +439,7 @@ namespace CoffeeGame.UI
                 SelectModernTab(tab);
             }
         }
+
 
         private void ResumeFromPauseMenu()
         {
@@ -679,6 +460,7 @@ namespace CoffeeGame.UI
             pauseMenuOpen = false;
         }
 
+
         private void OpenPreBattleInputSettings()
         {
             if ((run.Mode != CombatRunMode.Ready && run.Mode != CombatRunMode.GameOver)
@@ -690,6 +472,7 @@ namespace CoffeeGame.UI
 
             OpenPauseMenu(CharacterMenuTab.System);
         }
+
 
         private void BeginInputModeSelectionFromPause()
         {
@@ -703,6 +486,7 @@ namespace CoffeeGame.UI
             run.BeginInputModeSelection();
         }
 
+
         private void HandleResetBindings()
         {
             if (!SupportsButtonRebind || input.IsRebinding)
@@ -713,6 +497,7 @@ namespace CoffeeGame.UI
             modernView.RebuildMenuContent(run);
             modernView.SetSelectedControlRow(selectedSettingsRow);
         }
+
 
         private void HandleManualSave()
         {
@@ -726,12 +511,14 @@ namespace CoffeeGame.UI
             SetSystemNotice($"{profileMessage} {bindingMessage}");
         }
 
+
         private void HandleExportProfile()
         {
             SetSystemNotice(exportProfileCommand != null
                 ? exportProfileCommand()
                 : "セーブの書き出し先を初期化できていません。");
         }
+
 
         private void HandleImportProfile()
         {
@@ -740,20 +527,24 @@ namespace CoffeeGame.UI
                 : "セーブの取り込み先を初期化できていません。");
         }
 
+
         private void HandleCloudDrive()
         {
             SetSystemNotice(cloudDriveCommand != null ? cloudDriveCommand() : "クラウド設定を初期化できていません。");
         }
+
 
         private void HandleCloudFolder()
         {
             SetSystemNotice(cloudFolderCommand != null ? cloudFolderCommand() : "クラウド設定を初期化できていません。");
         }
 
+
         private void HandleCloudLocal()
         {
             SetSystemNotice(cloudLocalCommand != null ? cloudLocalCommand() : "クラウド設定を初期化できていません。");
         }
+
 
         private void SetSystemNotice(string message)
         {
@@ -763,6 +554,7 @@ namespace CoffeeGame.UI
                 modernView.SetSelectedControlRow(selectedSettingsRow);
             }
         }
+
 
         private void HandlePerformancePreset()
         {
@@ -775,6 +567,7 @@ namespace CoffeeGame.UI
             }
         }
 
+
         private void HandleFrameStatsToggle()
         {
             bool visible = GamePerformanceSettings.ToggleFrameStats();
@@ -786,103 +579,6 @@ namespace CoffeeGame.UI
             }
         }
 
-        private async void HandleCoffeeLearningPrimary()
-        {
-            if (coffeeLearningConnection == null)
-            {
-                SetSystemNotice("CoffeeLearning接続が初期化できていません。");
-                return;
-            }
-
-            if (coffeeLearningConnection.ConfirmationIntent != CoffeeLearningConfirmationIntent.Connect
-                && coffeeLearningConnection.ConfirmationIntent != CoffeeLearningConfirmationIntent.Reconnect)
-            {
-                coffeeLearningConnection.RequestPrimaryAction();
-            }
-
-            SetSystemNotice("ブラウザでCoffeeLearningにログインし、CoffeeGAMEを開くを押すか、接続コードをコピーしてコード貼付してください。");
-            await coffeeLearningConnection.ConfirmPrimaryActionAsync();
-            await ConsumePendingCoffeeLearningBearer();
-            SetSystemNotice(coffeeLearningConnection.StatusLabel);
-        }
-
-        private async void HandlePasteConnection()
-        {
-            if (coffeeLearningConnection == null)
-            {
-                SetSystemNotice("CoffeeLearning接続が初期化できていません。");
-                return;
-            }
-
-            string pasted = ReadClipboardText();
-            if (string.IsNullOrWhiteSpace(pasted) && !string.IsNullOrWhiteSpace(CoffeeGameDeepLink.LastUrl))
-            {
-                pasted = CoffeeGameDeepLink.LastUrl;
-            }
-
-            string message = await coffeeLearningConnection.TryApplyPastedAccessTokenAsync(pasted);
-            SetSystemNotice(message);
-        }
-
-        private async System.Threading.Tasks.Task ConsumePendingCoffeeLearningBearer()
-        {
-            if (coffeeLearningConnection == null || !CoffeeGameDeepLink.TryTakePendingBearer(out string token))
-            {
-                return;
-            }
-
-            string message = await coffeeLearningConnection.TryApplyPastedAccessTokenAsync(token);
-            SetSystemNotice(message);
-        }
-
-        private static string ReadClipboardText()
-        {
-#if UNITY_ANDROID && !UNITY_EDITOR
-            try
-            {
-                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                using (var clipboard = activity.Call<AndroidJavaObject>("getSystemService", "clipboard"))
-                {
-                    if (clipboard == null || !clipboard.Call<bool>("hasPrimaryClip"))
-                    {
-                        return string.Empty;
-                    }
-
-                    using (var clip = clipboard.Call<AndroidJavaObject>("getPrimaryClip"))
-                    using (var item = clip.Call<AndroidJavaObject>("getItemAt", 0))
-                    {
-                        return item.Call<AndroidJavaObject>("coerceToText", activity)?.Call<string>("toString") ?? string.Empty;
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-#endif
-            return GUIUtility.systemCopyBuffer ?? string.Empty;
-        }
-
-        private async void HandleCoffeeLearningDisconnect()
-        {
-            if (coffeeLearningConnection == null)
-            {
-                return;
-            }
-
-            if (coffeeLearningConnection.ConfirmationIntent == CoffeeLearningConfirmationIntent.Disconnect)
-            {
-                await coffeeLearningConnection.ConfirmDisconnectActionAsync();
-                return;
-            }
-
-            coffeeLearningConnection.RequestDisconnectAction();
-        }
-
-        private void HandleCoffeeLearningCancel()
-        {
-            coffeeLearningConnection?.CancelPendingOrActiveAction();
-        }
 
         private void HandleProgressionChanged()
         {
@@ -891,6 +587,7 @@ namespace CoffeeGame.UI
                 modernView.RebuildMenuContent(run);
             }
         }
+
 
         private void SelectPauseMenuTab(PauseMenuTab tab)
         {
@@ -904,6 +601,7 @@ namespace CoffeeGame.UI
             }
         }
 
+
         private void HandlePauseMenuNavigation()
         {
             if (modernView != null)
@@ -912,10 +610,12 @@ namespace CoffeeGame.UI
             }
         }
 
+
         private void DrawPauseMenu()
         {
             // The active pause menu is rendered by CombatGameHudView (uGUI).
         }
+
 
         private void HandleInputModeSelection()
         {
@@ -954,6 +654,7 @@ namespace CoffeeGame.UI
                 SelectInputMode(selectedMode);
             }
         }
+
 
         private void DrawPinnedSystemActions()
         {
@@ -998,6 +699,7 @@ namespace CoffeeGame.UI
                 HandlePasteConnection();
             }
         }
+
 
         private void DrawInputModeSelection()
         {
@@ -1064,6 +766,7 @@ namespace CoffeeGame.UI
                 centeredStyle);
         }
 
+
         private void DrawInputModeButton(
             Rect panel,
             float yOffset,
@@ -1085,12 +788,13 @@ namespace CoffeeGame.UI
             GUI.Label(new Rect(panel.x + 30f, panel.y + yOffset + 38f, panel.width - 60f, 36f), description, smallStyle);
         }
 
+
         private void SelectInputMode(InputMode mode)
         {
             if (run.TrySelectInputMode(mode, out string message))
             {
                 inputModeSelectionMessage = message;
-                selectedSettingsRow = SupportsButtonRebind ? 0 : InputModeRow;
+                selectedSettingsRow = SupportsButtonRebind ? 0 : CombatHudSettingsRows.InputMode;
                 navigationLatch = 0;
                 inputModeNavigationLatch = 0;
                 if (run.Mode == CombatRunMode.Ready
@@ -1104,6 +808,7 @@ namespace CoffeeGame.UI
             inputModeSelectionMessage = message;
         }
 
+
         private static int GetInputModeRow(InputMode mode)
         {
             for (int i = 0; i < SelectableInputModes.Length; i++)
@@ -1116,9 +821,11 @@ namespace CoffeeGame.UI
             return 0;
         }
 
+
         private bool SupportsButtonRebind =>
             input.SelectedInputMode == InputMode.ControllerGamepad ||
             input.SelectedInputMode == InputMode.SteamDesktopCompatibility;
+
 
         private void DrawPlayerHud()
         {
@@ -1140,6 +847,7 @@ namespace CoffeeGame.UI
                 DrawBar(chargeRect, run.PlayerCombat.ChargeNormalized, new Color(0.52f, 0.84f, 1f), $"{run.PlayerCombat.ChargeLabel} CHARGE");
             }
         }
+
 
         private void DrawInputDiagnostic()
         {
@@ -1170,6 +878,7 @@ namespace CoffeeGame.UI
                 $"Jump {input.GetActiveControllerBindingDescription(GameInputSemantic.Jump)}\nSword {input.GetActiveControllerBindingDescription(GameInputSemantic.Sword)}  |  Iai {input.GetActiveControllerBindingDescription(GameInputSemantic.Special)}  |  Ice {input.GetActiveControllerBindingDescription(GameInputSemantic.Magic)}",
                 smallStyle);
         }
+
 
         private void DrawRunOverlay()
         {
@@ -1210,219 +919,6 @@ namespace CoffeeGame.UI
             }
         }
 
-        private void DrawInputSettings()
-        {
-            float width = Mathf.Min(590f, Screen.width - 32f);
-            float height = Screen.height - 32f;
-            Rect panel = new Rect((Screen.width - width) * 0.5f, 16f, width, height);
-            Color previousColor = GUI.color;
-            GUI.color = new Color(0.025f, 0.035f, 0.045f, 0.97f);
-            GUI.DrawTexture(panel, Texture2D.whiteTexture);
-            GUI.color = previousColor;
-            GUI.Box(panel, GUIContent.none);
-
-            string title = input.IsWaitingForRebindButtonRelease
-                ? "決定に使ったボタンを離してください"
-                : input.IsRebinding
-                    ? input.UsesSteamDesktopFallback
-                        ? $"新しく使うSteam Controllerボタンを押してください（残り {Mathf.CeilToInt(input.RebindSecondsRemaining)}秒）"
-                        : $"新しく使うGamepadボタンを押してください（残り {Mathf.CeilToInt(input.RebindSecondsRemaining)}秒）"
-                    : SupportsButtonRebind
-                        ? $"{input.ActiveControllerProfileName} ボタン割当"
-                        : "キーボード／マウス設定";
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 10f, panel.width - 28f, 24f), title, titleStyle);
-
-            string status = string.IsNullOrEmpty(input.LastRebindMessage)
-                ? "View/Select または Tab で開閉できます。"
-                : input.LastRebindMessage;
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 36f, panel.width - 28f, 43f), status, smallStyle);
-
-            DrawRebindRow(panel, 84f, 0, "ジャンプ", GameInputSemantic.Jump);
-            DrawRebindRow(panel, 124f, 1, "刀攻撃", GameInputSemantic.Sword);
-            DrawRebindRow(panel, 164f, 2, "居合斬り", GameInputSemantic.Special);
-            DrawRebindRow(panel, 204f, 3, "氷魔法", GameInputSemantic.Magic);
-
-            DrawSettingsCommandButton(
-                panel,
-                250f,
-                InputModeRow,
-                $"入力方式を選び直す（現在: {input.ActiveControllerProfileName}）",
-                BeginInputModeSelectionFromSettings);
-            DrawSettingsCommandButton(panel, 290f, SaveRow, "プロフィールとボタン設定を保存", HandleManualSave);
-            DrawSettingsCommandButton(panel, 330f, ResetRow, "初期配置へ戻す", () => input.ResetBindingOverrides(), SupportsButtonRebind);
-            DrawSettingsCommandButton(panel, 370f, CloseRow, "設定を保存して閉じる", CloseInputSettings);
-
-            DrawSettingsCommandButton(
-                panel,
-                410f,
-                PerformanceRow,
-                $"描画プリセット: {GamePerformanceSettings.CurrentPresetLabel}",
-                HandlePerformancePreset);
-            DrawSettingsCommandButton(
-                panel,
-                450f,
-                FrameStatsRow,
-                $"FPS表示: {(GamePerformanceSettings.ShowFrameStats ? "ON" : "OFF")}",
-                HandleFrameStatsToggle);
-
-            bool previousEnabled = GUI.enabled;
-            GUI.enabled = input.IsRebinding;
-            if (AcceptPointerCommand(GUI.Button(
-                    new Rect(panel.x + 14f, panel.y + 490f, panel.width - 28f, 27f),
-                    "再割当を取り消す（Start/View・Esc）",
-                    buttonStyle)))
-            {
-                input.CancelInteractiveRebind();
-            }
-            GUI.enabled = previousEnabled;
-
-            string operationHelp = input.SelectedInputMode switch
-            {
-                InputMode.SteamDesktopCompatibility =>
-                    "Steam Desktop互換: B/Spaceは通常の取消、再割当待機中は戦闘ボタンとして選択可。Escで再割当を取り消します。変換後の実control pathを保存します。",
-                InputMode.ControllerGamepad =>
-                    "操作: ↑↓で選択 / South位置で決定 / East位置で通常取消。再割当待機中はEastも戦闘ボタンに選択可。Start/View・Escで再割当を取り消します。",
-                _ =>
-                    "キーボード／マウスの基本配置は現在固定です。変更したい場合は『入力方式を選び直す』からGamepadまたはSteam Desktop互換を選択してください。"
-            };
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 526f, panel.width - 28f, 48f),
-                operationHelp,
-                smallStyle);
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 578f, panel.width - 28f, Mathf.Max(40f, panel.height - 590f)),
-                input.ControllerCompatibilityHint,
-                smallStyle);
-        }
-
-        private void DrawRebindRow(Rect panel, float yOffset, int row, string label, GameInputSemantic semantic)
-        {
-            GUI.Label(new Rect(panel.x + 16f, panel.y + yOffset, 92f, 30f), label, labelStyle);
-            string current = input.GetActiveControllerBindingDescription(semantic);
-            if (!SupportsButtonRebind)
-            {
-                current += "（固定）";
-            }
-            GUIStyle style = selectedSettingsRow == row ? selectedButtonStyle : buttonStyle;
-            bool previousEnabled = GUI.enabled;
-            GUI.enabled = SupportsButtonRebind && !input.IsRebinding;
-            if (AcceptPointerCommand(GUI.Button(
-                    new Rect(panel.x + 112f, panel.y + yOffset, panel.width - 128f, 30f),
-                    current,
-                    style)))
-            {
-                selectedSettingsRow = row;
-                BeginRebind(semantic);
-            }
-            GUI.enabled = previousEnabled;
-        }
-
-        private void DrawSettingsCommandButton(
-            Rect panel,
-            float yOffset,
-            int row,
-            string text,
-            System.Action command,
-            bool enabled = true)
-        {
-            GUIStyle style = selectedSettingsRow == row ? selectedButtonStyle : buttonStyle;
-            bool previousEnabled = GUI.enabled;
-            GUI.enabled = enabled && !input.IsRebinding;
-            if (AcceptPointerCommand(GUI.Button(
-                    new Rect(panel.x + 14f, panel.y + yOffset, panel.width - 28f, 30f),
-                    text,
-                    style)))
-            {
-                selectedSettingsRow = row;
-                command?.Invoke();
-            }
-            GUI.enabled = previousEnabled;
-        }
-
-        private void HandleSettingsNavigation()
-        {
-            float vertical = input.Navigate.y;
-            if (Mathf.Abs(vertical) < 0.28f)
-            {
-                navigationLatch = 0;
-                return;
-            }
-
-            int direction = vertical > 0.55f ? -1 : vertical < -0.55f ? 1 : 0;
-            if (direction == 0 || navigationLatch == direction)
-            {
-                return;
-            }
-
-            navigationLatch = direction;
-            do
-            {
-                selectedSettingsRow = (selectedSettingsRow + direction + SettingsRowCount) % SettingsRowCount;
-            }
-            while (!IsSettingsRowSelectable(selectedSettingsRow));
-        }
-
-        private void ActivateSelectedSettingsRow()
-        {
-            switch (selectedSettingsRow)
-            {
-                case 0:
-                    BeginRebind(GameInputSemantic.Jump);
-                    break;
-                case 1:
-                    BeginRebind(GameInputSemantic.Sword);
-                    break;
-                case 2:
-                    BeginRebind(GameInputSemantic.Special);
-                    break;
-                case 3:
-                    BeginRebind(GameInputSemantic.Magic);
-                    break;
-                case InputModeRow:
-                    BeginInputModeSelectionFromSettings();
-                    break;
-                case SaveRow:
-                    HandleManualSave();
-                    break;
-                case ExportProfileRow:
-                    HandleExportProfile();
-                    break;
-                case ImportProfileRow:
-                    HandleImportProfile();
-                    break;
-                case CloudDriveRow:
-                    HandleCloudDrive();
-                    break;
-                case CloudFolderRow:
-                    HandleCloudFolder();
-                    break;
-                case CloudLocalRow:
-                    HandleCloudLocal();
-                    break;
-                case ResetRow:
-                    if (SupportsButtonRebind)
-                    {
-                        input.ResetBindingOverrides();
-                    }
-                    break;
-                case CloseRow:
-                    CloseInputSettings();
-                    break;
-                case PerformanceRow:
-                    HandlePerformancePreset();
-                    break;
-                case FrameStatsRow:
-                    HandleFrameStatsToggle();
-                    break;
-                case CoffeeLearningPrimaryRow:
-                    HandleCoffeeLearningPrimary();
-                    break;
-                case CoffeeLearningDisconnectRow:
-                    HandleCoffeeLearningDisconnect();
-                    break;
-                case CoffeeLearningCancelRow:
-                    HandleCoffeeLearningCancel();
-                    break;
-            }
-        }
 
         private void BeginRebind(GameInputSemantic semantic)
         {
@@ -1443,84 +939,6 @@ namespace CoffeeGame.UI
             }
         }
 
-        private void ToggleInputSettings()
-        {
-            if (input.IsRebinding)
-            {
-                return;
-            }
-
-            if (showInputSettings)
-            {
-                CloseInputSettings();
-                return;
-            }
-
-            if (run.BeginInputSettings())
-            {
-                showInputSettings = true;
-                selectedSettingsRow = SupportsButtonRebind ? 0 : InputModeRow;
-                navigationLatch = 0;
-            }
-        }
-
-        private bool IsSettingsRowSelectable(int row)
-        {
-            if (row == CoffeeLearningPrimaryRow)
-            {
-                return coffeeLearningConnection != null
-                    && coffeeLearningConnection.CanUsePrimaryAction;
-            }
-
-            if (row == CoffeeLearningDisconnectRow)
-            {
-                return coffeeLearningConnection != null
-                    && coffeeLearningConnection.CanUseDisconnectAction;
-            }
-
-            if (row == CoffeeLearningCancelRow)
-            {
-                return coffeeLearningConnection != null
-                    && coffeeLearningConnection.CanUseCancelAction;
-            }
-
-            return SupportsButtonRebind ||
-                   row == InputModeRow ||
-                   row == SaveRow ||
-                   row == ExportProfileRow ||
-                   row == ImportProfileRow ||
-                   row == CloudDriveRow ||
-                   row == CloudFolderRow ||
-                   row == CloudLocalRow ||
-                   row == CloseRow ||
-                   row == PerformanceRow ||
-                   row == FrameStatsRow;
-        }
-
-        private void BeginInputModeSelectionFromSettings()
-        {
-            InputMode currentMode = input.SelectedInputMode;
-            selectedInputModeRow = GetInputModeRow(
-                currentMode == InputMode.Unselected ? input.PreferredInputModeForSelection : currentMode);
-            inputModeSelectionMessage = "入力方式を変更すると、受け付けるデバイスもその方式だけに切り替わります。";
-            inputModeNavigationLatch = 0;
-            run.BeginInputModeSelection();
-        }
-
-        private void CloseInputSettings()
-        {
-            if (input.IsRebinding)
-            {
-                input.CancelInteractiveRebind();
-                return;
-            }
-
-            if (run.EndInputSettings())
-            {
-                showInputSettings = false;
-                navigationLatch = 0;
-            }
-        }
 
         private bool AcceptPointerCommand(bool wasClicked)
         {
@@ -1538,12 +956,14 @@ namespace CoffeeGame.UI
                    input.Context == GameInputContext.InputSelection;
         }
 
+
         private static bool AcceptSettingsPointerCommand(bool wasClicked)
         {
             // The settings entry is an explicit recovery path even while Battle
             // uses an exclusive controller binding profile.
             return wasClicked;
         }
+
 
         private static void DrawBar(Rect rect, float normalized, Color fillColor, string label)
         {
@@ -1554,6 +974,7 @@ namespace CoffeeGame.UI
             GUI.color = previous;
             GUI.Label(rect, label, GUI.skin.label);
         }
+
 
         private void OnDestroy()
         {
@@ -1588,6 +1009,7 @@ namespace CoffeeGame.UI
                 run.Progression.Changed -= HandleProgressionChanged;
             }
         }
+
 
         private void EnsureStyles()
         {

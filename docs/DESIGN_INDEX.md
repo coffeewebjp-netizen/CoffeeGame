@@ -16,10 +16,10 @@ The live game is `unity/CoffeeGame`.
 | 作業 | 先に読む文書 | 主な実装入口 |
 | --- | --- | --- |
 | いまの実装範囲 | `docs/current-status.md` | `unity/CoffeeGame/Assets/CoffeeGame/Scripts/` |
-| Unity 起動と入力 | `unity/CoffeeGame/README.md` | `Scripts/Input/GameInputReader.cs` |
+| Unity 起動と入力 | `unity/CoffeeGame/README.md` | `Scripts/Input/GameInputReader.cs` と `GameInputReader.{Keyboard,Gamepad,SteamDesktop,Touch}.cs` |
 | 戦闘スライス | `docs/first-combat-slice.md` | `Scripts/Runtime/Combat/`, `Scripts/Runtime/Bootstrap/` |
-| HUD / ポーズ | `docs/player-profile-and-pause-ui.md` | `Scripts/Runtime/UI/` |
-| CoffeeLearning 連携 | `docs/coffeelearning-integration.md` | `Scripts/Integration/` |
+| HUD / ポーズ | `docs/player-profile-and-pause-ui.md` | `CombatSliceHud`（制御）と `CombatGameHudView`（表示）。設定行は `CombatHudSettingsRows` |
+| CoffeeLearning 連携 | `docs/coffeelearning-integration.md` | `Scripts/Integration/`。HUD 接続面は `CombatSliceHud.CoffeeLearning.cs` / `CombatGameHudView.Settings.cs`。ライバル出題は `*.Rival*.cs` |
 | HD-2D 素材 | `art/hd2d/README.md` | `Resources/Art/HD2D/` |
 | 旧ブラウザ試作 | `archive/haxslasher/README.md` | 現行コードではない |
 
