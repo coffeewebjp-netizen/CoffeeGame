@@ -17,7 +17,10 @@ Use the T-pose pack. Neutral pose rigs much better than idle.
 
 Backup if the T-pose result looks wrong: `upload/identity/` (idle front / right / back). Do not mix T-pose and idle in one generation.
 
-Known input issue: front and right T-pose hold the sword; the back T-pose has empty hands and a sheathed sword. Expect the first mesh to fuse the katana into the right hand. That is acceptable for this trial.
+Known input issues:
+
+- Front and right T-pose hold the sword; the back T-pose has empty hands and a sheathed sword. Expect the first mesh to fuse the katana into the right hand. That is acceptable for this trial.
+- The first right T-pose had black tabi/socks. `02-right.jpg` is now bare feet in geta to match front/back. The socked original is `02-right-socks-archived.jpg` and must not be uploaded.
 
 ## Owner: subscribe
 
