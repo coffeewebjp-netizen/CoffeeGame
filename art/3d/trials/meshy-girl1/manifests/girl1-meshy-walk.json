@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "asset": "trial-meshy-girl1",
+  "status": "meshy-walk-trial",
+  "taskId": "ORC-20260823-004",
+  "source": "art/3d/trials/meshy-girl1/drop/Meshy_AI_Azure_Blade_Maiden_biped_Animation_Walking_withSkin.fbx",
+  "blend": "art/3d/trials/meshy-girl1/source/girl1-meshy-walk.blend",
+  "exportFbx": "art/3d/trials/meshy-girl1/export/girl1-meshy-walk.fbx",
+  "unityFbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/trial-anime-girl.fbx",
+  "actions": [
+    "Idle",
+    "Run",
+    "Walk"
+  ],
+  "bones": [
+    "Hips",
+    "LeftUpLeg",
+    "LeftLeg",
+    "LeftFoot",
+    "LeftToeBase",
+    "RightUpLeg",
+    "RightLeg",
+    "RightFoot",
+    "RightToeBase",
+    "Spine02",
+    "Spine01",
+    "Spine",
+    "LeftShoulder",
+    "LeftArm",
+    "LeftForeArm",
+    "LeftHand",
+    "RightShoulder",
+    "RightArm",
+    "RightForeArm",
+    "RightHand",
+    "neck",
+    "Head",
+    "head_end",
+    "headfront"
+  ],
+  "bodyTriangles": 102433,
+  "swordTriangles": 734,
+  "heightMeters": 130.52102304250002,
+  "origin": "ground-center",
+  "swordParentBone": "RightHand",
+  "notes": {
+    "swordVerts": 387,
+    "bodyVerts": 51013
+  },
+  "playableHeroine": "HD-2D unchanged; enable CoffeeGAME > Trial > Use anime-girl 3D"
+}

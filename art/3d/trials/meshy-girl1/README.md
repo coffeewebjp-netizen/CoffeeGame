@@ -51,7 +51,7 @@ This is a separate step after the mesh exists.
 
 ## Owner: remesh, rig, animate (usually 0 extra credits)
 
-1. If the mesh is very dense, run **Remesh** first (quad topology, target about 20k–40k triangles).
+1. Remesh is optional. If it punches holes in the haori or skirt, discard that result and rig the original textured mesh instead. Reduce polycount later in Blender if needed.
 2. Open **Animate** / Auto-Rig. Character type: **Humanoid**. Center, face forward, feet on the ground.
 3. Click **Auto-Rig**.
 4. Add library clips: **Idle**, **Walk**, **Run**. Optionally one Jump and one sword slash if they are easy to find.
@@ -66,6 +66,14 @@ Meshy has no cloth physics. A short skirt that stretches with the legs is expect
 3. Put both files in `drop/` in this folder. Do not replace `unity/.../heroine-v4.fbx`.
 
 Then tell Root the files are in `drop/`. Import into the existing Trial slot is the next step; HD-2D stays the default.
+
+## After the FBX is in `drop/`
+
+`tools/blender/prepare_meshy_girl1.py` separates the fused katana, parents it to `RightHand`, names `Idle` / `Walk` / `Run`, and copies FBX to the existing Trial slot `unity/.../Models/Hero/trial-anime-girl.fbx`. The previous Tripo trial FBX is copied to `archive/` if present.
+
+In Unity: **CoffeeGAME > Trial > Use anime-girl 3D**, then Play. **CoffeeGAME > Trial > Use HD-2D heroine** turns it off. The serialized default remains HD-2D.
+
+The sword stays straight. Mixamo walk still swings the right arm, so the blade can pass through the hip during Walk. That is a clip-offset limit, not rubber deformation.
 
 ## Reject checks
 
