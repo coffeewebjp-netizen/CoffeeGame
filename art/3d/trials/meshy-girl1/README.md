@@ -21,10 +21,7 @@ Known input issue: front and right T-pose hold the sword; the back T-pose has em
 
 ## Owner: subscribe
 
-1. Open https://www.meshy.ai/pricing
-2. Choose **Pro, billed monthly**. Do not pick yearly.
-3. New Pro is currently 50% off the first month (~$10). Confirm the live price on that page.
-4. Free plan cannot download latest models and has no Multi-view. Paid Pro is required.
+Paid Premium monthly is in place (`ORC-20260823-004-SIG01`). Premium is enough: Multi-view, latest-model download, auto-rig, and more credits than Pro. Do not switch to yearly. Cancel before the promotional window ends if the trial is done.
 
 ## Owner: generate (about 20 credits)
 
