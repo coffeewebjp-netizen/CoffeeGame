@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 PACK = ROOT / "art" / "3d" / "trials" / "meshy-girl1"
@@ -43,6 +43,26 @@ ACTION_RENAME = {
     "Armature|Regular_Jump": "Jump",
     "Armature|Attack": "Sword",
     "Armature|mage_soell_cast_7": "MagicCharge",
+}
+# Character faces -Y with +Z up. World +Y drop takes T-pose arms to the sides;
+# world +X pitch leans the torso toward -Y (forward).
+IDLE_ARM_DROP = {
+    "LeftShoulder": (Vector((0.0, 1.0, 0.0)), math.radians(12.0)),
+    "RightShoulder": (Vector((0.0, 1.0, 0.0)), math.radians(-12.0)),
+    "LeftArm": (Vector((0.0, 1.0, 0.0)), math.radians(78.0)),
+    "RightArm": (Vector((0.0, 1.0, 0.0)), math.radians(-78.0)),
+}
+IDLE_ELBOW_BEND = {
+    "LeftForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
+    "RightForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
+}
+RUN_FORWARD_LEAN = {
+    "Hips": math.radians(7.0),
+    "Spine02": math.radians(5.0),
+    "Spine01": math.radians(4.0),
+    "Spine": math.radians(3.0),
+    "neck": math.radians(-6.0),
+    "Head": math.radians(-3.0),
 }
 
 
@@ -164,6 +184,51 @@ def keyframe_pose(arm, frame):
         bone.keyframe_insert("scale", frame=frame)
 
 
+def rotate_bone_world(arm, bone_name, world_axis, angle_rad):
+    bone = arm.pose.bones.get(bone_name)
+    if bone is None or abs(angle_rad) < 1e-6:
+        return
+    bpy.context.view_layer.update()
+    axis_local = bone.matrix.to_3x3().inverted() @ world_axis
+    if axis_local.length < 0.001:
+        return
+    extra = Quaternion(axis_local.normalized(), angle_rad)
+    bone.rotation_quaternion = extra @ bone.rotation_quaternion
+
+
+def pose_idle_standing(arm):
+    """Lower T-pose arms into a standing rest. Sword stays sheathed at the hip."""
+    bpy.ops.pose.select_all(action="SELECT")
+    bpy.ops.pose.transforms_clear()
+    for name, (axis, angle) in IDLE_ARM_DROP.items():
+        rotate_bone_world(arm, name, axis, angle)
+    bpy.context.view_layer.update()
+    for name, (axis, angle) in IDLE_ELBOW_BEND.items():
+        rotate_bone_world(arm, name, axis, angle)
+    bpy.context.view_layer.update()
+
+
+def lean_run_forward(arm):
+    """Add extra sagittal lean so Run reads as a forward sprint, not upright jogging."""
+    action = bpy.data.actions.get("Run")
+    if action is None:
+        return
+    assign_action(arm, action)
+    scene = bpy.context.scene
+    start = int(round(action.frame_range[0]))
+    end = int(round(action.frame_range[1]))
+    for frame in range(start, end + 1):
+        scene.frame_set(frame)
+        bpy.context.view_layer.update()
+        for name, angle in RUN_FORWARD_LEAN.items():
+            rotate_bone_world(arm, name, Vector((1.0, 0.0, 0.0)), angle)
+        for name in RUN_FORWARD_LEAN:
+            bone = arm.pose.bones.get(name)
+            if bone is None:
+                continue
+            bone.keyframe_insert("rotation_quaternion", frame=frame)
+
+
 def bake_named_action(arm, source, dest_name):
     assign_action(arm, source)
     scene = bpy.context.scene
@@ -206,11 +271,10 @@ def prepare_actions(arm):
     for old, new in ACTION_RENAME.items():
         baked[new] = bake_named_action(arm, bpy.data.actions[old], new + "__baked")
 
-    bpy.ops.pose.select_all(action="SELECT")
-    bpy.ops.pose.transforms_clear()
     idle = bpy.data.actions.new(name="Idle")
     idle.use_fake_user = True
     assign_action(arm, idle)
+    pose_idle_standing(arm)
     keyframe_pose(arm, 1)
     keyframe_pose(arm, 10)
     bpy.ops.object.mode_set(mode="OBJECT")
@@ -293,6 +357,11 @@ def render_previews(arm):
     three_q = (2.15, -2.75, 1.15)
     assign_action(arm, bpy.data.actions["Idle"])
     render_still(PREVIEWS / "idle.jpg", three_q, 1)
+    render_still(PREVIEWS / "idle-front.jpg", (0.0, -3.35, 1.05), 1)
+    assign_action(arm, bpy.data.actions["Run"])
+    run = bpy.data.actions["Run"]
+    run_mid = int((run.frame_range[0] + run.frame_range[1]) * 0.5)
+    render_still(PREVIEWS / "run-side.jpg", (3.35, 0.0, 1.05), run_mid)
     for name in ("Walk", "Run", "Jump", "Sword", "MagicCharge"):
         action = bpy.data.actions.get(name)
         if action is None:
@@ -360,7 +429,7 @@ def write_manifest(arm, mesh):
         "source": str(SRC_FBX.relative_to(ROOT)).replace("\\", "/"),
         "actions": sorted(action.name for action in bpy.data.actions),
         "triangles": sum(len(p.vertices) - 2 for p in mesh.data.polygons),
-        "notes": "Symmetric T-pose Meshy pack. Sheathed sword left fused. No RightHand katana parent. Actions rebaked with Blender 4.5 slots.",
+        "notes": "Symmetric T-pose Meshy pack. Idle arms lowered from T-pose. Run has extra forward lean. Sheathed sword left fused.",
     }
     MANIFEST.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(data, indent=2))
@@ -408,6 +477,7 @@ def main():
     assign_textures(mesh)
     prepare_actions(arm)
     make_locomotion_inplace()
+    lean_run_forward(arm)
     verify_baked_actions()
     BLEND.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND))
