@@ -40,6 +40,15 @@ Paid Premium monthly is in place (`ORC-20260823-004-SIG01`). Premium is enough: 
 
 Judge the still in the Meshy viewer: face, hair, haori, skirt, geta, silhouette. If it is not recognizably girl1, regenerate once or twice before rigging.
 
+## Owner: texture (about 10 credits)
+
+This is a separate step after the mesh exists.
+
+1. Keep **画像入力** and **マルチビュー** on. Reuse the same four T-pose images.
+2. Keep **PBRマップを生成する** on. Unity needs relightable maps, not baked lighting.
+3. Texture resolution: **4K**. 2K and 4K cost the same 10 credits. 8K costs extra and is for film/print, not this camera.
+4. Click **テクスチャ**. Do not turn Multi-view off here; the back of the hair and haori come from the extra views.
+
 ## Owner: remesh, rig, animate (usually 0 extra credits)
 
 1. If the mesh is very dense, run **Remesh** first (quad topology, target about 20k–40k triangles).
