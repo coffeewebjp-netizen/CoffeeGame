@@ -56,15 +56,29 @@ IDLE_ELBOW_BEND = {
     "LeftForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
     "RightForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
 }
-# Whole-body pitch toward -Y. Neck/head use the same sign as hips so the
-# head drops with the torso instead of staying high.
+# Extra torso pitch toward -Y. Neck/head counter so the face stays forward
+# (the reference run looks ahead, not at the ground).
 RUN_FORWARD_LEAN = {
-    "Hips": math.radians(26.0),
-    "Spine02": math.radians(8.0),
-    "Spine01": math.radians(7.0),
-    "Spine": math.radians(5.0),
-    "neck": math.radians(8.0),
-    "Head": math.radians(6.0),
+    "Hips": math.radians(22.0),
+    "Spine02": math.radians(6.0),
+    "Spine01": math.radians(5.0),
+    "Spine": math.radians(4.0),
+}
+RUN_HEAD_LOOK_FORWARD = {
+    "neck": math.radians(-28.0),
+    "Head": math.radians(-14.0),
+}
+RUN_LIMB_SCALE = {
+    "LeftShoulder": 1.2,
+    "RightShoulder": 1.2,
+    "LeftArm": 1.45,
+    "RightArm": 1.45,
+    "LeftForeArm": 1.25,
+    "RightForeArm": 1.25,
+    "LeftUpLeg": 1.4,
+    "RightUpLeg": 1.4,
+    "LeftLeg": 1.3,
+    "RightLeg": 1.3,
 }
 SWORD_SLASH_ARM = ("RightShoulder", "RightArm", "RightForeArm", "RightHand")
 
@@ -434,8 +448,35 @@ def pose_idle_standing(arm):
     bpy.context.view_layer.update()
 
 
+def mean_quaternion(quats):
+    acc = Quaternion((0.0, 0.0, 0.0, 0.0))
+    for quat in quats:
+        sample = quat.copy()
+        if acc.dot(sample) < 0.0:
+            sample.negate()
+        acc.w += sample.w
+        acc.x += sample.x
+        acc.y += sample.y
+        acc.z += sample.z
+    if acc.magnitude < 1e-8:
+        return Quaternion((1.0, 0.0, 0.0, 0.0))
+    acc.normalize()
+    return acc
+
+
+def exaggerate_from_mean(bone, mean_quat, factor: float):
+    if bone is None or factor <= 1.001:
+        return
+    current = bone.rotation_quaternion.copy()
+    delta = mean_quat.rotation_difference(current)
+    axis, angle = delta.to_axis_angle()
+    if abs(angle) < 1e-5:
+        return
+    bone.rotation_quaternion = mean_quat @ Quaternion(axis, angle * factor)
+
+
 def lean_run_forward(arm):
-    """Rebuild Run with extra hip pitch. Layered-action keyframe_insert does not stick."""
+    """Rebuild Run: extra torso lean, forward gaze, bigger arm/leg reach."""
     action = bpy.data.actions.get("Run")
     if action is None:
         return
@@ -443,11 +484,27 @@ def lean_run_forward(arm):
     scene = bpy.context.scene
     start = int(round(action.frame_range[0]))
     end = int(round(action.frame_range[1]))
-    frames = []
+    originals = []
     for frame in range(start, end + 1):
         scene.frame_set(frame)
         bpy.context.view_layer.update()
+        originals.append(snapshot_pose(arm))
+    limb_means = {}
+    for name in RUN_LIMB_SCALE:
+        samples = [pose[name][1] for pose in originals if name in pose]
+        if samples:
+            limb_means[name] = mean_quaternion(samples)
+    frames = []
+    for pose in originals:
+        apply_pose(arm, pose)
+        bpy.context.view_layer.update()
+        for name, factor in RUN_LIMB_SCALE.items():
+            exaggerate_from_mean(arm.pose.bones.get(name), limb_means[name], factor)
+        bpy.context.view_layer.update()
         for name, angle in RUN_FORWARD_LEAN.items():
+            rotate_bone_world(arm, name, Vector((1.0, 0.0, 0.0)), angle)
+        bpy.context.view_layer.update()
+        for name, angle in RUN_HEAD_LOOK_FORWARD.items():
             rotate_bone_world(arm, name, Vector((1.0, 0.0, 0.0)), angle)
         bpy.context.view_layer.update()
         frames.append(snapshot_pose(arm))
@@ -670,7 +727,7 @@ def write_manifest(arm, mesh):
         "source": str(SRC_FBX.relative_to(ROOT)).replace("\\", "/"),
         "actions": sorted(action.name for action in bpy.data.actions),
         "triangles": sum(len(p.vertices) - 2 for p in mesh.data.polygons),
-        "notes": "Idle arms down. Run head-down lean. Sheathed sword still fused; drawn-sword split is not in this export.",
+        "notes": "Idle arms down. Run: bigger limb swing, face looks forward. Sword still sheathed.",
     }
     MANIFEST.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(data, indent=2))
