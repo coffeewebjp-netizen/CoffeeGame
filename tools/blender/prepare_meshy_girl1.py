@@ -260,6 +260,51 @@ def rename_actions(arm):
     arm.animation_data.action = walk
     scene.frame_start = start
     scene.frame_end = int(walk.frame_range[1])
+    lock_sword_arm_to_hold(arm)
+
+
+SWORD_ARM_BONES = ("RightShoulder", "RightArm", "RightForeArm", "RightHand")
+
+
+def lock_sword_arm_to_hold(arm):
+    """Keep the katana arm at the idle hold during Walk/Run so Mixamo arm-swing
+    does not throw the rigid sword through the spine."""
+    idle = bpy.data.actions.get("Idle")
+    if idle is None:
+        return
+    scene = bpy.context.scene
+    arm.animation_data.action = idle
+    scene.frame_set(int(idle.frame_range[0]))
+    bpy.context.view_layer.update()
+    hold = {}
+    for name in SWORD_ARM_BONES:
+        bone = arm.pose.bones.get(name)
+        if bone is None:
+            continue
+        hold[name] = (bone.location.copy(), bone.rotation_quaternion.copy(), bone.scale.copy())
+    if not hold:
+        return
+
+    for action_name in ("Walk", "Run"):
+        action = bpy.data.actions.get(action_name)
+        if action is None:
+            continue
+        for fcurve in list(action.fcurves):
+            if any(f'["{name}"]' in fcurve.data_path for name in hold):
+                action.fcurves.remove(fcurve)
+        arm.animation_data.action = action
+        start = int(round(action.frame_range[0]))
+        end = int(round(action.frame_range[1]))
+        for frame in range(start, end + 1):
+            scene.frame_set(frame)
+            for name, (loc, quat, scl) in hold.items():
+                bone = arm.pose.bones[name]
+                bone.location = loc
+                bone.rotation_quaternion = quat
+                bone.scale = scl
+                bone.keyframe_insert("location", frame=frame)
+                bone.keyframe_insert("rotation_quaternion", frame=frame)
+                bone.keyframe_insert("scale", frame=frame)
 
 
 def make_walk_inplace(arm):
