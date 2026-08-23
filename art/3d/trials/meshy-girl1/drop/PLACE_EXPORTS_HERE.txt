@@ -1,0 +1,2 @@
+Put the Meshy FBX (and optional GLB) here.
+Do not overwrite the playable HD-2D heroine or heroine-v4.fbx.
