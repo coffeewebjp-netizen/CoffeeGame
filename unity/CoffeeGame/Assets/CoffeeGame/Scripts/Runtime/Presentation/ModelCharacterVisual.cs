@@ -16,8 +16,12 @@ namespace CoffeeGame.Presentation
     public sealed class ModelCharacterVisual : MonoBehaviour, ICharacterVisual
     {
         private const string LocomotionSpeedParameter = "LocomotionSpeed";
+        private const string TrialAlbedoResource = "Models/Hero/Meshy_AI_Azure_Blade_Maiden_biped_texture_0";
+        private const string TrialNormalResource = "Models/Hero/Meshy_AI_Azure_Blade_Maiden_biped_texture_0_normal";
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+        private static readonly int BumpMapId = Shader.PropertyToID("_BumpMap");
         private static readonly int LocomotionSpeedId = Animator.StringToHash(LocomotionSpeedParameter);
 
         [Serializable]
@@ -117,6 +121,7 @@ namespace CoffeeGame.Presentation
 
             BuildStateNameLookup();
             ApplyReferenceMaterials();
+            ApplyImportedTexturesIfMissing();
             CacheTintTargets();
             CacheAnimatorParameters();
             ResetState(Vector3.back);
@@ -479,6 +484,87 @@ namespace CoffeeGame.Presentation
                         hasColor,
                         hasColor ? material.GetColor(ColorId) : Color.white));
                 }
+            }
+        }
+
+        private void ApplyImportedTexturesIfMissing()
+        {
+            if (modelStyle != CharacterModelStyle.Imported || modelRoot == null)
+            {
+                return;
+            }
+
+            Texture2D albedo = Resources.Load<Texture2D>(TrialAlbedoResource);
+            if (albedo == null)
+            {
+                return;
+            }
+
+            Texture2D normal = Resources.Load<Texture2D>(TrialNormalResource);
+            Material display = RuntimeMaterialFactory.CreateLit("trial-anime-girl display", Color.white);
+            if (display == null)
+            {
+                return;
+            }
+
+            if (display.HasProperty(BaseMapId))
+            {
+                display.SetTexture(BaseMapId, albedo);
+            }
+            else if (display.HasProperty("_MainTex"))
+            {
+                display.SetTexture("_MainTex", albedo);
+            }
+
+            if (normal != null && display.HasProperty(BumpMapId))
+            {
+                display.SetTexture(BumpMapId, normal);
+                display.EnableKeyword("_NORMALMAP");
+            }
+
+            if (display.HasProperty("_Smoothness"))
+            {
+                display.SetFloat("_Smoothness", 0.18f);
+            }
+            if (display.HasProperty("_Metallic"))
+            {
+                display.SetFloat("_Metallic", 0.02f);
+            }
+
+            ownedDisplayMaterials.Add(display);
+            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] materials = renderers[i].sharedMaterials;
+                if (materials == null || materials.Length == 0)
+                {
+                    renderers[i].sharedMaterial = display;
+                    continue;
+                }
+
+                bool needsMap = false;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    Material imported = materials[materialIndex];
+                    if (imported == null ||
+                        !imported.HasProperty(BaseMapId) ||
+                        imported.GetTexture(BaseMapId) == null)
+                    {
+                        needsMap = true;
+                        break;
+                    }
+                }
+
+                if (!needsMap)
+                {
+                    continue;
+                }
+
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    materials[materialIndex] = display;
+                }
+                renderers[i].sharedMaterials = materials;
             }
         }
 
