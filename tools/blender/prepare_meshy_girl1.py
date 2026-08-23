@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 PACK = ROOT / "art" / "3d" / "trials" / "meshy-girl1"
@@ -261,6 +261,7 @@ def rename_actions(arm):
     scene.frame_start = start
     scene.frame_end = int(walk.frame_range[1])
     lock_sword_arm_to_hold(arm)
+    add_sword_arm_fore_aft_swing(arm)
 
 
 SWORD_ARM_BONES = ("RightShoulder", "RightArm", "RightForeArm", "RightHand")
@@ -305,6 +306,61 @@ def lock_sword_arm_to_hold(arm):
                 bone.keyframe_insert("location", frame=frame)
                 bone.keyframe_insert("rotation_quaternion", frame=frame)
                 bone.keyframe_insert("scale", frame=frame)
+
+
+def add_sword_arm_fore_aft_swing(arm):
+    """Replace Mixamo's side-to-side arm swing with a small forward/back pendulum.
+
+    Character faces -Y with +Z up, so rotation around armature +X moves the
+    right hand in the sagittal plane. The hand/sword stay in the idle hold.
+    """
+    idle = bpy.data.actions.get("Idle")
+    if idle is None:
+        return
+    scene = bpy.context.scene
+    arm.animation_data.action = idle
+    scene.frame_set(int(idle.frame_range[0]))
+    bpy.context.view_layer.update()
+    hold = {}
+    for name in ("RightShoulder", "RightArm"):
+        bone = arm.pose.bones.get(name)
+        if bone is None:
+            continue
+        hold[name] = bone.rotation_quaternion.copy()
+    if "RightArm" not in hold:
+        return
+
+    amplitudes = {"Walk": math.radians(16.0), "Run": math.radians(24.0)}
+    swing_axis = Vector((1.0, 0.0, 0.0))
+
+    for action_name, amplitude in amplitudes.items():
+        action = bpy.data.actions.get(action_name)
+        if action is None:
+            continue
+        arm.animation_data.action = action
+        start = int(round(action.frame_range[0]))
+        end = int(round(action.frame_range[1]))
+        period = max(1, end - start)
+        for frame in range(start, end + 1):
+            scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            # Opposite the right leg: right arm goes forward when the right
+            # foot is back. A plain sine is enough at this amplitude.
+            t = (frame - start) / period
+            angle = amplitude * math.sin(2.0 * math.pi * t)
+            for name, scale in (("RightArm", 1.0), ("RightShoulder", 0.35)):
+                bone = arm.pose.bones.get(name)
+                base = hold.get(name)
+                if bone is None or base is None:
+                    continue
+                bone.rotation_quaternion = base
+                bpy.context.view_layer.update()
+                axis_local = bone.matrix.to_3x3().inverted() @ swing_axis
+                if axis_local.length < 0.001:
+                    continue
+                extra = Quaternion(axis_local.normalized(), angle * scale)
+                bone.rotation_quaternion = extra @ base
+                bone.keyframe_insert("rotation_quaternion", frame=frame)
 
 
 def make_walk_inplace(arm):
