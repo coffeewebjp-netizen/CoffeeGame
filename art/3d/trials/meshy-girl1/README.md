@@ -13,7 +13,7 @@ Use the T-pose pack. Neutral pose rigs much better than idle.
 | Main / Front | `upload/tpose/01-front.jpg` |
 | Right | `upload/tpose/02-right.jpg` |
 | Back | `upload/tpose/03-back.jpg` |
-| Left | leave empty; let Meshy fill it |
+| Left | `upload/tpose/04-left.jpg` |
 
 Backup if the T-pose result looks wrong: `upload/identity/` (idle front / right / back). Do not mix T-pose and idle in one generation.
 
@@ -21,6 +21,7 @@ Known input issues:
 
 - Front and right T-pose hold the sword; the back T-pose has empty hands and a sheathed sword. Expect the first mesh to fuse the katana into the right hand. That is acceptable for this trial.
 - The first right T-pose had black tabi/socks. `02-right.jpg` is now bare feet in geta to match front/back. The socked original is `02-right-socks-archived.jpg` and must not be uploaded.
+- `04-left.jpg` is a left-facing profile for Meshy's Left slot. It is not a pixel-flip of the right view. The sword sits in the near hand in this drawing; the front view still shows the sword in the right hand.
 
 ## Owner: subscribe
 
@@ -32,7 +33,7 @@ Paid Premium monthly is in place (`ORC-20260823-004-SIG01`). Premium is enough: 
 2. Model Type: **Standard**. Do not use Smart Topology (Multi-view disappears).
 3. AI Model: latest shown (**Meshy 6** or **Meshy 7**).
 4. Upload `01-front.jpg` as the main image.
-5. Turn **Multi-view** on. Put `02-right.jpg` in Right and `03-back.jpg` in Back.
+5. Turn **Multi-view** on. Put `02-right.jpg` in Right, `03-back.jpg` in Back, and `04-left.jpg` in Left.
 6. Before Generate, set Pose to **T-Pose** (Pro Pose Control, 0 credits).
 7. Leave Auto Split off (saves 10 credits).
 8. Click **Generate**. Failed technical errors refund credits.
