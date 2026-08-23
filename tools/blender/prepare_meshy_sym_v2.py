@@ -56,13 +56,14 @@ IDLE_ELBOW_BEND = {
     "LeftForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
     "RightForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
 }
+# Whole-body pitch toward -Y. 18deg hips was measured to move the head
+# ~15cm forward; that is the HD-2D / Meshy run silhouette, not a jog.
 RUN_FORWARD_LEAN = {
-    "Hips": math.radians(7.0),
-    "Spine02": math.radians(5.0),
-    "Spine01": math.radians(4.0),
-    "Spine": math.radians(3.0),
-    "neck": math.radians(-6.0),
-    "Head": math.radians(-3.0),
+    "Hips": math.radians(18.0),
+    "Spine02": math.radians(4.0),
+    "Spine01": math.radians(3.0),
+    "neck": math.radians(-8.0),
+    "Head": math.radians(-4.0),
 }
 
 
@@ -209,7 +210,7 @@ def pose_idle_standing(arm):
 
 
 def lean_run_forward(arm):
-    """Add extra sagittal lean so Run reads as a forward sprint, not upright jogging."""
+    """Rebuild Run with extra hip pitch. Layered-action keyframe_insert does not stick."""
     action = bpy.data.actions.get("Run")
     if action is None:
         return
@@ -217,16 +218,22 @@ def lean_run_forward(arm):
     scene = bpy.context.scene
     start = int(round(action.frame_range[0]))
     end = int(round(action.frame_range[1]))
+    frames = []
     for frame in range(start, end + 1):
         scene.frame_set(frame)
         bpy.context.view_layer.update()
         for name, angle in RUN_FORWARD_LEAN.items():
             rotate_bone_world(arm, name, Vector((1.0, 0.0, 0.0)), angle)
-        for name in RUN_FORWARD_LEAN:
-            bone = arm.pose.bones.get(name)
-            if bone is None:
-                continue
-            bone.keyframe_insert("rotation_quaternion", frame=frame)
+        bpy.context.view_layer.update()
+        frames.append(snapshot_pose(arm))
+    leaned = bpy.data.actions.new(name="Run__lean")
+    leaned.use_fake_user = True
+    assign_action(arm, leaned)
+    for index, frame in enumerate(range(start, end + 1)):
+        apply_pose(arm, frames[index])
+        keyframe_pose(arm, frame)
+    bpy.data.actions.remove(action)
+    leaned.name = "Run"
 
 
 def bake_named_action(arm, source, dest_name):
