@@ -125,6 +125,52 @@ namespace CoffeeGame.Presentation
             CacheTintTargets();
             CacheAnimatorParameters();
             ResetState(Vector3.back);
+            GroundImportedModel();
+        }
+
+        private void GroundImportedModel()
+        {
+            if (modelStyle != CharacterModelStyle.Imported || modelRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+            bool hasBounds = false;
+            Bounds bounds = new Bounds();
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] is SkinnedMeshRenderer skinned)
+                {
+                    skinned.updateWhenOffscreen = true;
+                }
+
+                Bounds rendererBounds = renderers[i].bounds;
+                if (!hasBounds)
+                {
+                    bounds = rendererBounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(rendererBounds);
+                }
+            }
+
+            if (!hasBounds)
+            {
+                return;
+            }
+
+            float lift = -bounds.min.y;
+            if (Mathf.Abs(lift) > 0.001f && Mathf.Abs(lift) < 5f)
+            {
+                modelRoot.position += new Vector3(0f, lift, 0f);
+            }
+
+            Debug.Log(
+                $"CoffeeGAME trial bounds: center={bounds.center} size={bounds.size} lift={lift:0.000}",
+                this);
         }
 
         public void ResetState(Vector3 worldDirection)
@@ -497,13 +543,21 @@ namespace CoffeeGame.Presentation
             Texture2D albedo = Resources.Load<Texture2D>(TrialAlbedoResource);
             if (albedo == null)
             {
+                Debug.LogWarning(
+                    $"CoffeeGAME trial texture: missing Resources/{TrialAlbedoResource}.",
+                    this);
                 return;
             }
 
             Texture2D normal = Resources.Load<Texture2D>(TrialNormalResource);
-            Material display = RuntimeMaterialFactory.CreateLit("trial-anime-girl display", Color.white);
+            Material display = RuntimeMaterialFactory.CreateUnlit("trial-anime-girl display", Color.white);
             if (display == null)
             {
+                display = RuntimeMaterialFactory.CreateLit("trial-anime-girl display", Color.white);
+            }
+            if (display == null)
+            {
+                Debug.LogWarning("CoffeeGAME trial texture: could not create a display material.", this);
                 return;
             }
 
@@ -511,7 +565,7 @@ namespace CoffeeGame.Presentation
             {
                 display.SetTexture(BaseMapId, albedo);
             }
-            else if (display.HasProperty("_MainTex"))
+            if (display.HasProperty("_MainTex"))
             {
                 display.SetTexture("_MainTex", albedo);
             }
@@ -533,30 +587,14 @@ namespace CoffeeGame.Presentation
 
             ownedDisplayMaterials.Add(display);
             Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+            int assigned = 0;
             for (int i = 0; i < renderers.Length; i++)
             {
                 Material[] materials = renderers[i].sharedMaterials;
                 if (materials == null || materials.Length == 0)
                 {
                     renderers[i].sharedMaterial = display;
-                    continue;
-                }
-
-                bool needsMap = false;
-                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
-                {
-                    Material imported = materials[materialIndex];
-                    if (imported == null ||
-                        !imported.HasProperty(BaseMapId) ||
-                        imported.GetTexture(BaseMapId) == null)
-                    {
-                        needsMap = true;
-                        break;
-                    }
-                }
-
-                if (!needsMap)
-                {
+                    assigned++;
                     continue;
                 }
 
@@ -565,7 +603,12 @@ namespace CoffeeGame.Presentation
                     materials[materialIndex] = display;
                 }
                 renderers[i].sharedMaterials = materials;
+                assigned++;
             }
+
+            Debug.Log(
+                $"CoffeeGAME trial texture: albedo {albedo.width}x{albedo.height} assigned to {assigned} renderers.",
+                this);
         }
 
         private void ApplyReferenceMaterials()
