@@ -8,12 +8,16 @@ CoffeeGAME already has a Trial slot (`CoffeeGAME > Trial > Use anime-girl 3D`). 
 
 Use the T-pose pack. Neutral pose rigs much better than idle.
 
+First generation used the old asymmetric pack in `upload/tpose/` (sword in the right hand, left arm only). Do not reuse that for a new Meshy model.
+
+For a new mesh, use the symmetric T-pose pack. Both arms out, empty hands, katana sheathed.
+
 | Meshy slot | File |
 | --- | --- |
-| Main / Front | `upload/tpose/01-front.jpg` |
-| Right | `upload/tpose/02-right.jpg` |
-| Back | `upload/tpose/03-back.jpg` |
-| Left | `upload/tpose/04-left.jpg` |
+| Main / Front | `upload/tpose-sym/01-front.jpg` |
+| Right | `upload/tpose-sym/02-right.jpg` |
+| Back | `upload/tpose-sym/03-back.jpg` |
+| Left | `upload/tpose-sym/04-left.jpg` |
 
 Backup if the T-pose result looks wrong: `upload/identity/` (idle front / right / back). Do not mix T-pose and idle in one generation.
 
