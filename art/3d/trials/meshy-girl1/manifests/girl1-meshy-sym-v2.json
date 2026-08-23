@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "asset": "trial-meshy-girl1-sym-v2",
+  "taskId": "ORC-20260823-004",
+  "source": "art/3d/trials/meshy-girl1/drop/sym-v2/Meshy_AI_Azure_Blade_Maiden_biped/Meshy_AI_Azure_Blade_Maiden_biped_Meshy_AI_Meshy_Merged_Animations.fbx",
+  "actions": [
+    "Fall",
+    "Idle",
+    "Jump",
+    "Land",
+    "MagicCharge",
+    "MagicRelease",
+    "Run",
+    "Sword",
+    "Walk"
+  ],
+  "triangles": 103348,
+  "notes": "Symmetric T-pose Meshy pack. Sheathed sword left fused. No RightHand katana parent. Actions rebaked with Blender 4.5 slots."
+}

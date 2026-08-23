@@ -26,6 +26,8 @@ namespace CoffeeGame.Editor
         private const string SlimeModelPath = "Assets/CoffeeGame/Resources/Models/Slime/slime-v2.fbx";
         private const string HeroControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/HeroRuntime.controller";
         private const string SlimeControllerPath = "Assets/CoffeeGame/Resources/Animations/Slime/SlimeRuntime.controller";
+        private const string TrialAnimeGirlModelPath = "Assets/CoffeeGame/Resources/Models/Hero/trial-anime-girl.fbx";
+        private const string TrialAnimeGirlControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/TrialAnimeGirlRuntime.controller";
         private const string Hd2dArtPath = "Assets/CoffeeGame/Resources/Art/HD2D";
         private const string SessionKey = "CoffeeGame.FirstSetupAttempted";
         private static bool setupRunning;
@@ -34,6 +36,48 @@ namespace CoffeeGame.Editor
         static CoffeeGameProjectSetup()
         {
             ScheduleAutomaticSetup();
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Setup anime-girl 3D", priority = 50)]
+        public static void SetupTrialAnimeGirl()
+        {
+            ConfigureModel(TrialAnimeGirlModelPath);
+            RefreshImportedClipList(TrialAnimeGirlModelPath);
+            EnsureModelAnimatorController(TrialAnimeGirlModelPath, TrialAnimeGirlControllerPath, false);
+            AnimatorController trialController =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(TrialAnimeGirlControllerPath);
+            if (trialController != null && trialController.name != "TrialAnimeGirlRuntime")
+            {
+                trialController.name = "TrialAnimeGirlRuntime";
+                EditorUtility.SetDirty(trialController);
+            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("CoffeeGAME trial anime-girl 3D controller is ready. Enable it from CoffeeGAME > Trial > Use anime-girl 3D.");
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Use anime-girl 3D", priority = 51)]
+        public static void EnableTrialAnimeGirl()
+        {
+            SetupTrialAnimeGirl();
+            PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 1);
+            PlayerPrefs.Save();
+            Debug.Log("CoffeeGAME trial anime-girl 3D is enabled for the next Play. HD-2D remains the default when this is off.");
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Use anime-girl 3D", true)]
+        public static bool EnableTrialAnimeGirlValidate()
+        {
+            Menu.SetChecked("CoffeeGAME/Trial/Use anime-girl 3D", PlayerPrefs.GetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 0) == 1);
+            return true;
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Use HD-2D heroine", priority = 52)]
+        public static void DisableTrialAnimeGirl()
+        {
+            PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 0);
+            PlayerPrefs.Save();
+            Debug.Log("CoffeeGAME trial anime-girl 3D is off. Play uses the HD-2D heroine.");
         }
 
         [MenuItem("CoffeeGAME/Setup first combat slice", priority = 1)]
@@ -365,6 +409,38 @@ namespace CoffeeGame.Editor
             settings.preloadAudioData = !streaming;
             importer.defaultSampleSettings = settings;
             importer.forceToMono = false;
+            importer.SaveAndReimport();
+        }
+
+        private static void RefreshImportedClipList(string path)
+        {
+            ModelImporter importer = AssetImporter.GetAtPath(path) as ModelImporter;
+            if (importer == null)
+            {
+                return;
+            }
+
+            ModelImporterClipAnimation[] defaults = importer.defaultClipAnimations;
+            if (defaults == null || defaults.Length == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < defaults.Length; i++)
+            {
+                ModelImporterClipAnimation clip = defaults[i];
+                bool shouldLoop = IsLoopingClip(clip.name);
+                clip.loopTime = shouldLoop;
+                clip.loopPose = shouldLoop;
+                clip.lockRootRotation = true;
+                clip.lockRootHeightY = true;
+                clip.lockRootPositionXZ = true;
+                clip.keepOriginalOrientation = true;
+                clip.keepOriginalPositionY = true;
+                clip.keepOriginalPositionXZ = true;
+            }
+
+            importer.clipAnimations = defaults;
             importer.SaveAndReimport();
         }
 
