@@ -55,9 +55,9 @@ This is a separate step after the mesh exists.
 2. Open **Animate** / Auto-Rig. Character type: **Humanoid**. Center, face forward, feet on the ground.
 3. Click **Auto-Rig**.
 4. Add library clips: **Idle**, **Walk**, **Run**. Optionally one Jump and one sword slash if they are easy to find.
-5. Preview Walk. Reject the candidate if the skirt or hair collapses into the legs, or if the face/identity is gone.
+5. Preview Walk. Owner accepted first-mesh look quality (`SIG05`). Mild skirt stretch is allowed. Stop only if the mesh explodes or the character is unrecognizable.
 
-Meshy has no cloth physics. A short skirt that stretches with the legs is expected; total collapse is a fail.
+Meshy has no cloth physics. A short skirt that stretches with the legs is expected.
 
 ## Owner: export
 
