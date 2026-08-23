@@ -18,6 +18,8 @@ namespace CoffeeGame.Presentation
         private const string LocomotionSpeedParameter = "LocomotionSpeed";
         private const string TrialAlbedoResource = "Models/Hero/Meshy_AI_Azure_Blade_Maiden_biped_texture_0";
         private const string TrialNormalResource = "Models/Hero/Meshy_AI_Azure_Blade_Maiden_biped_texture_0_normal";
+        public const string TrialHeldSwordAlbedoResource = "Models/Hero/Meshy_AI_Blue_Haired_Ronin_biped_texture_0";
+        public const string TrialHeldSwordNormalResource = "Models/Hero/Meshy_AI_Blue_Haired_Ronin_biped_texture_0_normal";
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -33,6 +35,8 @@ namespace CoffeeGame.Presentation
 
         [SerializeField] private Transform modelRoot;
         [SerializeField] private Animator animator;
+        [SerializeField] private Transform heldSwordRoot;
+        [SerializeField] private Animator heldSwordAnimator;
         [SerializeField] private float modelScale = 1f;
         [SerializeField] private float facingYawOffset;
         [SerializeField] private CharacterModelStyle modelStyle = CharacterModelStyle.Imported;
@@ -60,6 +64,9 @@ namespace CoffeeGame.Presentation
         private bool hasLocomotionSpeedParameter;
         private bool actionPlaying;
         private bool defeated;
+        private Transform locomotionRoot;
+        private Animator locomotionAnimator;
+        private bool showingHeldSwordSet;
 
         public Animator Animator => animator;
         public Transform ModelRoot => modelRoot;
@@ -67,6 +74,13 @@ namespace CoffeeGame.Presentation
         public static string GetDefaultStateName(CharacterAction action)
         {
             return action.ToString();
+        }
+
+        public static bool UsesHeldSwordSet(CharacterAction action)
+        {
+            return action == CharacterAction.Sword ||
+                action == CharacterAction.AirSlash ||
+                action == CharacterAction.SpinRelease;
         }
 
         public void Initialize(
@@ -118,24 +132,75 @@ namespace CoffeeGame.Presentation
                 animator.runtimeAnimatorController = runtimeController;
             }
             animator.applyRootMotion = false;
+            locomotionRoot = modelRoot;
+            locomotionAnimator = animator;
+            showingHeldSwordSet = false;
 
             BuildStateNameLookup();
             ApplyReferenceMaterials();
-            ApplyImportedTexturesIfMissing();
+            ApplyImportedTexturesIfMissing(
+                modelRoot,
+                TrialAlbedoResource,
+                TrialNormalResource,
+                "trial-anime-girl display");
             CacheTintTargets();
             CacheAnimatorParameters();
             ResetState(Vector3.back);
-            GroundImportedModel();
+            GroundImportedModel(modelRoot);
         }
 
-        private void GroundImportedModel()
+        public void AttachHeldSwordSet(
+            GameObject attackPrefab,
+            RuntimeAnimatorController attackController,
+            string albedoResource,
+            string normalResource)
         {
-            if (modelStyle != CharacterModelStyle.Imported || modelRoot == null)
+            if (attackPrefab == null || attackController == null)
             {
                 return;
             }
 
-            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+            GameObject attackInstance = Instantiate(attackPrefab, transform, false);
+            attackInstance.name = $"{attackPrefab.name} AttackSet";
+            attackInstance.transform.localPosition = locomotionRoot != null
+                ? locomotionRoot.localPosition
+                : Vector3.zero;
+            attackInstance.transform.localRotation = Quaternion.identity;
+            attackInstance.transform.localScale = Vector3.one;
+
+            Collider[] importedColliders = attackInstance.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < importedColliders.Length; i++)
+            {
+                importedColliders[i].enabled = false;
+            }
+
+            heldSwordRoot = attackInstance.transform;
+            heldSwordAnimator = heldSwordRoot.GetComponentInChildren<Animator>(true);
+            if (heldSwordAnimator == null)
+            {
+                heldSwordAnimator = attackInstance.AddComponent<Animator>();
+            }
+
+            heldSwordAnimator.runtimeAnimatorController = attackController;
+            heldSwordAnimator.applyRootMotion = false;
+            ApplyImportedTexturesIfMissing(
+                heldSwordRoot,
+                string.IsNullOrWhiteSpace(albedoResource) ? TrialHeldSwordAlbedoResource : albedoResource,
+                string.IsNullOrWhiteSpace(normalResource) ? TrialHeldSwordNormalResource : normalResource,
+                "trial-anime-girl-attack display");
+            GroundImportedModel(heldSwordRoot);
+            CacheTintTargets();
+            SetHeldSwordVisible(false);
+        }
+
+        private void GroundImportedModel(Transform root)
+        {
+            if (modelStyle != CharacterModelStyle.Imported || root == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
             bool hasBounds = false;
             Bounds bounds = new Bounds();
             for (int i = 0; i < renderers.Length; i++)
@@ -165,11 +230,11 @@ namespace CoffeeGame.Presentation
             float lift = -bounds.min.y;
             if (Mathf.Abs(lift) > 0.001f && Mathf.Abs(lift) < 5f)
             {
-                modelRoot.position += new Vector3(0f, lift, 0f);
+                root.position += new Vector3(0f, lift, 0f);
             }
 
             Debug.Log(
-                $"CoffeeGAME trial bounds: center={bounds.center} size={bounds.size} lift={lift:0.000}",
+                $"CoffeeGAME trial bounds ({root.name}): center={bounds.center} size={bounds.size} lift={lift:0.000}",
                 this);
         }
 
@@ -178,6 +243,7 @@ namespace CoffeeGame.Presentation
             StopActionRoutine();
             defeated = false;
             actionPlaying = false;
+            SetHeldSwordVisible(false);
             locomotion = CharacterAction.Idle;
             currentState = CharacterAction.Idle;
             locomotionPlaybackSpeed = 1f;
@@ -419,10 +485,16 @@ namespace CoffeeGame.Presentation
 
         private bool TryPlayState(CharacterAction action, float crossFadeSeconds)
         {
+            bool swappedSets = EnsureSetForAction(action);
             if (animator == null || animator.runtimeAnimatorController == null || !animator.isActiveAndEnabled)
             {
                 currentState = action;
                 return false;
+            }
+
+            if (swappedSets)
+            {
+                crossFadeSeconds = 0f;
             }
 
             string stateName = ResolveStateName(action);
@@ -502,7 +574,13 @@ namespace CoffeeGame.Presentation
         private void CacheTintTargets()
         {
             tintTargets.Clear();
-            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+            Transform searchRoot = heldSwordRoot != null ? transform : modelRoot;
+            if (searchRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = searchRoot.GetComponentsInChildren<Renderer>(true);
             for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
             {
                 Renderer renderer = renderers[rendererIndex];
@@ -533,27 +611,61 @@ namespace CoffeeGame.Presentation
             }
         }
 
-        private void ApplyImportedTexturesIfMissing()
+        private bool EnsureSetForAction(CharacterAction action)
         {
-            if (modelStyle != CharacterModelStyle.Imported || modelRoot == null)
+            bool wantHeldSword = heldSwordAnimator != null && UsesHeldSwordSet(action);
+            if (wantHeldSword == showingHeldSwordSet)
+            {
+                animator = wantHeldSword ? heldSwordAnimator : locomotionAnimator ?? animator;
+                return false;
+            }
+
+            SetHeldSwordVisible(wantHeldSword);
+            return true;
+        }
+
+        private void SetHeldSwordVisible(bool visible)
+        {
+            showingHeldSwordSet = visible && heldSwordRoot != null;
+            if (locomotionRoot != null)
+            {
+                locomotionRoot.gameObject.SetActive(!showingHeldSwordSet);
+            }
+
+            if (heldSwordRoot != null)
+            {
+                heldSwordRoot.gameObject.SetActive(showingHeldSwordSet);
+            }
+
+            animator = showingHeldSwordSet ? heldSwordAnimator : locomotionAnimator;
+            CacheAnimatorParameters();
+        }
+
+        private void ApplyImportedTexturesIfMissing(
+            Transform root,
+            string albedoResource,
+            string normalResource,
+            string materialName)
+        {
+            if (modelStyle != CharacterModelStyle.Imported || root == null)
             {
                 return;
             }
 
-            Texture2D albedo = Resources.Load<Texture2D>(TrialAlbedoResource);
+            Texture2D albedo = Resources.Load<Texture2D>(albedoResource);
             if (albedo == null)
             {
                 Debug.LogWarning(
-                    $"CoffeeGAME trial texture: missing Resources/{TrialAlbedoResource}.",
+                    $"CoffeeGAME trial texture: missing Resources/{albedoResource}.",
                     this);
                 return;
             }
 
-            Texture2D normal = Resources.Load<Texture2D>(TrialNormalResource);
-            Material display = RuntimeMaterialFactory.CreateUnlit("trial-anime-girl display", Color.white);
+            Texture2D normal = Resources.Load<Texture2D>(normalResource);
+            Material display = RuntimeMaterialFactory.CreateUnlit(materialName, Color.white);
             if (display == null)
             {
-                display = RuntimeMaterialFactory.CreateLit("trial-anime-girl display", Color.white);
+                display = RuntimeMaterialFactory.CreateLit(materialName, Color.white);
             }
             if (display == null)
             {
@@ -586,7 +698,7 @@ namespace CoffeeGame.Presentation
             }
 
             ownedDisplayMaterials.Add(display);
-            Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
             int assigned = 0;
             for (int i = 0; i < renderers.Length; i++)
             {
@@ -607,7 +719,7 @@ namespace CoffeeGame.Presentation
             }
 
             Debug.Log(
-                $"CoffeeGAME trial texture: albedo {albedo.width}x{albedo.height} assigned to {assigned} renderers.",
+                $"CoffeeGAME trial texture: albedo {albedo.width}x{albedo.height} assigned to {assigned} renderers on {root.name}.",
                 this);
         }
 

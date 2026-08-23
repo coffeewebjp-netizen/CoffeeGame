@@ -30,6 +30,11 @@ namespace CoffeeGame.Bootstrap
         private const string HeroModelResource = "Models/Hero/heroine-v4";
         private const string HeroControllerResource = "Animations/Hero/HeroRuntime";
         private const string HeroHd2dManifestResource = "Art/HD2D/hero-hd2d";
+        private const string TrialHeroModelResource = "Models/Hero/trial-anime-girl";
+        private const string TrialHeroControllerResource = "Animations/Hero/TrialAnimeGirlRuntime";
+        private const string TrialHeroAttackModelResource = "Models/Hero/trial-anime-girl-attack";
+        private const string TrialHeroAttackControllerResource = "Animations/Hero/TrialAnimeGirlAttackRuntime";
+        public const string TrialAnimeGirlPrefKey = "CoffeeGAME.TrialAnimeGirl3D";
         private const string SlimeModelResource = "Models/Slime/slime-v2";
         private const string SlimeControllerResource = "Animations/Slime/SlimeRuntime";
         private const string SlimeHd2dManifestResource = "Art/HD2D/slime-hd2d";
@@ -57,6 +62,25 @@ namespace CoffeeGame.Bootstrap
         private CoffeeLearningConnectionPresenter coffeeLearningConnection;
 
         public ILearningBridge LearningBridge => coffeeLearningConnection?.LearningBridge ?? UnavailableLearningBridge;
+
+        public static bool ShouldUseTrialAnimeGirl()
+        {
+            if (PlayerPrefs.GetInt(TrialAnimeGirlPrefKey, 0) == 1)
+            {
+                return true;
+            }
+
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], "-trialAnimeGirl3D", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         private void Awake()
         {
@@ -468,13 +492,14 @@ namespace CoffeeGame.Bootstrap
             PlayerResources resources = player.AddComponent<PlayerResources>();
             resources.Initialize(tuning.MaxStamina, tuning.PlayerMaxMp, tuning.MagicMpRegenPerSecond);
 
+            bool trialAnimeGirl = ShouldUseTrialAnimeGirl();
             ICharacterVisual visual = CreatePreferredVisual(
                 player.transform,
                 "Hero VisualSlot",
-                HeroHd2dManifestResource,
-                HeroModelResource,
-                HeroControllerResource,
-                CharacterModelStyle.Heroine,
+                trialAnimeGirl ? null : HeroHd2dManifestResource,
+                trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
+                trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
+                trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
                 180f,
                 1f,
                 Resources.Load<Sprite>("Art/Hero/hero-sprite"),
@@ -487,6 +512,10 @@ namespace CoffeeGame.Bootstrap
             motor.Initialize(input, tuning, sceneCamera, visual);
             PlayerCombatController combat = player.AddComponent<PlayerCombatController>();
             combat.Initialize(input, tuning, motor, resources, health, visual, audioDirector);
+            if (trialAnimeGirl)
+            {
+                AttachTrialHeldSwordSet(visual);
+            }
 
             health.Damaged += (_, damage) =>
             {
@@ -532,6 +561,31 @@ namespace CoffeeGame.Bootstrap
             SlimeController controller = slime.AddComponent<SlimeController>();
             controller.Initialize(claimId, tuning, target, targetHealth, health, collider, visual);
             return controller;
+        }
+
+        private static void AttachTrialHeldSwordSet(ICharacterVisual visual)
+        {
+            var modelVisual = visual as ModelCharacterVisual;
+            if (modelVisual == null)
+            {
+                return;
+            }
+
+            GameObject attackPrefab = Resources.Load<GameObject>(TrialHeroAttackModelResource);
+            RuntimeAnimatorController attackController =
+                Resources.Load<RuntimeAnimatorController>(TrialHeroAttackControllerResource);
+            if (attackPrefab == null || attackController == null)
+            {
+                Debug.LogWarning(
+                    "CoffeeGAME trial held-sword attack set is missing. Sword stays on the sheathed mesh.");
+                return;
+            }
+
+            modelVisual.AttachHeldSwordSet(
+                attackPrefab,
+                attackController,
+                ModelCharacterVisual.TrialHeldSwordAlbedoResource,
+                ModelCharacterVisual.TrialHeldSwordNormalResource);
         }
 
         private ICharacterVisual CreatePreferredVisual(

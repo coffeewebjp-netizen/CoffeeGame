@@ -28,6 +28,8 @@ namespace CoffeeGame.Editor
         private const string SlimeControllerPath = "Assets/CoffeeGame/Resources/Animations/Slime/SlimeRuntime.controller";
         private const string TrialAnimeGirlModelPath = "Assets/CoffeeGame/Resources/Models/Hero/trial-anime-girl.fbx";
         private const string TrialAnimeGirlControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/TrialAnimeGirlRuntime.controller";
+        private const string TrialAnimeGirlAttackModelPath = "Assets/CoffeeGame/Resources/Models/Hero/trial-anime-girl-attack.fbx";
+        private const string TrialAnimeGirlAttackControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/TrialAnimeGirlAttackRuntime.controller";
         private const string Hd2dArtPath = "Assets/CoffeeGame/Resources/Art/HD2D";
         private const string SessionKey = "CoffeeGame.FirstSetupAttempted";
         private static bool setupRunning;
@@ -51,6 +53,18 @@ namespace CoffeeGame.Editor
                 trialController.name = "TrialAnimeGirlRuntime";
                 EditorUtility.SetDirty(trialController);
             }
+
+            ConfigureModel(TrialAnimeGirlAttackModelPath);
+            RefreshImportedClipList(TrialAnimeGirlAttackModelPath);
+            EnsureModelAnimatorController(TrialAnimeGirlAttackModelPath, TrialAnimeGirlAttackControllerPath, false);
+            AnimatorController attackController =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(TrialAnimeGirlAttackControllerPath);
+            if (attackController != null && attackController.name != "TrialAnimeGirlAttackRuntime")
+            {
+                attackController.name = "TrialAnimeGirlAttackRuntime";
+                EditorUtility.SetDirty(attackController);
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("CoffeeGAME trial anime-girl 3D controller is ready. Enable it from CoffeeGAME > Trial > Use anime-girl 3D.");
