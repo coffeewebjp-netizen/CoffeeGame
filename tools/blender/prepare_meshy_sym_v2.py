@@ -56,29 +56,40 @@ IDLE_ELBOW_BEND = {
     "LeftForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
     "RightForeArm": (Vector((1.0, 0.0, 0.0)), math.radians(-18.0)),
 }
-# Extra torso pitch toward -Y. Neck/head counter so the face stays forward
-# (the reference run looks ahead, not at the ground).
+# Extra whole-body pitch so a line from the feet through the hips hits the head.
+# Do not counter-rotate the neck: that lifts the skull off the lean axis.
 RUN_FORWARD_LEAN = {
-    "Hips": math.radians(22.0),
-    "Spine02": math.radians(6.0),
-    "Spine01": math.radians(5.0),
-    "Spine": math.radians(4.0),
+    "Hips": math.radians(30.0),
+    "Spine02": math.radians(5.0),
+    "Spine01": math.radians(4.0),
+    "Spine": math.radians(3.0),
 }
+# Small skull nod only, so the face is not glued to the dirt.
 RUN_HEAD_LOOK_FORWARD = {
-    "neck": math.radians(-28.0),
-    "Head": math.radians(-14.0),
+    "Head": math.radians(-8.0),
 }
 RUN_LIMB_SCALE = {
-    "LeftShoulder": 1.2,
-    "RightShoulder": 1.2,
-    "LeftArm": 1.45,
-    "RightArm": 1.45,
-    "LeftForeArm": 1.25,
-    "RightForeArm": 1.25,
-    "LeftUpLeg": 1.4,
-    "RightUpLeg": 1.4,
-    "LeftLeg": 1.3,
-    "RightLeg": 1.3,
+    "LeftUpLeg": 1.35,
+    "RightUpLeg": 1.35,
+    "LeftLeg": 1.25,
+    "RightLeg": 1.25,
+}
+RUN_ARM_DAMP = {
+    "LeftShoulder": 0.45,
+    "RightShoulder": 0.45,
+    "LeftArm": 0.4,
+    "RightArm": 0.4,
+    "LeftForeArm": 0.5,
+    "RightForeArm": 0.5,
+}
+# Extra world-X rotation, signed by whether the limb is already forward (-Y) or back (+Y).
+RUN_SAGITTAL_EXTRA = {
+    "LeftShoulder": math.radians(12.0),
+    "RightShoulder": math.radians(12.0),
+    "LeftArm": math.radians(42.0),
+    "RightArm": math.radians(42.0),
+    "LeftUpLeg": math.radians(16.0),
+    "RightUpLeg": math.radians(16.0),
 }
 SWORD_SLASH_ARM = ("RightShoulder", "RightArm", "RightForeArm", "RightHand")
 
@@ -475,8 +486,20 @@ def exaggerate_from_mean(bone, mean_quat, factor: float):
     bone.rotation_quaternion = mean_quat @ Quaternion(axis, angle * factor)
 
 
+def add_sagittal_extra(arm, bone_name, extra_radians):
+    bone = arm.pose.bones.get(bone_name)
+    hips = arm.pose.bones.get("Hips")
+    if bone is None or hips is None or abs(extra_radians) < 1e-6:
+        return
+    hips_world = (arm.matrix_world @ hips.matrix).translation
+    bone_world = (arm.matrix_world @ bone.matrix).translation
+    rel_y = bone_world.y - hips_world.y
+    amount = extra_radians * math.tanh(rel_y / 0.10)
+    rotate_bone_world(arm, bone_name, Vector((1.0, 0.0, 0.0)), amount)
+
+
 def lean_run_forward(arm):
-    """Rebuild Run: extra torso lean, forward gaze, bigger arm/leg reach."""
+    """Rebuild Run: body on one lean axis, arms swing fore-aft, legs reach farther."""
     action = bpy.data.actions.get("Run")
     if action is None:
         return
@@ -489,23 +512,28 @@ def lean_run_forward(arm):
         scene.frame_set(frame)
         bpy.context.view_layer.update()
         originals.append(snapshot_pose(arm))
-    limb_means = {}
-    for name in RUN_LIMB_SCALE:
+    means = {}
+    for name in set(RUN_LIMB_SCALE) | set(RUN_ARM_DAMP):
         samples = [pose[name][1] for pose in originals if name in pose]
         if samples:
-            limb_means[name] = mean_quaternion(samples)
+            means[name] = mean_quaternion(samples)
     frames = []
     for pose in originals:
         apply_pose(arm, pose)
         bpy.context.view_layer.update()
+        for name, factor in RUN_ARM_DAMP.items():
+            exaggerate_from_mean(arm.pose.bones.get(name), means[name], factor)
         for name, factor in RUN_LIMB_SCALE.items():
-            exaggerate_from_mean(arm.pose.bones.get(name), limb_means[name], factor)
+            exaggerate_from_mean(arm.pose.bones.get(name), means[name], factor)
         bpy.context.view_layer.update()
         for name, angle in RUN_FORWARD_LEAN.items():
             rotate_bone_world(arm, name, Vector((1.0, 0.0, 0.0)), angle)
         bpy.context.view_layer.update()
         for name, angle in RUN_HEAD_LOOK_FORWARD.items():
             rotate_bone_world(arm, name, Vector((1.0, 0.0, 0.0)), angle)
+        bpy.context.view_layer.update()
+        for name, extra in RUN_SAGITTAL_EXTRA.items():
+            add_sagittal_extra(arm, name, extra)
         bpy.context.view_layer.update()
         frames.append(snapshot_pose(arm))
     leaned = bpy.data.actions.new(name="Run__lean")
