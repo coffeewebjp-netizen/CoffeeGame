@@ -400,7 +400,8 @@ namespace CoffeeGame.Presentation
             {
                 animator.speed = 1f;
             }
-            TryPlayState(action, actionCrossFadeSeconds);
+            float playCrossFade = action == CharacterAction.Dodge ? 0f : actionCrossFadeSeconds;
+            TryPlayState(action, playCrossFade);
             MatchClipPlaybackToDuration(action, Mathf.Max(0.05f, duration));
             actionRoutine = StartCoroutine(FinishActionAfter(action, Mathf.Max(0.05f, duration)));
         }
@@ -421,13 +422,24 @@ namespace CoffeeGame.Presentation
             }
 
             animator.Update(0f);
-            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-            if (state.length < 0.08f)
+            float length = 0f;
+            AnimatorClipInfo[] clipInfo = animator.GetCurrentAnimatorClipInfo(0);
+            if (clipInfo != null && clipInfo.Length > 0 && clipInfo[0].clip != null)
+            {
+                length = clipInfo[0].clip.length;
+            }
+
+            if (length < 0.08f)
+            {
+                length = animator.GetCurrentAnimatorStateInfo(0).length;
+            }
+
+            if (length < 0.08f)
             {
                 return;
             }
 
-            animator.speed = state.length / duration;
+            animator.speed = length / duration;
         }
 
         private static int GetActionPriority(CharacterAction action)

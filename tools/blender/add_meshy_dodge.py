@@ -33,6 +33,9 @@ UNITY_FBX = (
 EXPORT_FBX = ROOT / "art" / "3d" / "trials" / "meshy-girl1" / "export" / "girl1-meshy-sym-v2.fbx"
 PREVIEWS = ROOT / "art" / "3d" / "trials" / "meshy-girl1" / "previews" / "sym-v2"
 SOURCE_ACTION = "Armature|360_Power_Spin_Jump"
+# Airborne sideways spin only. Frames 1-29 are a standing takeoff that
+# fills the whole dodge when the 93-frame clip plays at native speed.
+DODGE_WINDOW = (30, 62)
 
 
 def load_sym():
@@ -63,8 +66,7 @@ def snapshot_source_dodge():
     for bone in arm.pose.bones:
         bone.rotation_mode = "QUATERNION"
     bpy.ops.object.mode_set(mode="OBJECT")
-    start = int(round(action.frame_range[0]))
-    end = int(round(action.frame_range[1]))
+    start, end = DODGE_WINDOW
     P.assign_action(arm, action)
     poses = []
     scene = bpy.context.scene
