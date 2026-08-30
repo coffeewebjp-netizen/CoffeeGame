@@ -61,14 +61,17 @@ namespace CoffeeGame.Input.Tests
             reader.SetTouchMove(new Vector2(0.8f, -0.2f));
             reader.QueueTouchPress(GameInputSemantic.Jump);
             reader.QueueTouchPress(GameInputSemantic.Sword);
+            reader.QueueTouchPress(GameInputSemantic.Dodge);
 
             Assert.That(reader.Move.x, Is.EqualTo(0.8f).Within(0.02f));
             Assert.That(reader.JumpPressed, Is.True);
             Assert.That(reader.SwordPressed, Is.True);
+            Assert.That(reader.DodgePressed, Is.True);
 
             reader.ClearQueuedTouchPresses();
             Assert.That(reader.JumpPressed, Is.False);
             Assert.That(reader.SwordPressed, Is.False);
+            Assert.That(reader.DodgePressed, Is.False);
         }
 
         [Test]

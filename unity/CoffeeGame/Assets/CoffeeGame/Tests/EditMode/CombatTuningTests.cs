@@ -30,6 +30,11 @@ namespace CoffeeGame.Domain.Tests
             Assert.That(tuning.JumpVelocity, Is.EqualTo(4.8f).Within(0.0001f));
             Assert.That(tuning.Gravity, Is.EqualTo(11.8f).Within(0.0001f));
             Assert.That(tuning.AirControl, Is.EqualTo(0.72f).Within(0.0001f));
+            Assert.That(tuning.DodgeSpeed, Is.EqualTo(4.2f).Within(0.0001f));
+            Assert.That(tuning.DodgeInvulnerabilityFraction, Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(tuning.ExpectedDodgeAirSeconds, Is.EqualTo(2f * 4.8f / 11.8f).Within(0.0001f));
+            Assert.That(tuning.DodgeInvulnerabilitySeconds, Is.EqualTo(4.8f / 11.8f).Within(0.0001f));
+            Assert.That(tuning.PerfectDodgeRangeMultiplier, Is.EqualTo(1.65f).Within(0.0001f));
             Assert.That(tuning.SwordRange, Is.EqualTo(0.78f).Within(0.0001f));
             Assert.That(tuning.AirSlashRange, Is.EqualTo(0.94f).Within(0.0001f));
             Assert.That(tuning.PlungeRadius, Is.EqualTo(1.18f).Within(0.0001f));

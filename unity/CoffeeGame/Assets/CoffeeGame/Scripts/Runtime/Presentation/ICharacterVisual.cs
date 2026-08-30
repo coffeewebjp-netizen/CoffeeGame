@@ -20,7 +20,8 @@ namespace CoffeeGame.Presentation
         Land,
         MagicRelease,
         AttackWindup,
-        Attack
+        Attack,
+        Dodge
     }
 
     public interface ICharacterVisual
@@ -51,7 +52,8 @@ namespace CoffeeGame.Presentation
                 current == CharacterAction.Fall ||
                 current == CharacterAction.Plunge ||
                 current == CharacterAction.AirSlash ||
-                current == CharacterAction.Hurt;
+                current == CharacterAction.Hurt ||
+                current == CharacterAction.Dodge;
         }
     }
 }

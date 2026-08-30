@@ -35,6 +35,7 @@ namespace CoffeeGame.Input
             _sword.AddBinding("<Mouse>/leftButton", groups: KeyboardGroup);
             _special = AddButton(_battleMap, "Special", "<Keyboard>/q", "<Gamepad>/buttonWest", "<Keyboard>/pageUp");
             _magic = AddButton(_battleMap, "Magic", "<Keyboard>/e", "<Gamepad>/buttonNorth", "<Keyboard>/pageDown");
+            _dodge = AddButton(_battleMap, "Dodge", "<Keyboard>/leftShift", "<Gamepad>/leftShoulder", "<Keyboard>/leftShift");
             _pause = AddButton(_battleMap, "Pause", "<Keyboard>/escape", "<Gamepad>/start", "<Keyboard>/escape");
             _battleSettings = AddSettingsButton(_battleMap);
 
@@ -100,6 +101,7 @@ namespace CoffeeGame.Input
                 GameInputSemantic.Sword => _sword,
                 GameInputSemantic.Special => _special,
                 GameInputSemantic.Magic => _magic,
+                GameInputSemantic.Dodge => _dodge,
                 GameInputSemantic.Pause => _pause,
                 GameInputSemantic.Navigate => _navigate,
                 GameInputSemantic.Confirm => _confirm,
@@ -122,6 +124,7 @@ namespace CoffeeGame.Input
             _sword.performed += OnSword;
             _special.performed += OnSpecial;
             _magic.performed += OnMagic;
+            _dodge.performed += OnDodge;
             _pause.performed += OnPause;
             _uiPause.performed += OnUiPause;
             _confirm.performed += OnConfirm;
@@ -150,6 +153,7 @@ namespace CoffeeGame.Input
             _sword.performed -= OnSword;
             _special.performed -= OnSpecial;
             _magic.performed -= OnMagic;
+            _dodge.performed -= OnDodge;
             _pause.performed -= OnPause;
             _uiPause.performed -= OnUiPause;
             _confirm.performed -= OnConfirm;
@@ -209,6 +213,13 @@ namespace CoffeeGame.Input
         {
             RecordInput(context, "Battle/Magic");
             MagicTriggered?.Invoke();
+        }
+
+
+        private void OnDodge(InputAction.CallbackContext context)
+        {
+            RecordInput(context, "Battle/Dodge");
+            DodgeTriggered?.Invoke();
         }
 
 

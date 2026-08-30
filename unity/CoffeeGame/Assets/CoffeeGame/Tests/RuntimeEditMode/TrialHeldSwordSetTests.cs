@@ -12,6 +12,7 @@ namespace CoffeeGame.Presentation.Tests
         [TestCase(CharacterAction.Walk, false)]
         [TestCase(CharacterAction.Run, false)]
         [TestCase(CharacterAction.Jump, false)]
+        [TestCase(CharacterAction.Dodge, false)]
         [TestCase(CharacterAction.MagicCharge, false)]
         [TestCase(CharacterAction.MagicRelease, false)]
         [TestCase(CharacterAction.Hurt, false)]

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CoffeeGame.Actors;
 using CoffeeGame.Audio;
 using CoffeeGame.Domain;
+using CoffeeGame.Enemies;
 using CoffeeGame.Input;
 using CoffeeGame.Presentation;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace CoffeeGame.Combat
         private float attackCooldown;
         private bool airSlashUsed;
         private bool plungeWasActive;
+        private bool perfectDodgeGranted;
         private Coroutine specialReleaseRoutine;
         private GameObject activeIaiEffect;
 
@@ -63,6 +65,8 @@ namespace CoffeeGame.Combat
             audioDirector = audio;
             motor.Landed += HandleLanding;
             motor.PlungeStarted += HandlePlungeStarted;
+            motor.Dodged += HandleDodged;
+            playerHealth.AttackAvoided += HandleAttackAvoided;
         }
 
         public void ResetCombat()
@@ -74,6 +78,7 @@ namespace CoffeeGame.Combat
             attackCooldown = 0f;
             airSlashUsed = false;
             plungeWasActive = false;
+            perfectDodgeGranted = false;
             ChargeNormalized = 0f;
         }
 
@@ -334,9 +339,59 @@ namespace CoffeeGame.Combat
             plungeWasActive = true;
         }
 
+        private void HandleDodged()
+        {
+            perfectDodgeGranted = false;
+            playerHealth?.BeginDodgeInvulnerability(tuning.DodgeInvulnerabilitySeconds);
+            TryGrantPerfectDodgeFromWindup();
+        }
+
+        private void HandleAttackAvoided()
+        {
+            GrantPerfectDodge();
+        }
+
+        private void TryGrantPerfectDodgeFromWindup()
+        {
+            if (tuning == null)
+            {
+                return;
+            }
+
+            float generousRange = tuning.SlimeAttackRange * tuning.PerfectDodgeRangeMultiplier;
+            SlimeController[] slimes = FindObjectsByType<SlimeController>(FindObjectsInactive.Exclude);
+            for (int index = 0; index < slimes.Length; index++)
+            {
+                SlimeController slime = slimes[index];
+                if (slime == null || !slime.IsWindingUp)
+                {
+                    continue;
+                }
+
+                Vector3 toSlime = Vector3.ProjectOnPlane(slime.transform.position - transform.position, Vector3.up);
+                if (toSlime.magnitude <= generousRange)
+                {
+                    GrantPerfectDodge();
+                    return;
+                }
+            }
+        }
+
+        private void GrantPerfectDodge()
+        {
+            if (perfectDodgeGranted || resources == null)
+            {
+                return;
+            }
+
+            perfectDodgeGranted = true;
+            resources.GainStamina(resources.MaxStamina);
+        }
+
         private void HandleLanding(Vector3 position)
         {
             airSlashUsed = false;
+            playerHealth?.EndDodgeInvulnerability();
             if (!plungeWasActive)
             {
                 return;
@@ -355,6 +410,12 @@ namespace CoffeeGame.Combat
             {
                 motor.Landed -= HandleLanding;
                 motor.PlungeStarted -= HandlePlungeStarted;
+                motor.Dodged -= HandleDodged;
+            }
+
+            if (playerHealth != null)
+            {
+                playerHealth.AttackAvoided -= HandleAttackAvoided;
             }
         }
 

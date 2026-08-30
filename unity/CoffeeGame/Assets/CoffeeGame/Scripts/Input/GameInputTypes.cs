@@ -13,7 +13,8 @@ namespace CoffeeGame.Input
         Magic,
         Pause,
         Navigate,
-        Confirm
+        Confirm,
+        Dodge
     }
 
     public enum GameInputContext

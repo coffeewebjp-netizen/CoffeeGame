@@ -224,6 +224,7 @@ namespace CoffeeGame.Presentation.Tests
         [TestCase(CharacterAction.Plunge, CharacterAction.Land)]
         [TestCase(CharacterAction.AirSlash, CharacterAction.Land)]
         [TestCase(CharacterAction.Hurt, CharacterAction.Land)]
+        [TestCase(CharacterAction.Dodge, CharacterAction.Land)]
         public void PhysicsTransition_OverridesAnIndefiniteAirPose(
             CharacterAction current,
             CharacterAction next)

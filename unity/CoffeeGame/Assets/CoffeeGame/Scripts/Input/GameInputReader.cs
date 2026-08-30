@@ -60,6 +60,8 @@ namespace CoffeeGame.Input
 
         private InputAction _magic;
 
+        private InputAction _dodge;
+
         private InputAction _pause;
 
         private InputAction _navigate;
@@ -187,6 +189,9 @@ namespace CoffeeGame.Input
         public bool MagicPressed => !_suppressActionsUntilRelease &&
             ((UsesTouchOverlay && _touchMagicPressed) || (_magic != null && _magic.WasPressedThisFrame()));
 
+        public bool DodgePressed => !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchDodgePressed) || (_dodge != null && _dodge.WasPressedThisFrame()));
+
         public bool PausePressed =>
             !_suppressActionsUntilRelease &&
             ((UsesTouchOverlay && _touchPausePressed) ||
@@ -289,6 +294,8 @@ namespace CoffeeGame.Input
         public event Action SpecialTriggered;
 
         public event Action MagicTriggered;
+
+        public event Action DodgeTriggered;
 
         public event Action PauseTriggered;
 

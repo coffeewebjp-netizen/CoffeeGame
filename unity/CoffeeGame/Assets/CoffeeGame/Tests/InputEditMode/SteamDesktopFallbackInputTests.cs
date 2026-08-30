@@ -67,6 +67,10 @@ namespace CoffeeGame.Input.Tests
 
             Press(mouse.leftButton);
             Assert.That(reader.SwordPressed, Is.True, "Steam RT/Mouse Left must use the sword.");
+            Release(mouse.leftButton);
+
+            Press(keyboard.leftShiftKey);
+            Assert.That(reader.DodgePressed, Is.True, "Steam LB/Left Shift must dodge.");
         }
 
         [Test]

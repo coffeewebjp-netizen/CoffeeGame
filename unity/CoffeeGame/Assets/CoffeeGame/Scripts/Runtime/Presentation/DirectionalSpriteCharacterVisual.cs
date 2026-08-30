@@ -487,6 +487,11 @@ namespace CoffeeGame.Presentation
 
         private RuntimeClip ResolveClip(CharacterAction action, Hd2dFacingDirection direction)
         {
+            if (action == CharacterAction.Dodge)
+            {
+                action = CharacterAction.Jump;
+            }
+
             if (clips.TryGetValue(ClipKey(action, direction), out RuntimeClip exact))
             {
                 return exact;
@@ -1276,6 +1281,7 @@ namespace CoffeeGame.Presentation
                 case CharacterAction.Attack:
                     return 60;
                 case CharacterAction.Jump:
+                case CharacterAction.Dodge:
                 case CharacterAction.Fall:
                 case CharacterAction.Land:
                     return 20;

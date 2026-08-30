@@ -28,6 +28,7 @@ namespace CoffeeGame.UI
         private bool swordHeld;
         private bool specialHeld;
         private bool magicHeld;
+        private bool dodgeHeld;
         private GUIStyle labelStyle;
         private Texture2D circleTexture;
 
@@ -75,6 +76,7 @@ namespace CoffeeGame.UI
             bool sword = false;
             bool special = false;
             bool magic = false;
+            bool dodge = false;
 
             foreach (TouchControl touch in touchscreen.touches)
             {
@@ -89,11 +91,18 @@ namespace CoffeeGame.UI
                 bool onSword = IsInside(position, SwordRect);
                 bool onSpecial = IsInside(position, SpecialRect);
                 bool onMagic = IsInside(position, MagicRect);
-                bool onAction = onJump || onSword || onSpecial || onMagic;
+                bool onDodge = IsInside(position, DodgeRect);
+                bool onAction = onJump || onSword || onSpecial || onMagic || onDodge;
 
                 if (onJump)
                 {
                     jump = true;
+                    continue;
+                }
+
+                if (onDodge)
+                {
+                    dodge = true;
                     continue;
                 }
 
@@ -161,6 +170,7 @@ namespace CoffeeGame.UI
             QueueIfNewlyPressed(sword, ref swordHeld, GameInputSemantic.Sword);
             QueueIfNewlyPressed(special, ref specialHeld, GameInputSemantic.Special);
             QueueIfNewlyPressed(magic, ref magicHeld, GameInputSemantic.Magic);
+            QueueIfNewlyPressed(dodge, ref dodgeHeld, GameInputSemantic.Dodge);
         }
 
         private void OnGUI()
@@ -175,6 +185,7 @@ namespace CoffeeGame.UI
             DrawActionButton(SwordRect, "刀");
             DrawActionButton(SpecialRect, "居合");
             DrawActionButton(MagicRect, "氷");
+            DrawActionButton(DodgeRect, "避");
 
             if (moveFingerId >= 0)
             {
@@ -200,6 +211,7 @@ namespace CoffeeGame.UI
             swordHeld = false;
             specialHeld = false;
             magicHeld = false;
+            dodgeHeld = false;
             if (input != null)
             {
                 input.SetTouchMove(Vector2.zero);
@@ -268,6 +280,12 @@ namespace CoffeeGame.UI
         private static Rect MagicRect => new Rect(
             Screen.width - Scaled(28f) - ButtonSize,
             Screen.height - Scaled(36f) - ButtonSize * 2f - Scaled(16f),
+            ButtonSize * 0.92f,
+            ButtonSize * 0.92f);
+
+        private static Rect DodgeRect => new Rect(
+            Screen.width - Scaled(28f) - ButtonSize * 3f - Scaled(36f),
+            Screen.height - Scaled(36f) - ButtonSize,
             ButtonSize * 0.92f,
             ButtonSize * 0.92f);
 

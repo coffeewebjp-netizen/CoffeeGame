@@ -27,6 +27,7 @@ namespace CoffeeGame.Enemies
 
         public string ClaimId { get; private set; }
         public Health Health => health;
+        public bool IsWindingUp => windingUp;
 
         public void Initialize(
             string claimId,

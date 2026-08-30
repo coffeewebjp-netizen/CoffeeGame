@@ -875,7 +875,7 @@ namespace CoffeeGame.UI
             GUI.Label(new Rect(panel.x + 12f, panel.y + 36f, panel.width - 24f, 34f), $"選択中: {input.ActiveControllerProfileName} / {input.ConnectedControllersSummary}", smallStyle);
             GUI.Label(new Rect(panel.x + 12f, panel.y + 70f, panel.width - 24f, 34f), $"直近の実ボタン: {input.LastRawButtonDiagnostic}", smallStyle);
             GUI.Label(new Rect(panel.x + 12f, panel.y + 105f, panel.width - 24f, 42f),
-                $"Jump {input.GetActiveControllerBindingDescription(GameInputSemantic.Jump)}\nSword {input.GetActiveControllerBindingDescription(GameInputSemantic.Sword)}  |  Iai {input.GetActiveControllerBindingDescription(GameInputSemantic.Special)}  |  Ice {input.GetActiveControllerBindingDescription(GameInputSemantic.Magic)}",
+                $"Jump {input.GetActiveControllerBindingDescription(GameInputSemantic.Jump)}\nSword {input.GetActiveControllerBindingDescription(GameInputSemantic.Sword)}  |  Iai {input.GetActiveControllerBindingDescription(GameInputSemantic.Special)}  |  Ice {input.GetActiveControllerBindingDescription(GameInputSemantic.Magic)}  |  Dodge {input.GetActiveControllerBindingDescription(GameInputSemantic.Dodge)}",
                 smallStyle);
         }
 

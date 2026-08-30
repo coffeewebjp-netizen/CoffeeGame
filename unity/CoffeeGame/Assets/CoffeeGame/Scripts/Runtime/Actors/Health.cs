@@ -10,9 +10,11 @@ namespace CoffeeGame.Actors
         [SerializeField, Min(0f)] private float invulnerabilitySeconds;
 
         private float invulnerableUntil;
+        private float dodgeInvulnerableUntil;
 
         public event Action<Health, DamageInfo> Damaged;
         public event Action<Health, DamageInfo> Died;
+        public event Action AttackAvoided;
 
         public int Current { get; private set; }
         public int Maximum => maxHealth;
@@ -27,18 +29,52 @@ namespace CoffeeGame.Actors
             invulnerabilitySeconds = Mathf.Max(0f, invulnerability);
             Current = maxHealth;
             invulnerableUntil = 0f;
+            dodgeInvulnerableUntil = 0f;
         }
 
         public void RestoreFull()
         {
             Current = maxHealth;
             invulnerableUntil = 0f;
+            dodgeInvulnerableUntil = 0f;
+        }
+
+        public bool IsDodgeInvulnerable => Time.time < dodgeInvulnerableUntil;
+
+        public void BeginDodgeInvulnerability(float seconds)
+        {
+            float until = Time.time + Mathf.Max(0f, seconds);
+            dodgeInvulnerableUntil = until;
+            if (until > invulnerableUntil)
+            {
+                invulnerableUntil = until;
+            }
+        }
+
+        public void EndDodgeInvulnerability()
+        {
+            if (invulnerableUntil <= dodgeInvulnerableUntil)
+            {
+                invulnerableUntil = Time.time;
+            }
+
+            dodgeInvulnerableUntil = 0f;
         }
 
         public bool ApplyDamage(DamageInfo damage)
         {
-            if (!IsAlive || damage.Amount <= 0 || Time.time < invulnerableUntil)
+            if (!IsAlive || damage.Amount <= 0)
             {
+                return false;
+            }
+
+            if (Time.time < invulnerableUntil)
+            {
+                if (Time.time < dodgeInvulnerableUntil)
+                {
+                    AttackAvoided?.Invoke();
+                }
+
                 return false;
             }
 

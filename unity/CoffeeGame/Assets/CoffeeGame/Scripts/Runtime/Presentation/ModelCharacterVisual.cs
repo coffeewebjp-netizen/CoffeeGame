@@ -414,7 +414,8 @@ namespace CoffeeGame.Presentation
 
             if (!showingHeldSwordSet &&
                 action != CharacterAction.MagicCharge &&
-                action != CharacterAction.MagicRelease)
+                action != CharacterAction.MagicRelease &&
+                action != CharacterAction.Dodge)
             {
                 return;
             }
@@ -448,6 +449,7 @@ namespace CoffeeGame.Presentation
                 case CharacterAction.Attack:
                     return 60;
                 case CharacterAction.Jump:
+                case CharacterAction.Dodge:
                 case CharacterAction.Fall:
                 case CharacterAction.Land:
                     return 20;
@@ -514,6 +516,11 @@ namespace CoffeeGame.Presentation
             if (action == CharacterAction.Defeated)
             {
                 actionPlaying = false;
+                yield break;
+            }
+
+            if (action == CharacterAction.Dodge)
+            {
                 yield break;
             }
 

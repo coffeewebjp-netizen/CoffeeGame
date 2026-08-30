@@ -682,7 +682,8 @@ namespace CoffeeGame.Editor
             if (!slimeModel)
             {
                 return action != CharacterAction.AttackWindup &&
-                    action != CharacterAction.Attack;
+                    action != CharacterAction.Attack &&
+                    action != CharacterAction.Dodge;
             }
 
             return action == CharacterAction.Idle ||
@@ -728,6 +729,8 @@ namespace CoffeeGame.Editor
                     return new[] { "Run", "Sprint" };
                 case CharacterAction.Jump:
                     return new[] { "Jump", "Leap" };
+                case CharacterAction.Dodge:
+                    return new[] { "Dodge", "360_Power_Spin_Jump", "Power_Spin_Jump", "Jump", "Leap" };
                 case CharacterAction.Sword:
                     return new[] { "Sword", "SwordAttack", "Attack", "Slash" };
                 case CharacterAction.AirSlash:

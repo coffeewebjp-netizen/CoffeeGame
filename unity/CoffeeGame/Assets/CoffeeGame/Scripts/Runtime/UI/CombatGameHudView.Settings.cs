@@ -31,6 +31,7 @@ namespace CoffeeGame.UI
             AddControlButton(menuScrollContent, GameInputSemantic.Sword, "刀攻撃");
             AddControlButton(menuScrollContent, GameInputSemantic.Special, "居合斬り");
             AddControlButton(menuScrollContent, GameInputSemantic.Magic, "氷魔法");
+            AddControlButton(menuScrollContent, GameInputSemantic.Dodge, "回避");
             AddCommandButton(menuScrollContent, "入力方式を選び直す", () => InputModeSelectionRequested?.Invoke());
             AddSectionHeading(menuScrollContent, "セーブ", 27, Accent, 42f);
             AddCommandButton(menuScrollContent, "セーブする", () => SaveRequested?.Invoke());
@@ -123,9 +124,10 @@ namespace CoffeeGame.UI
                 GameInputSemantic.Jump,
                 GameInputSemantic.Sword,
                 GameInputSemantic.Special,
-                GameInputSemantic.Magic
+                GameInputSemantic.Magic,
+                GameInputSemantic.Dodge
             };
-            string[] labels = { "ジャンプ", "刀攻撃", "居合斬り", "氷魔法" };
+            string[] labels = { "ジャンプ", "刀攻撃", "居合斬り", "氷魔法", "回避" };
             bool supportsRebind = input.SelectedInputMode == InputMode.ControllerGamepad ||
                                   input.SelectedInputMode == InputMode.SteamDesktopCompatibility;
             for (int index = 0; index < semantics.Length; index++)

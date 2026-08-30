@@ -21,6 +21,7 @@ namespace CoffeeGame.Input.Tests
         [TestCase("<Keyboard>/upArrow")]
         [TestCase("<Keyboard>/w")]
         [TestCase("<Keyboard>/f")]
+        [TestCase("<Keyboard>/leftShift")]
         [TestCase("<Gamepad>/buttonSouth")]
         [TestCase("<Mouse>/scroll")]
         public void MenuMovementAndLegacyKeyboardControls_AreRejected(string path)

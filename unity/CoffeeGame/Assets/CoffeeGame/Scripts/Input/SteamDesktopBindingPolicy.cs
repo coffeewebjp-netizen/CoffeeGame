@@ -28,7 +28,8 @@ namespace CoffeeGame.Input
                 "rightArrow",
                 "f",
                 "q",
-                "e"
+                "e",
+                "leftShift"
             };
 
         private static readonly HashSet<string> BindableMouseControls =

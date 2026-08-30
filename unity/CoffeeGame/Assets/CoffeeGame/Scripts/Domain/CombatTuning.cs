@@ -27,6 +27,9 @@ namespace CoffeeGame.Domain
         [SerializeField, Min(0f)] private float jumpVelocity = 4.8f;
         [SerializeField, Min(0f)] private float gravity = 11.8f;
         [SerializeField, Range(0f, 1f)] private float airControl = 0.72f;
+        [SerializeField, Min(0f)] private float dodgeSpeed = 4.2f;
+        [SerializeField, Range(0.05f, 1f)] private float dodgeInvulnerabilityFraction = 0.5f;
+        [SerializeField, Min(1f)] private float perfectDodgeRangeMultiplier = 1.65f;
 
         [Header("Sword")]
         [SerializeField, Min(0)] private int swordDamage = 3;
@@ -75,6 +78,11 @@ namespace CoffeeGame.Domain
         public float JumpVelocity => jumpVelocity;
         public float Gravity => gravity;
         public float AirControl => airControl;
+        public float DodgeSpeed => dodgeSpeed;
+        public float DodgeInvulnerabilityFraction => dodgeInvulnerabilityFraction;
+        public float PerfectDodgeRangeMultiplier => perfectDodgeRangeMultiplier;
+        public float ExpectedDodgeAirSeconds => gravity <= 0f ? 0f : 2f * jumpVelocity / gravity;
+        public float DodgeInvulnerabilitySeconds => ExpectedDodgeAirSeconds * dodgeInvulnerabilityFraction;
         public int SwordDamage => swordDamage;
         public float SwordRange => swordRange;
         public float SwordCooldown => swordCooldown;
@@ -129,6 +137,9 @@ namespace CoffeeGame.Domain
             RequirePositive(errors, nameof(jumpVelocity), jumpVelocity);
             RequirePositive(errors, nameof(gravity), gravity);
             RequireUnitInterval(errors, nameof(airControl), airControl);
+            RequireNonNegative(errors, nameof(dodgeSpeed), dodgeSpeed);
+            RequireUnitInterval(errors, nameof(dodgeInvulnerabilityFraction), dodgeInvulnerabilityFraction);
+            RequirePositive(errors, nameof(perfectDodgeRangeMultiplier), perfectDodgeRangeMultiplier);
             RequireNonNegative(errors, nameof(swordDamage), swordDamage);
             RequireNonNegative(errors, nameof(swordRange), swordRange);
             RequireNonNegative(errors, nameof(swordCooldown), swordCooldown);
@@ -198,6 +209,9 @@ namespace CoffeeGame.Domain
             jumpVelocity = 480f / PixelsPerMeter;
             gravity = 1180f / PixelsPerMeter;
             airControl = 0.72f;
+            dodgeSpeed = 4.2f;
+            dodgeInvulnerabilityFraction = 0.5f;
+            perfectDodgeRangeMultiplier = 1.65f;
             swordDamage = 3;
             swordRange = 78f / PixelsPerMeter;
             swordCooldown = 0.34f;

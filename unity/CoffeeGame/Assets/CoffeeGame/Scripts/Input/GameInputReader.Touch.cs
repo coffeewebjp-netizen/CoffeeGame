@@ -21,6 +21,8 @@ namespace CoffeeGame.Input
 
         private bool _touchMagicPressed;
 
+        private bool _touchDodgePressed;
+
         private bool _touchPausePressed;
 
         private bool _touchConfirmPressed;
@@ -56,6 +58,9 @@ namespace CoffeeGame.Input
                 case GameInputSemantic.Magic:
                     _touchMagicPressed = true;
                     break;
+                case GameInputSemantic.Dodge:
+                    _touchDodgePressed = true;
+                    break;
                 case GameInputSemantic.Pause:
                     _touchPausePressed = true;
                     break;
@@ -80,6 +85,7 @@ namespace CoffeeGame.Input
             _touchSwordPressed = false;
             _touchSpecialPressed = false;
             _touchMagicPressed = false;
+            _touchDodgePressed = false;
             _touchPausePressed = false;
             _touchConfirmPressed = false;
             _touchCancelPressed = false;
