@@ -73,14 +73,7 @@ def snapshot_source_dodge():
     for frame in range(start, end + 1):
         scene.frame_set(frame)
         bpy.context.view_layer.update()
-        pose = P.snapshot_pose(arm)
-        if poses:
-            rest_hip = poses[0]["Hips"][0]
-            location, quaternion, scale = pose["Hips"]
-            location.x = rest_hip.x
-            location.y = rest_hip.y
-            pose["Hips"] = (location, quaternion, scale)
-        poses.append(pose)
+        poses.append(P.snapshot_pose(arm))
     print("snapshot dodge", len(poses), "frames")
     return poses
 
@@ -215,6 +208,17 @@ def main():
     require_locomotion_motion()
     rebake_existing(arm)
     require_locomotion_motion()
+    idle = bpy.data.actions.get("Idle")
+    if idle is None:
+        raise RuntimeError("Idle missing; cannot plant Dodge hips")
+    P.assign_action(arm, idle)
+    bpy.context.scene.frame_set(int(round(idle.frame_range[0])))
+    bpy.context.view_layer.update()
+    idle_hips = arm.pose.bones["Hips"].location.copy()
+    idle_scale = arm.pose.bones["Hips"].scale.copy()
+    for pose in dodge_poses:
+        location, quaternion, scale = pose["Hips"]
+        pose["Hips"] = (idle_hips.copy(), quaternion.copy(), idle_scale.copy())
     rebuild(arm, "Dodge", dodge_poses)
     bind_all_actions(arm)
     require_locomotion_motion()

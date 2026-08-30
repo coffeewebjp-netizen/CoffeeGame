@@ -184,15 +184,16 @@ namespace CoffeeGame.Actors
                     landingLockRemaining = tuning.LandingLag;
                     visual?.PlayAction(CharacterAction.Land, Mathf.Max(0.18f, tuning.LandingLag));
                 }
+                else if (landedFromDodge)
+                {
+                    landingLockRemaining = 0f;
+                    planarVelocity = Vector3.zero;
+                    visual?.PlayAction(CharacterAction.Idle, 0.16f);
+                }
                 else
                 {
                     landingLockRemaining = 0f;
                     visual?.PlayAction(CharacterAction.Land, 0.18f);
-                }
-
-                if (landedFromDodge)
-                {
-                    planarVelocity = Vector3.zero;
                 }
 
                 Landed?.Invoke(transform.position);

@@ -43,6 +43,11 @@ namespace CoffeeGame.Presentation
                 return current == CharacterAction.Jump;
             }
 
+            if (next == CharacterAction.Idle)
+            {
+                return current == CharacterAction.Dodge;
+            }
+
             if (next != CharacterAction.Land)
             {
                 return false;

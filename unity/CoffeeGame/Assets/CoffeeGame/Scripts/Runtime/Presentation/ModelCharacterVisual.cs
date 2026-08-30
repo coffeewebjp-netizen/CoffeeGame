@@ -400,7 +400,12 @@ namespace CoffeeGame.Presentation
             {
                 animator.speed = 1f;
             }
-            float playCrossFade = action == CharacterAction.Dodge ? 0f : actionCrossFadeSeconds;
+            float playCrossFade = action == CharacterAction.Dodge
+                ? 0f
+                : currentState == CharacterAction.Dodge &&
+                  (action == CharacterAction.Idle || action == CharacterAction.Land)
+                    ? 0.16f
+                    : actionCrossFadeSeconds;
             TryPlayState(action, playCrossFade);
             MatchClipPlaybackToDuration(action, Mathf.Max(0.05f, duration));
             actionRoutine = StartCoroutine(FinishActionAfter(action, Mathf.Max(0.05f, duration)));
