@@ -80,6 +80,7 @@ namespace CoffeeGame.Presentation
         {
             return action == CharacterAction.Sword ||
                 action == CharacterAction.AirSlash ||
+                action == CharacterAction.Plunge ||
                 action == CharacterAction.SpinRelease;
         }
 
@@ -356,13 +357,20 @@ namespace CoffeeGame.Presentation
                 animator.speed = 1f;
             }
             TryPlayState(action, actionCrossFadeSeconds);
-            MatchHeldSwordPlaybackToDuration(Mathf.Max(0.05f, duration));
+            MatchClipPlaybackToDuration(action, Mathf.Max(0.05f, duration));
             actionRoutine = StartCoroutine(FinishActionAfter(action, Mathf.Max(0.05f, duration)));
         }
 
-        private void MatchHeldSwordPlaybackToDuration(float duration)
+        private void MatchClipPlaybackToDuration(CharacterAction action, float duration)
         {
-            if (!showingHeldSwordSet || animator == null || !animator.isActiveAndEnabled)
+            if (animator == null || !animator.isActiveAndEnabled || float.IsInfinity(duration))
+            {
+                return;
+            }
+
+            if (!showingHeldSwordSet &&
+                action != CharacterAction.MagicCharge &&
+                action != CharacterAction.MagicRelease)
             {
                 return;
             }

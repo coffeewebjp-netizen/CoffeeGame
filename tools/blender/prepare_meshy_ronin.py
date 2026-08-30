@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import shutil
 import sys
 from pathlib import Path
 
 import bpy
+from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 PACK = ROOT / "art" / "3d" / "trials" / "meshy-girl1"
@@ -227,6 +229,44 @@ def plant_combat_hips(arm):
         print("planted hips", name, "rest", [round(rest.x, 3), round(rest.y, 3), round(rest.z, 3)])
 
 
+def aim_bone_towards(arm, bone_name, world_dir):
+    bone = arm.pose.bones.get(bone_name)
+    if bone is None:
+        return
+    bpy.context.view_layer.update()
+    current = ((arm.matrix_world @ bone.matrix).to_3x3() @ Vector((0.0, 1.0, 0.0)))
+    if current.length < 0.001:
+        return
+    rot = current.normalized().rotation_difference(world_dir.normalized())
+    if rot.angle < 1e-4:
+        return
+    P.rotate_bone_world(arm, bone_name, rot.axis, rot.angle)
+
+
+def make_plunge(arm):
+    idle = bpy.data.actions["Idle"]
+    P.assign_action(arm, idle)
+    scene = bpy.context.scene
+    scene.frame_set(int(round(idle.frame_range[0])))
+    bpy.context.view_layer.update()
+    P.apply_pose(arm, P.snapshot_pose(arm))
+    down = Vector((0.0, 0.0, -1.0))
+    aim_bone_towards(arm, "RightShoulder", down)
+    aim_bone_towards(arm, "RightArm", down)
+    aim_bone_towards(arm, "RightForeArm", down)
+    aim_bone_towards(arm, "RightHand", down)
+    aim_bone_towards(arm, "LeftArm", Vector((0.15, 0.0, -1.0)))
+    P.rotate_bone_world(arm, "Spine", Vector((1.0, 0.0, 0.0)), math.radians(12.0))
+    P.rotate_bone_world(arm, "Head", Vector((1.0, 0.0, 0.0)), math.radians(18.0))
+    hips = arm.pose.bones.get("Hips")
+    if hips is not None:
+        hips.location.x = 0.0
+        hips.location.y = 0.0
+    pose = P.snapshot_pose(arm)
+    rebuild_action(arm, "Plunge", [pose for _ in range(10)])
+    print("plunge frames", 10)
+
+
 def export_and_copy(copy_to_locomotion=False, copy_to_attack=True):
     EXPORT_FBX.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action="DESELECT")
@@ -310,6 +350,11 @@ def render_previews(arm):
             (3.35, 0.0, 1.05),
             int((sword.frame_range[0] + sword.frame_range[1]) * 0.5),
         )
+    plunge = bpy.data.actions.get("Plunge")
+    if plunge is not None:
+        P.assign_action(arm, plunge)
+        P.render_still(PREVIEWS / "plunge.jpg", (2.15, -2.75, 1.15), 1)
+        P.render_still(PREVIEWS / "plunge-side.jpg", (3.35, 0.0, 1.05), 1)
 
 
 def main():
@@ -373,7 +418,8 @@ def slash_only():
         print("stole", name)
     extract_slash_windows(arm)
     plant_combat_hips(arm)
-    keep = {"Idle", "Sword", "AirSlash", "SpinRelease"}
+    make_plunge(arm)
+    keep = {"Idle", "Sword", "AirSlash", "SpinRelease", "Plunge"}
     for action in list(bpy.data.actions):
         if action.name not in keep:
             bpy.data.actions.remove(action)

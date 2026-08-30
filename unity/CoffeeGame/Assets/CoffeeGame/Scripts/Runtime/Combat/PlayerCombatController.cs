@@ -345,7 +345,7 @@ namespace CoffeeGame.Combat
             plungeWasActive = false;
             int hitCount = DamageTargets(tuning.PlungeRadius, CalculateDamage(tuning.PlungeDamage), true, false);
             audioDirector?.Play(hitCount > 0 ? CombatSound.SwordHit : CombatSound.Impact, hitCount > 0 ? 1f : 0.7f);
-            CombatVfxFactory.SpawnRing(position, tuning.PlungeRadius, new Color(0.8f, 0.9f, 1f), 0.34f);
+            CombatVfxFactory.SpawnPlungeImpact(position, tuning.PlungeRadius);
         }
 
         private void OnDestroy()

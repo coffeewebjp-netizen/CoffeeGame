@@ -7,6 +7,7 @@ namespace CoffeeGame.Presentation.Tests
         [TestCase(CharacterAction.Sword, true)]
         [TestCase(CharacterAction.AirSlash, true)]
         [TestCase(CharacterAction.SpinRelease, true)]
+        [TestCase(CharacterAction.Plunge, true)]
         [TestCase(CharacterAction.Idle, false)]
         [TestCase(CharacterAction.Walk, false)]
         [TestCase(CharacterAction.Run, false)]

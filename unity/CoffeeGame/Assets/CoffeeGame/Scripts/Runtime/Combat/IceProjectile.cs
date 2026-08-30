@@ -1,6 +1,5 @@
 using System;
 using CoffeeGame.Actors;
-using CoffeeGame.Presentation;
 using UnityEngine;
 
 namespace CoffeeGame.Combat
@@ -35,7 +34,7 @@ namespace CoffeeGame.Combat
         {
             float deltaTime = Time.deltaTime;
             transform.position += direction * (speed * deltaTime);
-            transform.Rotate(direction, 240f * deltaTime, Space.World);
+            transform.Rotate(0f, 0f, 140f * deltaTime, Space.Self);
             remainingLifetime -= deltaTime;
 
             Collider[] overlaps = Physics.OverlapSphere(transform.position, 0.16f, ~0, QueryTriggerInteraction.Collide);
@@ -50,7 +49,8 @@ namespace CoffeeGame.Combat
                 var hit = new DamageInfo(damage, source, transform.position, direction * 0.45f);
                 if (health.ApplyDamage(hit))
                 {
-                    CombatVfxFactory.SpawnRing(transform.position, 0.32f, new Color(0.45f, 0.9f, 1f), 0.22f);
+                    CombatVfxFactory.SpawnIceBurst(transform.position, direction, 0.38f, 0.24f);
+                    CombatVfxFactory.SpawnRing(transform.position, 0.28f, IceCrystalVisuals.Frost, 0.18f);
                     Destroy(gameObject);
                     return;
                 }
@@ -64,37 +64,35 @@ namespace CoffeeGame.Combat
 
         private void CreateVisual()
         {
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "Ice crystal visual";
-            visual.transform.SetParent(transform, false);
-            visual.transform.localScale = new Vector3(0.14f, 0.32f, 0.14f);
-            visual.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
-            Collider visualCollider = visual.GetComponent<Collider>();
-            if (visualCollider != null)
-            {
-                Destroy(visualCollider);
-            }
+            transform.rotation = Quaternion.LookRotation(direction) * Quaternion.Euler(90f, 0f, 0f);
+            GameObject visual = IceCrystalVisuals.CreateCrystal(
+                transform,
+                "Ice crystal visual",
+                new Vector3(0.055f, 0.22f, 0.055f),
+                IceCrystalVisuals.Core,
+                out visualMaterial);
 
-            Renderer renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            GameObject halo = IceCrystalVisuals.CreateCrystal(
+                visual.transform,
+                "Ice crystal halo",
+                new Vector3(1.35f, 0.72f, 1.35f),
+                new Color(0.72f, 0.9f, 1f, 0.35f),
+                out Material haloMaterial);
+            if (haloMaterial != null)
             {
-                Color ice = new Color(0.35f, 0.88f, 1f, 1f);
-                Material material = RuntimeMaterialFactory.CreateUnlit("Ice crystal material", ice);
-                if (material != null)
-                {
-                    visualMaterial = material;
-                    renderer.sharedMaterial = visualMaterial;
-                }
+                // Halo material is owned by the child; destroy with the projectile material.
+                Destroy(haloMaterial, remainingLifetime + 0.1f);
             }
 
             var trail = gameObject.AddComponent<TrailRenderer>();
-            trail.time = 0.18f;
-            trail.minVertexDistance = 0.025f;
-            trail.startWidth = 0.13f;
-            trail.endWidth = 0.012f;
-            trail.numCapVertices = 3;
-            trail.startColor = new Color(0.72f, 0.97f, 1f, 0.88f);
-            trail.endColor = new Color(0.28f, 0.72f, 1f, 0f);
+            trail.time = 0.16f;
+            trail.minVertexDistance = 0.02f;
+            trail.startWidth = 0.045f;
+            trail.endWidth = 0.004f;
+            trail.numCapVertices = 0;
+            trail.alignment = LineAlignment.View;
+            trail.startColor = new Color(0.88f, 0.97f, 1f, 0.7f);
+            trail.endColor = new Color(0.7f, 0.88f, 1f, 0f);
             if (visualMaterial != null)
             {
                 trail.sharedMaterial = visualMaterial;
@@ -102,9 +100,9 @@ namespace CoffeeGame.Combat
 
             Light glow = gameObject.AddComponent<Light>();
             glow.type = LightType.Point;
-            glow.color = new Color(0.35f, 0.82f, 1f);
-            glow.intensity = 1.25f;
-            glow.range = 1.35f;
+            glow.color = new Color(0.72f, 0.9f, 1f);
+            glow.intensity = 0.85f;
+            glow.range = 1.1f;
             glow.shadows = LightShadows.None;
         }
 

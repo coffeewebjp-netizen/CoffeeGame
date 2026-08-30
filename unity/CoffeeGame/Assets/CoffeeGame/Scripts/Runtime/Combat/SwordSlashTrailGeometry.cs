@@ -33,5 +33,52 @@ namespace CoffeeGame.Combat
 
             return points;
         }
+
+        public static Mesh BuildRibbon(Vector3[] path, float maxWidth)
+        {
+            if (path == null || path.Length < 2 || maxWidth <= 0f)
+            {
+                return null;
+            }
+
+            int count = path.Length;
+            var vertices = new Vector3[count * 2];
+            var triangles = new int[(count - 1) * 6];
+            for (int index = 0; index < count; index++)
+            {
+                float t = index / (float)(count - 1);
+                Vector3 tangent = index < count - 1
+                    ? path[index + 1] - path[index]
+                    : path[index] - path[index - 1];
+                if (tangent.sqrMagnitude < 0.0000001f)
+                {
+                    tangent = Vector3.right;
+                }
+
+                Vector3 side = Vector3.Cross(tangent.normalized, Vector3.forward).normalized;
+                float width = maxWidth * (0.22f + Mathf.Sin(t * Mathf.PI) * 0.78f) * (1f - t * 0.62f);
+                vertices[index * 2] = path[index] + side * width;
+                vertices[index * 2 + 1] = path[index] - side * width * 0.28f;
+                if (index >= count - 1)
+                {
+                    continue;
+                }
+
+                int triangle = index * 6;
+                int vertex = index * 2;
+                triangles[triangle] = vertex;
+                triangles[triangle + 1] = vertex + 2;
+                triangles[triangle + 2] = vertex + 1;
+                triangles[triangle + 3] = vertex + 1;
+                triangles[triangle + 4] = vertex + 2;
+                triangles[triangle + 5] = vertex + 3;
+            }
+
+            var mesh = new Mesh { name = "Sword slash ribbon" };
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            return mesh;
+        }
     }
 }

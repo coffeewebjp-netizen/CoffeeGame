@@ -152,7 +152,7 @@ ModelImporter:
       takeName: MeshyGirl1Rig|MagicCharge
       internalID: 8905048134159592344
       firstFrame: 0
-      lastFrame: 81
+      lastFrame: 38
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -181,7 +181,7 @@ ModelImporter:
       takeName: MeshyGirl1Rig|MagicRelease
       internalID: -2522474504191991230
       firstFrame: 0
-      lastFrame: 81
+      lastFrame: 30
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

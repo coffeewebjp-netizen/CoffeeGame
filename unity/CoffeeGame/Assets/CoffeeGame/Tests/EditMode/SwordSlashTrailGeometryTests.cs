@@ -38,5 +38,16 @@ namespace CoffeeGame.Combat.Tests
         {
             Assert.That(SwordSlashTrailGeometry.Build(0f, false), Is.Empty);
         }
+
+        [Test]
+        public void BuildRibbon_CreatesTaperedBladeMesh()
+        {
+            Vector3[] path = SwordSlashTrailGeometry.Build(1f, false, 8);
+            Mesh ribbon = SwordSlashTrailGeometry.BuildRibbon(path, 0.05f);
+
+            Assert.That(ribbon, Is.Not.Null);
+            Assert.That(ribbon.vertexCount, Is.EqualTo(path.Length * 2));
+            Assert.That(ribbon.triangles.Length, Is.EqualTo((path.Length - 1) * 6));
+        }
     }
 }
