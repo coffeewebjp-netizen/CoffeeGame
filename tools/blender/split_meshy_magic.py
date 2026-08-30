@@ -61,13 +61,31 @@ def rebuild(arm, name, poses):
     P.assign_action(arm, rebuilt)
 
 
+def bind_all_actions(arm):
+    for action in bpy.data.actions:
+        action.use_fake_user = True
+        P.assign_action(arm, action)
+
+
+def require_locomotion_motion():
+    missing = []
+    for name in ("Walk", "Run"):
+        action = bpy.data.actions.get(name)
+        if action is None or not P.action_has_motion(action):
+            missing.append(name)
+    if missing:
+        raise RuntimeError(f"locomotion lost motion: {missing}")
+
+
 def export_maiden():
+    arm = next(obj for obj in bpy.data.objects if obj.type == "ARMATURE")
+    bind_all_actions(arm)
+    require_locomotion_motion()
     EXPORT_FBX.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action="DESELECT")
     for obj in bpy.context.scene.objects:
         if obj.type in {"MESH", "ARMATURE"} and not obj.name.startswith("PreviewOnly"):
             obj.select_set(True)
-    arm = next(obj for obj in bpy.data.objects if obj.type == "ARMATURE")
     bpy.context.view_layer.objects.active = arm
     bpy.ops.export_scene.fbx(
         filepath=str(EXPORT_FBX),
@@ -88,6 +106,13 @@ def export_maiden():
         path_mode="COPY",
         embed_textures=False,
     )
+    P.reset()
+    bpy.ops.import_scene.fbx(filepath=str(EXPORT_FBX), automatic_bone_orientation=True)
+    for action in list(bpy.data.actions):
+        leaf = action.name.split("|")[-1]
+        if leaf != action.name and leaf not in bpy.data.actions:
+            action.name = leaf
+    require_locomotion_motion()
     UNITY_FBX.parent.mkdir(parents=True, exist_ok=True)
     import shutil
 
@@ -111,6 +136,18 @@ def main():
         leaf = action.name.split("|")[-1]
         if leaf != action.name and leaf not in bpy.data.actions:
             action.name = leaf
+    bind_all_actions(arm)
+    for name in ("Idle", "Walk", "Run", "Jump", "Fall", "Land", "Sword"):
+        if name in bpy.data.actions:
+            action = bpy.data.actions[name]
+            start = int(round(action.frame_range[0]))
+            end = int(round(action.frame_range[1]))
+            poses = snapshot_window(arm, action, start, end)
+            if name in ("Walk", "Run") and poses[0] == poses[min(5, len(poses) - 1)]:
+                raise RuntimeError(f"{name} imported as rest pose")
+            rebuild(arm, name, poses)
+            print("rebaked", name, "frames", len(poses))
+    require_locomotion_motion()
     source_charge = bpy.data.actions.get("MagicCharge")
     if source_charge is None:
         raise RuntimeError("MagicCharge missing")
@@ -118,6 +155,8 @@ def main():
     release_poses = snapshot_window(arm, source_charge, RELEASE_WINDOW[0], RELEASE_WINDOW[1])
     rebuild(arm, "MagicCharge", charge_poses)
     rebuild(arm, "MagicRelease", release_poses)
+    bind_all_actions(arm)
+    require_locomotion_motion()
     P.PREVIEWS = PREVIEWS
     P.add_studio()
     three_q = (2.15, -2.75, 1.15)
@@ -127,6 +166,9 @@ def main():
     release = bpy.data.actions["MagicRelease"]
     P.assign_action(arm, release)
     P.render_still(PREVIEWS / "magicrelease-mid.jpg", three_q, int((release.frame_range[0] + release.frame_range[1]) * 0.5))
+    run = bpy.data.actions["Run"]
+    P.assign_action(arm, run)
+    P.render_still(PREVIEWS / "run-mid.jpg", three_q, int((run.frame_range[0] + run.frame_range[1]) * 0.5))
     export_maiden()
     print("magic split", CHARGE_WINDOW, RELEASE_WINDOW, "->", UNITY_FBX)
 
