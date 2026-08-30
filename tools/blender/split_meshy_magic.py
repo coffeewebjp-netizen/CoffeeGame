@@ -61,6 +61,26 @@ def rebuild(arm, name, poses):
     P.assign_action(arm, rebuilt)
 
 
+def rigidify_saya(mesh, arm):
+    """Lock fused saya verts to Hips so Run does not bend the sheath."""
+    bpy.context.view_layer.update()
+    hips = arm.matrix_world @ arm.data.bones["Hips"].head_local
+    indices = []
+    for index, vert in enumerate(mesh.data.vertices):
+        pos = mesh.matrix_world @ vert.co
+        if pos.x < hips.x - 0.08 and 0.03 < pos.z < hips.z - 0.05 and abs(pos.y) < 0.22:
+            indices.append(index)
+    hips_group = mesh.vertex_groups.get("Hips")
+    if hips_group is None or not indices:
+        print("saya rigidify skipped", "verts", len(indices))
+        return
+    for index in indices:
+        for group in mesh.vertex_groups:
+            group.remove([index])
+        hips_group.add([index], 1.0, "REPLACE")
+    print("saya rigidified", len(indices), "verts")
+
+
 def bind_all_actions(arm):
     for action in bpy.data.actions:
         action.use_fake_user = True

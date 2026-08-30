@@ -34,7 +34,7 @@ namespace CoffeeGame.Combat
         {
             float deltaTime = Time.deltaTime;
             transform.position += direction * (speed * deltaTime);
-            transform.Rotate(0f, 0f, 140f * deltaTime, Space.Self);
+            transform.Rotate(0f, 0f, 55f * deltaTime, Space.Self);
             remainingLifetime -= deltaTime;
 
             Collider[] overlaps = Physics.OverlapSphere(transform.position, 0.16f, ~0, QueryTriggerInteraction.Collide);
@@ -65,34 +65,39 @@ namespace CoffeeGame.Combat
         private void CreateVisual()
         {
             transform.rotation = Quaternion.LookRotation(direction) * Quaternion.Euler(90f, 0f, 0f);
-            GameObject visual = IceCrystalVisuals.CreateCrystal(
+            IceCrystalVisuals.CreateCrystal(
                 transform,
-                "Ice crystal visual",
-                new Vector3(0.055f, 0.22f, 0.055f),
+                "Ice spear core",
+                new Vector3(0.07f, 0.34f, 0.07f),
                 IceCrystalVisuals.Core,
                 out visualMaterial);
 
-            GameObject halo = IceCrystalVisuals.CreateCrystal(
-                visual.transform,
-                "Ice crystal halo",
-                new Vector3(1.35f, 0.72f, 1.35f),
-                new Color(0.72f, 0.9f, 1f, 0.35f),
-                out Material haloMaterial);
-            if (haloMaterial != null)
-            {
-                // Halo material is owned by the child; destroy with the projectile material.
-                Destroy(haloMaterial, remainingLifetime + 0.1f);
-            }
+            IceCrystalVisuals.CreateCrystal(
+                transform,
+                "Ice spear facet a",
+                new Vector3(0.045f, 0.22f, 0.045f),
+                IceCrystalVisuals.Frost,
+                out Material facetA);
+            transform.GetChild(transform.childCount - 1).localRotation = Quaternion.Euler(18f, 35f, 0f);
+            IceCrystalVisuals.CreateCrystal(
+                transform,
+                "Ice spear facet b",
+                new Vector3(0.04f, 0.18f, 0.04f),
+                IceCrystalVisuals.Frost,
+                out Material facetB);
+            transform.GetChild(transform.childCount - 1).localRotation = Quaternion.Euler(-16f, -40f, 12f);
+            Destroy(facetA, remainingLifetime + 0.1f);
+            Destroy(facetB, remainingLifetime + 0.1f);
 
             var trail = gameObject.AddComponent<TrailRenderer>();
-            trail.time = 0.16f;
+            trail.time = 0.12f;
             trail.minVertexDistance = 0.02f;
-            trail.startWidth = 0.045f;
-            trail.endWidth = 0.004f;
+            trail.startWidth = 0.028f;
+            trail.endWidth = 0.002f;
             trail.numCapVertices = 0;
             trail.alignment = LineAlignment.View;
-            trail.startColor = new Color(0.88f, 0.97f, 1f, 0.7f);
-            trail.endColor = new Color(0.7f, 0.88f, 1f, 0f);
+            trail.startColor = new Color(0.92f, 0.98f, 1f, 0.55f);
+            trail.endColor = new Color(0.85f, 0.95f, 1f, 0f);
             if (visualMaterial != null)
             {
                 trail.sharedMaterial = visualMaterial;
@@ -100,9 +105,9 @@ namespace CoffeeGame.Combat
 
             Light glow = gameObject.AddComponent<Light>();
             glow.type = LightType.Point;
-            glow.color = new Color(0.72f, 0.9f, 1f);
-            glow.intensity = 0.85f;
-            glow.range = 1.1f;
+            glow.color = new Color(0.82f, 0.94f, 1f);
+            glow.intensity = 0.7f;
+            glow.range = 0.95f;
             glow.shadows = LightShadows.None;
         }
 

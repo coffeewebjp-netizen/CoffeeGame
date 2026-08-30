@@ -91,10 +91,30 @@ def import_base():
         bone.rotation_mode = "QUATERNION"
     bpy.ops.object.mode_set(mode="OBJECT")
     P.ground_and_scale(arm, [mesh])
+    match_head_height(arm)
     P.TEX.update(TEX)
     P.assign_textures(mesh)
     cleanup_mesh(mesh)
     return arm, mesh
+
+
+def match_head_height(arm):
+    """Match the sheathed maiden's idle head height so slash swaps do not shrink."""
+    bpy.context.view_layer.update()
+    head = bone_world(arm, "Head")
+    left = bone_world(arm, "LeftFoot")
+    right = bone_world(arm, "RightFoot")
+    if head is None or left is None or right is None or head.z < 0.2:
+        return
+    factor = 1.47 / head.z
+    arm.scale *= factor
+    bpy.context.view_layer.update()
+    left = bone_world(arm, "LeftFoot")
+    right = bone_world(arm, "RightFoot")
+    foot = min(left.z, right.z)
+    arm.location.z -= foot - 0.139
+    bpy.context.view_layer.update()
+    print("matched head height", round(bone_world(arm, "Head").z, 3))
 
 
 def cleanup_mesh(obj):
@@ -227,6 +247,62 @@ def plant_combat_hips(arm):
             poses.append(P.snapshot_pose(arm))
         rebuild_action(arm, name, poses)
         print("planted hips", name, "rest", [round(rest.x, 3), round(rest.y, 3), round(rest.z, 3)])
+
+
+def bone_world(arm, name):
+    bone = arm.pose.bones.get(name)
+    if bone is None:
+        return None
+    return arm.matrix_world @ bone.matrix @ Vector((0.0, 0.0, 0.0))
+
+
+def shift_hips_world(arm, delta):
+    hips = arm.pose.bones.get("Hips")
+    if hips is None or delta.length < 1e-5:
+        return
+    bpy.context.view_layer.update()
+    world = arm.matrix_world @ hips.matrix
+    world.translation += delta
+    if hips.parent:
+        parent = arm.matrix_world @ hips.parent.matrix
+        hips.matrix = parent.inverted() @ world
+    else:
+        hips.matrix = arm.matrix_world.inverted() @ world
+
+
+def plant_combat_feet(arm):
+    """Lower combat poses so the lowest foot matches Idle geta height."""
+    idle = bpy.data.actions.get("Idle")
+    if idle is None:
+        return
+    scene = bpy.context.scene
+    P.assign_action(arm, idle)
+    scene.frame_set(int(round(idle.frame_range[0])))
+    bpy.context.view_layer.update()
+    rest_left = bone_world(arm, "LeftFoot")
+    rest_right = bone_world(arm, "RightFoot")
+    if rest_left is None or rest_right is None:
+        return
+    rest_foot = min(rest_left.z, rest_right.z)
+    for name in ("Sword", "AirSlash", "Plunge", "SpinRelease"):
+        action = bpy.data.actions.get(name)
+        if action is None:
+            continue
+        P.assign_action(arm, action)
+        poses = []
+        start = int(round(action.frame_range[0]))
+        end = int(round(action.frame_range[1]))
+        for frame in range(start, end + 1):
+            scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            left = bone_world(arm, "LeftFoot")
+            right = bone_world(arm, "RightFoot")
+            current = min(left.z, right.z)
+            shift_hips_world(arm, Vector((0.0, 0.0, rest_foot - current)))
+            bpy.context.view_layer.update()
+            poses.append(P.snapshot_pose(arm))
+        rebuild_action(arm, name, poses)
+        print("planted feet", name, "restFoot", round(rest_foot, 3))
 
 
 def aim_bone_towards(arm, bone_name, world_dir):
@@ -419,6 +495,7 @@ def slash_only():
     extract_slash_windows(arm)
     plant_combat_hips(arm)
     make_plunge(arm)
+    plant_combat_feet(arm)
     keep = {"Idle", "Sword", "AirSlash", "SpinRelease", "Plunge"}
     for action in list(bpy.data.actions):
         if action.name not in keep:

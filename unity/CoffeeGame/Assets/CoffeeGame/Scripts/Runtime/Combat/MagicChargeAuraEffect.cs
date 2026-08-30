@@ -6,7 +6,8 @@ namespace CoffeeGame.Combat
     public sealed class MagicChargeAuraEffect : MonoBehaviour
     {
         private readonly Transform[] shards = new Transform[6];
-        private readonly Material[] materials = new Material[6];
+        private readonly Material[] materials = new Material[7];
+        private Transform spear;
         private Transform anchor;
         private float lifetime;
         private float elapsed;
@@ -26,6 +27,15 @@ namespace CoffeeGame.Combat
                 shards[index] = crystal.transform;
                 materials[index] = material;
             }
+
+            IceCrystalVisuals.CreateCrystal(
+                transform,
+                "Charge spear",
+                new Vector3(0.04f, 0.02f, 0.04f),
+                IceCrystalVisuals.Core,
+                out Material spearMaterial);
+            spear = transform.GetChild(transform.childCount - 1);
+            materials[6] = spearMaterial;
         }
 
         private void Update()
@@ -51,6 +61,13 @@ namespace CoffeeGame.Combat
                 shards[index].localRotation = Quaternion.Euler(90f, angle * Mathf.Rad2Deg, elapsed * 80f);
                 float scale = Mathf.Lerp(0.7f, 1.15f, normalized);
                 shards[index].localScale = new Vector3(0.03f, 0.09f, 0.03f) * scale;
+            }
+
+            if (spear != null)
+            {
+                spear.localPosition = Vector3.up * Mathf.Lerp(0.02f, 0.1f, normalized);
+                spear.localRotation = Quaternion.Euler(90f, elapsed * 40f, 0f);
+                spear.localScale = new Vector3(0.05f, Mathf.Lerp(0.08f, 0.32f, normalized), 0.05f);
             }
 
             if (elapsed >= lifetime)

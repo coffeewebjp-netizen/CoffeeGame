@@ -190,8 +190,45 @@ namespace CoffeeGame.Presentation
                 string.IsNullOrWhiteSpace(normalResource) ? TrialHeldSwordNormalResource : normalResource,
                 "trial-anime-girl-attack display");
             GroundImportedModel(heldSwordRoot);
+            MatchHeldSwordHeight(locomotionRoot, heldSwordRoot);
+            GroundImportedModel(heldSwordRoot);
             CacheTintTargets();
             SetHeldSwordVisible(false);
+        }
+
+        private static void MatchHeldSwordHeight(Transform locomotion, Transform attack)
+        {
+            if (locomotion == null || attack == null)
+            {
+                return;
+            }
+
+            Transform locoHead = FindNamedChild(locomotion, "Head");
+            Transform attackHead = FindNamedChild(attack, "Head");
+            if (locoHead == null || attackHead == null || attackHead.position.y < 0.2f)
+            {
+                return;
+            }
+
+            float scale = locoHead.position.y / attackHead.position.y;
+            if (scale > 0.8f && scale < 1.25f)
+            {
+                attack.localScale *= scale;
+            }
+        }
+
+        private static Transform FindNamedChild(Transform root, string boneName)
+        {
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (string.Equals(children[i].name, boneName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return children[i];
+                }
+            }
+
+            return null;
         }
 
         private void GroundImportedModel(Transform root)
@@ -202,40 +239,47 @@ namespace CoffeeGame.Presentation
             }
 
             Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-            bool hasBounds = false;
-            Bounds bounds = new Bounds();
             for (int i = 0; i < renderers.Length; i++)
             {
                 if (renderers[i] is SkinnedMeshRenderer skinned)
                 {
                     skinned.updateWhenOffscreen = true;
                 }
-
-                Bounds rendererBounds = renderers[i].bounds;
-                if (!hasBounds)
-                {
-                    bounds = rendererBounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(rendererBounds);
-                }
             }
 
-            if (!hasBounds)
+            Animator sourceAnimator = root.GetComponentInChildren<Animator>(true);
+            if (sourceAnimator != null)
+            {
+                sourceAnimator.Update(0f);
+            }
+
+            float minFootY = float.PositiveInfinity;
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                string boneName = transforms[i].name;
+                if (boneName.IndexOf("Foot", System.StringComparison.OrdinalIgnoreCase) < 0 &&
+                    boneName.IndexOf("Toe", System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                minFootY = Mathf.Min(minFootY, transforms[i].position.y);
+            }
+
+            if (float.IsPositiveInfinity(minFootY))
             {
                 return;
             }
 
-            float lift = -bounds.min.y;
+            float lift = -minFootY;
             if (Mathf.Abs(lift) > 0.001f && Mathf.Abs(lift) < 5f)
             {
                 root.position += new Vector3(0f, lift, 0f);
             }
 
             Debug.Log(
-                $"CoffeeGAME trial bounds ({root.name}): center={bounds.center} size={bounds.size} lift={lift:0.000}",
+                $"CoffeeGAME trial foot ground ({root.name}): minFootY={minFootY:0.000} lift={lift:0.000}",
                 this);
         }
 
