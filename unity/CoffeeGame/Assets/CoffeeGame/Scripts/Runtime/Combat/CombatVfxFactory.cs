@@ -90,14 +90,14 @@ namespace CoffeeGame.Combat
                 effect.transform.rotation = Quaternion.LookRotation(-planarFacing, Vector3.up);
             }
 
-            Color glowColor = color;
-            glowColor.a = 0.42f;
-            Color coreColor = Color.Lerp(color, Color.white, 0.78f);
-            coreColor.a = 0.96f;
+            Color glowColor = Color.Lerp(color, new Color(1f, 0.96f, 0.82f), 0.35f);
+            glowColor.a = 0.22f;
+            Color coreColor = Color.Lerp(color, Color.white, 0.9f);
+            coreColor.a = 1f;
             Material glowMaterial = RuntimeMaterialFactory.CreateUnlit("Sword slash glow material", glowColor);
             Material coreMaterial = RuntimeMaterialFactory.CreateUnlit("Sword slash core material", coreColor);
-            LineRenderer glow = CreateSlashLine(effect.transform, "Glow", 0.14f, glowColor, glowMaterial);
-            LineRenderer core = CreateSlashLine(effect.transform, "Core", 0.052f, coreColor, coreMaterial);
+            LineRenderer glow = CreateSlashLine(effect.transform, "Glow", 0.036f, glowColor, glowMaterial);
+            LineRenderer core = CreateSlashLine(effect.transform, "Core", 0.012f, coreColor, coreMaterial);
 
             effect.AddComponent<SwordSlashTrailEffect>().Initialize(
                 glow,
@@ -124,16 +124,18 @@ namespace CoffeeGame.Combat
             line.useWorldSpace = false;
             line.positionCount = 2;
             line.widthMultiplier = width;
-            line.numCapVertices = 4;
-            line.numCornerVertices = 3;
+            line.numCapVertices = 0;
+            line.numCornerVertices = 1;
+            line.alignment = LineAlignment.View;
+            line.textureMode = LineTextureMode.Stretch;
             line.sortingOrder = 1200;
             line.startColor = color;
             line.endColor = color;
             line.widthCurve = new AnimationCurve(
-                new Keyframe(0f, 0.08f),
-                new Keyframe(0.28f, 0.72f),
-                new Keyframe(0.72f, 1f),
-                new Keyframe(1f, 0.08f));
+                new Keyframe(0f, 0.12f),
+                new Keyframe(0.16f, 0.7f),
+                new Keyframe(0.52f, 1f),
+                new Keyframe(1f, 0.04f));
             if (material != null)
             {
                 line.material = material;
@@ -219,12 +221,12 @@ namespace CoffeeGame.Combat
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / lifetime);
-                float sweep = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.72f));
+                float sweep = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.46f));
                 int head = Mathf.Clamp(
                     Mathf.CeilToInt(sweep * (path.Length - 1)),
                     1,
                     path.Length - 1);
-                int trailPoints = Mathf.Max(5, Mathf.CeilToInt(path.Length * 0.38f));
+                int trailPoints = Mathf.Max(3, Mathf.CeilToInt(path.Length * 0.2f));
                 int tail = Mathf.Max(0, head - trailPoints);
                 ApplyVisibleSegment(tail, head);
 

@@ -12,7 +12,7 @@ namespace CoffeeGame.Combat.Tests
 
             Assert.That(points, Has.Length.EqualTo(25));
             Assert.That(points[0].x, Is.LessThan(0f));
-            Assert.That(points[0].y, Is.GreaterThan(0f));
+            Assert.That(points[0].y, Is.GreaterThan(0.45f));
             Assert.That(points[^1].x, Is.GreaterThan(0f));
             Assert.That(points[^1].y, Is.LessThan(0f));
             Assert.That(Vector3.Distance(points[0], points[^1]), Is.GreaterThan(1f));

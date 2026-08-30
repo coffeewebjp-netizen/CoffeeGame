@@ -25,9 +25,9 @@ namespace CoffeeGame.Combat
             for (int index = 0; index < points.Length; index++)
             {
                 float t = index / (float)clampedSegments;
-                float angle = Mathf.Lerp(145f, -32f, t) * Mathf.Deg2Rad;
-                float x = (Mathf.Cos(angle) * 0.9f + 0.08f) * radius * mirror;
-                float y = Mathf.Sin(angle) * 0.62f * radius;
+                float angle = Mathf.Lerp(122f, -24f, t) * Mathf.Deg2Rad;
+                float x = Mathf.Cos(angle) * 0.96f * radius * mirror;
+                float y = Mathf.Sin(angle) * 0.88f * radius;
                 points[index] = new Vector3(x, y, 0f);
             }
 

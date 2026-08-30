@@ -198,6 +198,35 @@ def extract_slash_windows(arm):
         print("slash window", name, src_start, src_end, "frames", len(poses))
 
 
+def plant_combat_hips(arm):
+    """Keep combat clips on the actor. AirSlash otherwise starts a metre behind Idle."""
+    idle = bpy.data.actions.get("Idle")
+    if idle is None or "Hips" not in arm.pose.bones:
+        return
+    scene = bpy.context.scene
+    P.assign_action(arm, idle)
+    scene.frame_set(int(round(idle.frame_range[0])))
+    bpy.context.view_layer.update()
+    rest = arm.pose.bones["Hips"].location.copy()
+    for name in ("Sword", "AirSlash", "SpinRelease"):
+        action = bpy.data.actions.get(name)
+        if action is None:
+            continue
+        P.assign_action(arm, action)
+        poses = []
+        start = int(round(action.frame_range[0]))
+        end = int(round(action.frame_range[1]))
+        for frame in range(start, end + 1):
+            scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            hips = arm.pose.bones["Hips"]
+            hips.location.x = rest.x
+            hips.location.y = rest.y
+            poses.append(P.snapshot_pose(arm))
+        rebuild_action(arm, name, poses)
+        print("planted hips", name, "rest", [round(rest.x, 3), round(rest.y, 3), round(rest.z, 3)])
+
+
 def export_and_copy(copy_to_locomotion=False, copy_to_attack=True):
     EXPORT_FBX.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action="DESELECT")
@@ -297,6 +326,7 @@ def main():
     copy_named("Idle", "MagicCharge")
     P.make_locomotion_inplace()
     extract_slash_windows(arm)
+    plant_combat_hips(arm)
     keep = {
         "Idle",
         "Walk",
@@ -326,7 +356,7 @@ def main():
         "taskId": "ORC-20260823-004",
         "actions": sorted(action.name for action in bpy.data.actions),
         "triangles": sum(len(p.vertices) - 2 for p in mesh.data.polygons),
-        "notes": "Held-sword Ronin pack. Sword/AirSlash trimmed to the cut and leaned forward. Sheathed maiden stays the locomotion mesh. HD-2D untouched.",
+        "notes": "Held-sword Ronin pack. Sword/AirSlash trimmed to the cut. Combat hips planted to Idle so AirSlash does not teleport. Sheathed maiden stays the locomotion mesh. HD-2D untouched.",
     }
     MANIFEST.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -342,6 +372,7 @@ def slash_only():
         steal_clip(arm, CLIP_FBX[name], name)
         print("stole", name)
     extract_slash_windows(arm)
+    plant_combat_hips(arm)
     keep = {"Idle", "Sword", "AirSlash", "SpinRelease"}
     for action in list(bpy.data.actions):
         if action.name not in keep:

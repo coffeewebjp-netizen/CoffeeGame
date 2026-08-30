@@ -170,7 +170,7 @@ namespace CoffeeGame.Combat
                 transform.position,
                 motor.Facing,
                 range,
-                new Color(0.78f, 0.94f, 1f),
+                new Color(0.96f, 0.94f, 0.84f),
                 tuning.SwordCooldown);
 
             int hitCount = DamageTargets(range, damage, false, true);
