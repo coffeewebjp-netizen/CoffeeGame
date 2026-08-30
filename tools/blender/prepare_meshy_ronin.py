@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import bpy
@@ -27,7 +28,23 @@ UNITY_FBX = (
     / "Hero"
     / "trial-anime-girl.fbx"
 )
+UNITY_ATTACK_FBX = (
+    ROOT
+    / "unity"
+    / "CoffeeGame"
+    / "Assets"
+    / "CoffeeGame"
+    / "Resources"
+    / "Models"
+    / "Hero"
+    / "trial-anime-girl-attack.fbx"
+)
 UNITY_BACKUP = PACK / "archive" / "emptyhand-sym-v2-trial-anime-girl.fbx"
+# Gameplay sword window is 0.34s. Keep the committed cut, not the wind-up.
+SLASH_WINDOWS = {
+    "Sword": (31, 41),
+    "AirSlash": (18, 28),
+}
 TEX = {
     "base": SRC_DIR / "Meshy_AI_Blue_Haired_Ronin_biped_texture_0.png",
     "metallic": SRC_DIR / "Meshy_AI_Blue_Haired_Ronin_biped_texture_0_metallic.png",
@@ -151,7 +168,37 @@ def copy_named(src_name, dest_name):
     copied.use_fake_user = True
 
 
-def export_and_copy():
+def rebuild_action(arm, name, poses):
+    old = bpy.data.actions.get(name)
+    rebuilt = bpy.data.actions.new(name + "__slash")
+    rebuilt.use_fake_user = True
+    P.assign_action(arm, rebuilt)
+    for index, pose in enumerate(poses):
+        P.apply_pose(arm, pose)
+        P.keyframe_pose(arm, 1 + index)
+    if old is not None:
+        bpy.data.actions.remove(old)
+    rebuilt.name = name
+    P.assign_action(arm, rebuilt)
+
+
+def extract_slash_windows(arm):
+    scene = bpy.context.scene
+    for name, (src_start, src_end) in SLASH_WINDOWS.items():
+        action = bpy.data.actions.get(name)
+        if action is None:
+            raise RuntimeError(f"missing {name}")
+        P.assign_action(arm, action)
+        poses = []
+        for src in range(src_start, src_end + 1):
+            scene.frame_set(src)
+            bpy.context.view_layer.update()
+            poses.append(P.snapshot_pose(arm))
+        rebuild_action(arm, name, poses)
+        print("slash window", name, src_start, src_end, "frames", len(poses))
+
+
+def export_and_copy(copy_to_locomotion=False, copy_to_attack=True):
     EXPORT_FBX.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action="DESELECT")
     for obj in bpy.context.scene.objects:
@@ -178,25 +225,32 @@ def export_and_copy():
         path_mode="COPY",
         embed_textures=False,
     )
-    UNITY_FBX.parent.mkdir(parents=True, exist_ok=True)
-    if UNITY_FBX.exists() and not UNITY_BACKUP.exists():
-        UNITY_BACKUP.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(UNITY_FBX, UNITY_BACKUP)
-    shutil.copy2(EXPORT_FBX, UNITY_FBX)
+    if copy_to_locomotion:
+        UNITY_FBX.parent.mkdir(parents=True, exist_ok=True)
+        if UNITY_FBX.exists() and not UNITY_BACKUP.exists():
+            UNITY_BACKUP.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(UNITY_FBX, UNITY_BACKUP)
+        shutil.copy2(EXPORT_FBX, UNITY_FBX)
+    if copy_to_attack:
+        UNITY_ATTACK_FBX.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(EXPORT_FBX, UNITY_ATTACK_FBX)
 
 
 def copy_textures_to_unity():
-    dest_dir = UNITY_FBX.parent
+    dest_dir = UNITY_ATTACK_FBX.parent
     mapping = {
-        "texture_0.png": "Meshy_AI_Azure_Blade_Maiden_biped_texture_0.png",
-        "texture_0_metallic.png": "Meshy_AI_Azure_Blade_Maiden_biped_texture_0_metallic.png",
-        "texture_0_normal.png": "Meshy_AI_Azure_Blade_Maiden_biped_texture_0_normal.png",
-        "texture_0_roughness.png": "Meshy_AI_Azure_Blade_Maiden_biped_texture_0_roughness.png",
+        "texture_0.png": "Meshy_AI_Blue_Haired_Ronin_biped_texture_0.png",
+        "texture_0_metallic.png": "Meshy_AI_Blue_Haired_Ronin_biped_texture_0_metallic.png",
+        "texture_0_normal.png": "Meshy_AI_Blue_Haired_Ronin_biped_texture_0_normal.png",
+        "texture_0_roughness.png": "Meshy_AI_Blue_Haired_Ronin_biped_texture_0_roughness.png",
     }
     for src in TEX.values():
         suffix = src.name.split("biped_")[-1]
         dest_name = mapping.get(suffix, src.name)
-        shutil.copy2(src, dest_dir / dest_name)
+        dest = dest_dir / dest_name
+        if dest.exists():
+            continue
+        shutil.copy2(src, dest)
 
 
 def render_previews(arm):
@@ -206,10 +260,11 @@ def render_previews(arm):
     P.assign_action(arm, bpy.data.actions["Idle"])
     P.render_still(PREVIEWS / "idle.jpg", three_q, 1)
     P.render_still(PREVIEWS / "idle-front.jpg", (0.0, -3.35, 1.05), 1)
-    run = bpy.data.actions["Run"]
-    P.assign_action(arm, run)
-    run_mid = int((run.frame_range[0] + run.frame_range[1]) * 0.5)
-    P.render_still(PREVIEWS / "run-side.jpg", (3.35, 0.0, 1.05), run_mid)
+    run = bpy.data.actions.get("Run")
+    if run is not None:
+        P.assign_action(arm, run)
+        run_mid = int((run.frame_range[0] + run.frame_range[1]) * 0.5)
+        P.render_still(PREVIEWS / "run-side.jpg", (3.35, 0.0, 1.05), run_mid)
     for name in ("Walk", "Run", "Jump", "Sword", "AirSlash"):
         action = bpy.data.actions.get(name)
         if action is None:
@@ -217,6 +272,15 @@ def render_previews(arm):
         P.assign_action(arm, action)
         mid = int((action.frame_range[0] + action.frame_range[1]) * 0.5)
         P.render_still(PREVIEWS / f"{name.lower()}-mid.jpg", three_q, mid)
+    sword = bpy.data.actions.get("Sword")
+    if sword is not None:
+        P.assign_action(arm, sword)
+        P.render_still(PREVIEWS / "sword-side.jpg", (3.35, 0.0, 1.05), 1)
+        P.render_still(
+            PREVIEWS / "sword-side-mid.jpg",
+            (3.35, 0.0, 1.05),
+            int((sword.frame_range[0] + sword.frame_range[1]) * 0.5),
+        )
 
 
 def main():
@@ -232,6 +296,7 @@ def main():
     copy_named("Jump", "Land")
     copy_named("Idle", "MagicCharge")
     P.make_locomotion_inplace()
+    extract_slash_windows(arm)
     keep = {
         "Idle",
         "Walk",
@@ -253,7 +318,7 @@ def main():
     BLEND.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND))
     render_previews(arm)
-    export_and_copy()
+    export_and_copy(copy_to_locomotion=False, copy_to_attack=True)
     copy_textures_to_unity()
     data = {
         "schemaVersion": 1,
@@ -261,7 +326,7 @@ def main():
         "taskId": "ORC-20260823-004",
         "actions": sorted(action.name for action in bpy.data.actions),
         "triangles": sum(len(p.vertices) - 2 for p in mesh.data.polygons),
-        "notes": "Held-sword Ronin pack. Sword=Attack, AirSlash=DoubleCombo. Small remesh holes filled. No extra run lean on this mesh. HD-2D untouched.",
+        "notes": "Held-sword Ronin pack. Sword/AirSlash trimmed to the cut and leaned forward. Sheathed maiden stays the locomotion mesh. HD-2D untouched.",
     }
     MANIFEST.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -270,5 +335,24 @@ def main():
     P.verify_export(arm.name)
 
 
+def slash_only():
+    arm, _mesh = import_base()
+    make_idle(arm)
+    for name in ("Sword", "AirSlash", "SpinRelease"):
+        steal_clip(arm, CLIP_FBX[name], name)
+        print("stole", name)
+    extract_slash_windows(arm)
+    keep = {"Idle", "Sword", "AirSlash", "SpinRelease"}
+    for action in list(bpy.data.actions):
+        if action.name not in keep:
+            bpy.data.actions.remove(action)
+    render_previews(arm)
+    export_and_copy(copy_to_locomotion=False, copy_to_attack=True)
+    print("slash-only export", EXPORT_FBX, "->", UNITY_ATTACK_FBX)
+
+
 if __name__ == "__main__":
-    main()
+    if "--slash-only" in sys.argv:
+        slash_only()
+    else:
+        main()

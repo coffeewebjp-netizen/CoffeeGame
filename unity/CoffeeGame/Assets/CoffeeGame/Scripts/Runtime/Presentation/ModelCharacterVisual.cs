@@ -356,7 +356,25 @@ namespace CoffeeGame.Presentation
                 animator.speed = 1f;
             }
             TryPlayState(action, actionCrossFadeSeconds);
+            MatchHeldSwordPlaybackToDuration(Mathf.Max(0.05f, duration));
             actionRoutine = StartCoroutine(FinishActionAfter(action, Mathf.Max(0.05f, duration)));
+        }
+
+        private void MatchHeldSwordPlaybackToDuration(float duration)
+        {
+            if (!showingHeldSwordSet || animator == null || !animator.isActiveAndEnabled)
+            {
+                return;
+            }
+
+            animator.Update(0f);
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            if (state.length < 0.08f)
+            {
+                return;
+            }
+
+            animator.speed = state.length / duration;
         }
 
         private static int GetActionPriority(CharacterAction action)
