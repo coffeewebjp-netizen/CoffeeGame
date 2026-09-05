@@ -122,3 +122,36 @@ but completed with the expected model and no application exception. Capture
 evidence does not establish in-play performance. The independent
 `tools/launch-azure-maiden-clean.cmd` trial remains available and does not
 persist selection changes.
+
+### IN14 correction: verify the actual Steam client launch
+
+WP17's direct-EXE checks were insufficient: the Owner's real Steam run still
+entered the first-launch branch and saved MeshySnowKimono3D, while the
+automation host's registry view retained selection 4. The installed DLL and
+all payload hashes were already correct. The observed selection state
+differed between launch environments; the precise OS-level isolation
+mechanism has not been established and is not asserted as a proven cause.
+
+WP18 backed up the current shortcut, failed-run log and profile. Through the
+Steam properties UI, the existing persistent selection flag and a one-time
+scene capture were added, and Steam launched the game itself. The game
+saved/rendered AzureMaidenUpgraded3D. Both flags were then removed, restoring
+empty launch options. A fresh click on Steam's Play button started the same
+normal EXE with no arguments. Its actual Player.log selected the upgraded
+model without saving a new override; Root also inspected the native game
+window after the input selection and Start buttons, seeing the red haori,
+peach skirt and katana in the running combat scene. The game was paused
+immediately for Owner testing. This verifies delivery, not jump quality.
+
+All 297 installed files and 348 old backup files still pass the rollback
+helper's non-mutating check. All 77 protected source files and the current
+profile hash are unchanged. No runtime source or binary was changed in WP18.
+`manifests/steam-selection-repair.json` records sanitized evidence; local
+logs and the shortcut snapshot are under
+`.task-local-backup/ORC-20260905-001-WP18-steam-selection`.
+
+Future adoption checks must use the actual Steam client to set and read the
+selection, then remove temporary flags and restart from Play. A direct EXE
+capture and a registry read in the automation host are not substitutes. The
+existing rollback helper remains valid when launched by the Owner normally;
+it restores runtime files and display preferences without reverting progress.

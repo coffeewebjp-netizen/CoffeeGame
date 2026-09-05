@@ -8,6 +8,8 @@ CoffeeLearningでの学習を、少女剣士の成長と結び付けるアクシ
 
 2026-09-06、Owner承認により通常Windows版・Steam起動へ赤羽織の改良3Dモデル（保存選択値4）を仮反映しました。Steamの起動先は従来の `Builds/Windows/CoffeeGAME.exe` のままです。ジャンプの違和感は未調整で、Ownerによる総チェック前の段階です。元のHD-2D（記録値0）は `tools/launch-previous-character.cmd`、黒着物Meshy版は `tools/launch-meshy-snow-kimono-default.cmd` で切り替えられます。
 
+IN14でSteamでは黒着物のままだったとの報告を受け、Steam自身が起動したゲームで選択を保存し直しました。一時オプションを空欄へ戻した後、Steamの「プレイ」から引数なしで再起動し、戦闘画面の赤羽織モデルを直接確認済みです。自動実行環境の設定値とEXEの直接起動だけでは、Steamへの反映確認にならないことを検証手順へ追記しています。
+
 水色ボブ・赤羽織・白キャミソール・桃色スカートの改良版は、クリーンなMeshy本体、4K再テクスチャ、Blenderで修正した握りと刀、16動作を備えています。独立した確認用ビルドも `tools/launch-azure-maiden-clean.cmd`（既存の `launch-azure-maiden-trial.cmd` も同じ起動先）に残しています。更新前の通常版全348ファイルと表示設定3項目をローカル保存済みで、ゲーム終了後に `tools/restore-pre-azure-normal-player.cmd` を実行するとゲーム本体と表示設定を更新前へ戻せます。プレイの進行データは巻き戻しません。制作・検証・復元記録は [clean A-pose資料](art/3d/trials/azure-maiden-clean-apose/README.md) にあります。
 
 表示の優先順は次のとおりです。

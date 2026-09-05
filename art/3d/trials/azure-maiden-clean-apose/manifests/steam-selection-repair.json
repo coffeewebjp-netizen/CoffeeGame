@@ -1,0 +1,32 @@
+{
+  "taskId": "ORC-20260905-001",
+  "inputId": "IN14",
+  "workPackage": "WP18",
+  "outputId": "OUT22",
+  "recordedAt": "2026-09-05T17:47:24.342487+00:00",
+  "status": "actual-steam-launch-verified",
+  "corrects": "normal-player-adoption.json: direct EXE verification did not prove actual Steam selection",
+  "diagnosis": "Actual Steam run initialized black kimono while automation-host selection remained 4. Exact OS-level setting isolation mechanism unconfirmed.",
+  "repair": "Steam UI temporarily supplied the supported persistent selection option. Steam game saved Azure. Temporary options were then cleared.",
+  "normalTarget": "unity/CoffeeGame/Builds/Windows/CoffeeGAME.exe",
+  "finalSteamLaunchOptions": "",
+  "steamProcessLogEvidence": {
+    "failedRun": "2026-09-06 02:27:49 JST / PID 4688 / no arguments",
+    "saveSelectionRun": "2026-09-06 02:38:12 JST / PID 54940 / persistent selection and capture",
+    "verifiedNormalRun": "2026-09-06 02:41:41 JST / PID 52352 / no arguments"
+  },
+  "normalRunSelected": "AzureMaidenUpgraded3D",
+  "normalRunSavedOverride": false,
+  "rootNativeVisualReview": "Input mode and Start selected in actual Steam-launched window. Red haori, peach skirt and held katana visible in combat scene; game then paused.",
+  "runtimeDllSha256": "5ad960f12e1496bc588b5bcd207b376d7bdb047a9d655ef24adbd30de9fc8de2",
+  "installedFilesVerified": 297,
+  "backupFilesVerified": 348,
+  "protectedSourceFilesUnchanged": 77,
+  "profileHashUnchanged": true,
+  "shortcutFieldsChanged": [
+    "shortcuts.1.lastplaytime"
+  ],
+  "gameplaySourceChanged": false,
+  "jumpConcernUnresolved": true,
+  "normalRunLogSha256": "85bb4d421ecab8660b7fedd4558b1bb5b90f242008593e03960468d5466ada4a"
+}
