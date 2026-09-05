@@ -38,6 +38,7 @@ namespace CoffeeGame.Combat
         private bool perfectDodgeGranted;
         private Coroutine specialReleaseRoutine;
         private GameObject activeIaiEffect;
+        private GameObject activeMagicChargeEffect;
 
         public int AttackBonus { get; set; }
         public float AttackMultiplier { get; set; } = 1f;
@@ -84,6 +85,11 @@ namespace CoffeeGame.Combat
 
         public void CancelPendingActions()
         {
+            if (activeMagicChargeEffect != null)
+            {
+                Destroy(activeMagicChargeEffect);
+                activeMagicChargeEffect = null;
+            }
             if (specialReleaseRoutine != null)
             {
                 StopCoroutine(specialReleaseRoutine);
@@ -183,7 +189,7 @@ namespace CoffeeGame.Combat
             {
                 resources.GainStamina(tuning.StaminaPerHit);
                 audioDirector?.Play(CombatSound.SwordHit, 0.95f);
-                CombatVfxFactory.SpawnRing(transform.position + motor.Facing * range, 0.28f, new Color(0.92f, 0.95f, 1f), 0.16f);
+                CombatVfxFactory.SpawnSwordImpact(transform.position + motor.Facing * range * 0.65f, motor.Facing);
             }
         }
 
@@ -217,7 +223,7 @@ namespace CoffeeGame.Combat
             motor.MovementScale = 0.22f;
             visual?.PlayAction(CharacterAction.MagicCharge, tuning.MagicChargeSeconds);
             audioDirector?.Play(CombatSound.MagicCharge, 0.6f);
-            CombatVfxFactory.SpawnMagicCharge(transform, tuning.MagicChargeSeconds);
+            activeMagicChargeEffect = CombatVfxFactory.SpawnMagicCharge(transform, tuning.MagicChargeSeconds);
         }
 
         private void TickCharge(float deltaTime)

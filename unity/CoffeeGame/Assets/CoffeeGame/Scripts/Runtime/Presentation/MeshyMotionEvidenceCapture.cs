@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
+using CoffeeGame.Combat;
+using CoffeeGame.Domain;
 
 namespace CoffeeGame.Presentation
 {
@@ -36,6 +38,7 @@ namespace CoffeeGame.Presentation
             public string output = "OUT20";
             public string renderer = "actual development player / ModelCharacterVisual";
             public bool denseVideoFrames;
+            public bool combatEffects;
             public Vector3 framingCenter;
             public Vector3 framingSize;
             public List<Sample> samples = new List<Sample>();
@@ -68,6 +71,8 @@ namespace CoffeeGame.Presentation
             capture.outputDirectory = Path.GetFullPath(outputPath);
             capture.report.denseVideoFrames = Array.Exists(Environment.GetCommandLineArgs(),
                 argument => string.Equals(argument, "-captureMeshyMotionVideo", StringComparison.OrdinalIgnoreCase));
+            capture.report.combatEffects = Array.Exists(Environment.GetCommandLineArgs(),
+                argument => string.Equals(argument, "-captureCombatEffects", StringComparison.OrdinalIgnoreCase));
             capture.StartCoroutine(capture.Run());
         }
 
@@ -107,6 +112,7 @@ namespace CoffeeGame.Presentation
             yield return CaptureSwordToRunTransition();
             yield return CaptureAction("magic-charge", CharacterAction.MagicCharge, 0.65f, 0.72f, true);
             yield return CaptureAction("magic-release", CharacterAction.MagicRelease, 0.36f, 0.9f, false);
+            yield return CaptureAction("dodge", CharacterAction.Dodge, 0.81f, 0.82f, true);
 
             string reportPath = Path.Combine(outputDirectory, "motion-progress.json");
             File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));
@@ -203,6 +209,7 @@ namespace CoffeeGame.Presentation
                 visual.ResetState(Vector3.back);
             }
             visual.PlayAction(action, requestedDuration);
+            SpawnEvidenceEffects(action, requestedDuration);
             yield return CaptureTimeline(sequence, action, evidenceDuration);
         }
 
@@ -218,7 +225,24 @@ namespace CoffeeGame.Presentation
                 visual.ResetState(Vector3.back);
             }
             visual.PlayAction(action, requestedDuration);
+            SpawnEvidenceEffects(action, requestedDuration);
             yield return CaptureTimeline(sequence, action, sampleSeconds);
+        }
+
+        private void SpawnEvidenceEffects(CharacterAction action, float duration)
+        {
+            if (!report.combatEffects) return;
+            CombatTuning tuning = Resources.Load<CombatTuning>("Data/FirstCombatTuning");
+            float range = tuning != null ? tuning.SwordRange : 0.78f;
+            if (action == CharacterAction.Sword)
+            {
+                CombatVfxFactory.SpawnSwordSlash(visual.transform.position, Vector3.back, range, new Color(0.96f, 0.94f, 0.84f), duration);
+                CombatVfxFactory.SpawnSwordImpact(visual.transform.position + Vector3.back * range * 0.65f, Vector3.back);
+            }
+            else if (action == CharacterAction.MagicCharge)
+                CombatVfxFactory.SpawnMagicCharge(visual.transform, duration);
+            else if (action == CharacterAction.MagicRelease)
+                CombatVfxFactory.SpawnMagicRelease(visual.transform.position, Vector3.back);
         }
 
         private IEnumerator CaptureTimeline(string sequence, CharacterAction action, float duration)

@@ -48,6 +48,12 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-AzureCleanV3", "CoffeeGAME-AzureCleanV3.exe");
         }
 
+        public static void BuildAzureActionV5NoSetup()
+        {
+            AzureMaidenUpgradedValidation.Validate();
+            BuildDiagnosticNoSetup("Windows-AzureActionV5", "CoffeeGAME-AzureActionV5.exe");
+        }
+
         private static void BuildDiagnosticNoSetup(string directory, string executable)
         {
             EnsureCombatSceneExists();

@@ -1,5 +1,54 @@
 # Original red-haori heroine: clean A-pose source
 
+IN15 / WP19 (2026-09-06): action V5 restores the saved Meshy
+`360_Power_Spin_Jump` donor as Dodge, retargeting its world rotation deltas onto
+the accepted V4 rig and retaining the target bone lengths. Donor frames 24–74
+fit the existing 1–24 take. Quaternion signs are made continuous before baking.
+The body's geometry, texture, controller/clip identities and the other fifteen
+Blender actions are unchanged. Hips translation is fixed; the motor still owns
+the airborne sideways travel and invulnerability. Ordinary Jump is unchanged.
+
+Latest editable source is `export/action-v5c/azure-maiden-clean-runtime.blend`;
+the original `source/azure-maiden-clean-runtime.blend` remains the V4 backup.
+Reproduce using `tools/blender/restore_azure_meshy_dodge.py` with
+`--source-blend`, the saved merged-animation `--donor-fbx`, and a new `--out-dir`.
+Do not use the rejected `action-v5b` candidate: subframe validation caught a
+quaternion interpolation flip which was corrected in V5c.
+
+Sword VFX now use a broad tapered additive crescent, a bright moving core and
+short speed/impact sparks. Ice chanting grows two ground circles with twelve
+sigils, three rising light spirals and ten converging crystals before release.
+No damage, range, cooldown, MP cost, charge duration, motor or save rules change.
+CancelPendingActions also disposes the charge presentation. Runtime-created
+meshes/materials in the new effects are destroyed with their owning effect.
+
+`BuildAzureActionV5NoSetup` validates the existing imported assets and builds
+`Builds/Windows-AzureActionV5`, with no scene/controller setup. Supply
+`-azureValidationReport <new-json>` to preserve historical reports. Optional
+`-captureCombatEffects` adds real VFX to the presentation capture at the actual
+tuning's sword range; its sword impact is simulated and its motor/combat remain
+disabled, so that recording is not an input-driven combat test.
+
+The normal `Builds/Windows/CoffeeGAME.exe` now contains action V5. Full pre-action
+backup: `.task-local-backup/ORC-20260905-001-WP19-normal-player` (348 files).
+Run `tools/restore-pre-action-v5-player.cmd` with the game closed to restore the
+previous red-haori player; current selection and save progress remain intact.
+To then return all the way to the earlier pre-Azure player, run the older
+`restore-pre-azure-normal-player.cmd` after this rollback. Both helpers verify
+hashes before replacing runtime files and retain the displaced version.
+
+Final evidence: `manifests/action-v5.json` and local
+`previews/action-v5/motion-review.mp4` (201 measured frames, including Dodge).
+Four existing slash geometry tests pass; Unity imports sixteen clips and checks
+the right-hand weapon at about 0.39 m to its centre. The other fifteen Blender
+actions match exactly; 221 pre-task protected files, the older 77-file guard,
+and the profile hash are unchanged. Actual Steam Play launched PID 58760 at
+03:28:15 JST with no arguments and Player.log selected Azure. It exited normally
+at 03:29:05 before Root could capture/control its combat window; no manual
+input-driven action test is claimed. The recorded action visuals were inspected
+in the separate actual-player presentation harness. Final art acceptance and a
+comprehensive combat test remain with the Owner.
+
 ORC-20260905-001 / WP13 / ROUTE17, inputs IN08-IN12. IN13 / WP17 / ROUTE19
 approves provisional adoption in the ordinary player for Owner testing.
 The final derivative uses V3 art plus the V4 FBX socket correction.

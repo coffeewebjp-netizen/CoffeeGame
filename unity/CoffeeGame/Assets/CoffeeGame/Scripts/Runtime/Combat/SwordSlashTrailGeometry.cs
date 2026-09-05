@@ -43,6 +43,8 @@ namespace CoffeeGame.Combat
 
             int count = path.Length;
             var vertices = new Vector3[count * 2];
+            var colors = new Color[count * 2];
+            var uv = new Vector2[count * 2];
             var triangles = new int[(count - 1) * 6];
             for (int index = 0; index < count; index++)
             {
@@ -56,9 +58,13 @@ namespace CoffeeGame.Combat
                 }
 
                 Vector3 side = Vector3.Cross(tangent.normalized, Vector3.forward).normalized;
-                float width = maxWidth * (0.22f + Mathf.Sin(t * Mathf.PI) * 0.78f) * (1f - t * 0.62f);
+                float width = maxWidth * Mathf.Pow(Mathf.Max(0f, Mathf.Sin(t * Mathf.PI)), 0.65f) * (1f - t * 0.62f);
                 vertices[index * 2] = path[index] + side * width;
                 vertices[index * 2 + 1] = path[index] - side * width * 0.28f;
+                colors[index * 2] = new Color(1f, 1f, 1f, 0.12f);
+                colors[index * 2 + 1] = Color.white;
+                uv[index * 2] = new Vector2(t, 0f);
+                uv[index * 2 + 1] = new Vector2(t, 1f);
                 if (index >= count - 1)
                 {
                     continue;
@@ -76,6 +82,8 @@ namespace CoffeeGame.Combat
 
             var mesh = new Mesh { name = "Sword slash ribbon" };
             mesh.vertices = vertices;
+            mesh.colors = colors;
+            mesh.uv = uv;
             mesh.triangles = triangles;
             mesh.RecalculateBounds();
             return mesh;

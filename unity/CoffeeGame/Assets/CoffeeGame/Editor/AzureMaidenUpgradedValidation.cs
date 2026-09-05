@@ -205,6 +205,9 @@ namespace CoffeeGame.Editor
 
         private static string ReportPath()
         {
+            string[] args = Environment.GetCommandLineArgs();
+            int reportArg = Array.IndexOf(args, "-azureValidationReport");
+            if (reportArg >= 0 && reportArg + 1 < args.Length) return Path.GetFullPath(args[reportArg + 1]);
             string repository = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", ".."));
             return Path.Combine(repository, "art", "3d", "trials", "azure-maiden-upgraded", "manifests", "unity-validation.json");
         }

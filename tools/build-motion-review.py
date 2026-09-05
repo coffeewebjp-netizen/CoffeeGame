@@ -19,6 +19,8 @@ def main():
     if not encoder:
         raise FileNotFoundError("ffmpeg must be on PATH")
     sequences = ["run", "jump-ascent", "jump-fall", "jump-land", "sword", "magic-charge", "magic-release"]
+    if any(sample['sequence'] == 'dodge' for sample in report['samples']):
+        sequences.append('dodge')
     lines = ["ffconcat version 1.0"]
     timeline = []
     total = 0.0

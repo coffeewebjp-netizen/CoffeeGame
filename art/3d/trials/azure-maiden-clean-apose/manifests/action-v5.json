@@ -1,0 +1,93 @@
+{
+  "taskId": "ORC-20260905-001",
+  "inputId": "IN15",
+  "workPackage": "WP19",
+  "output": "OUT23",
+  "changes": [
+    "Wider soft additive sword crescent and hit/speed sparks",
+    "Two ice invocation circles, twelve sigils, three spirals and ten converging crystals",
+    "Saved Meshy 360 Power Spin Jump retargeted to current rig"
+  ],
+  "donor": {
+    "action": "360_Power_Spin_Jump",
+    "frames": [
+      24,
+      74
+    ],
+    "sha256": "e551118d95d65eab9f0f32f58e0a2c1c8feecb25caf7abf2e5b0d508cc3434f7",
+    "creditsSpent": 0
+  },
+  "asset": {
+    "fbxSha256": "30286561b20a68ba9a25a2bff02b2194e4bfa5fc047bdbb0df096269d0b49d0c",
+    "blendSha256": "75fe7ecdfbfadb9876e80abc1c74e2f79a1d2d6209d0e8d404c1b4e808e79ba4",
+    "changedActions": [
+      "Dodge"
+    ],
+    "preservedActions": 15,
+    "bodyGeometryUnchanged": true,
+    "takeRangesUnchanged": true,
+    "maxTorsoTiltDegrees": 117.044,
+    "rootTranslation": "fixed; motor owns airborne displacement"
+  },
+  "checks": {
+    "unity": true,
+    "clips": 16,
+    "controllerClips": 16,
+    "dodge": {
+      "action": "Dodge",
+      "clipLengthSeconds": 0.7666667103767395,
+      "motionMagnitude": 3.8019375801086426,
+      "weaponHandDistanceMeters": 0.38866281509399414,
+      "rootHorizontalDisplacement": 0.0
+    },
+    "existingGeometryTests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "protectedFiles": 221,
+    "profileUnchanged": true,
+    "subframeContinuity": {
+      "changedActions": [
+        "Dodge"
+      ],
+      "preservedActions": 15,
+      "maximumQuarterFrameRotationRadians": 0.4776170551776886
+    }
+  },
+  "capture": {
+    "renderer": "actual Windows player / presentation harness",
+    "frames": 201,
+    "videoSha256": "9f44d25bb7d7727894d3a96098add0e2c1b641564e76315ffd7ffe350fae983f",
+    "motorAndCombatDisabled": true,
+    "swordImpactSimulated": true,
+    "fullInputCombatRegression": false
+  },
+  "delivery": {
+    "target": "unity/CoffeeGame/Builds/Windows/CoffeeGAME.exe",
+    "buildReportBytes": 572929509,
+    "verifiedInstalledFiles": 297,
+    "installedFilesystemBytes": 573137822,
+    "backupFiles": 348,
+    "backupBytes": 588735497,
+    "runtimeDllSha256": "2e894163122401be70ffb83cbe18cf6dd11e9e2fc7489a5309c6754db725cb61",
+    "steamGameId": "11848876491142070272",
+    "steamLaunchJst": "2026-09-06T03:28:15+09:00",
+    "steamPid": 58760,
+    "arguments": [],
+    "selectedModel": "AzureMaidenUpgraded3D",
+    "steamExitCode": 0,
+    "steamExitJst": "2026-09-06T03:29:05+09:00",
+    "steamLogSha256": "4014e2bc2e6b43f9dcc034b83e1a876b0523becc43d2590fd80eda2bdd8d37ec",
+    "nativeWindowObserved": true,
+    "rootInputActionTest": false,
+    "rollback": "tools/restore-pre-action-v5-player.cmd"
+  },
+  "limits": [
+    "Owner artistic acceptance pending",
+    "Ordinary jump unchanged",
+    "Presentation recording is not an input-driven playtest",
+    "Steam window closed gracefully before Root could capture its combat view; actual launch/selection verified by Steam and Player logs",
+    "Existing graphics ring buffer warning during offscreen capture; no application exception or shader error",
+    "Prior model coarse fingers and faceted cloth/hair remain"
+  ]
+}

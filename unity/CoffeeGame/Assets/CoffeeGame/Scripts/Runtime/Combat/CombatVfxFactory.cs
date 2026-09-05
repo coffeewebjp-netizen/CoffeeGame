@@ -16,7 +16,7 @@ namespace CoffeeGame.Combat
         public static GameObject SpawnMagicCharge(Transform anchor, float lifetime)
         {
             var effect = new GameObject("Magic charge aura VFX");
-            effect.AddComponent<MagicChargeAuraEffect>().Initialize(anchor, lifetime);
+            effect.AddComponent<IceInvocationEffect>().Initialize(anchor, lifetime);
             return effect;
         }
 
@@ -30,8 +30,8 @@ namespace CoffeeGame.Combat
 
             planarFacing.Normalize();
             Vector3 origin = center + Vector3.up * 0.72f + planarFacing * 0.28f;
-            SpawnRing(center, 0.36f, IceCrystalVisuals.Frost, 0.2f);
-            SpawnIceBurst(origin, planarFacing, 0.42f, 0.32f);
+            SpawnRing(center, 0.8f, IceCrystalVisuals.Frost, 0.24f);
+            SpawnIceBurst(origin, planarFacing, 0.7f, 0.32f);
         }
 
         public static void SpawnPlungeImpact(Vector3 center, float radius)
@@ -132,14 +132,14 @@ namespace CoffeeGame.Combat
             }
 
             Color glowColor = Color.Lerp(color, new Color(1f, 0.93f, 0.62f), 0.45f);
-            glowColor.a = 0.18f;
+            glowColor.a = 0.48f;
             Color coreColor = new Color(1f, 0.99f, 0.94f, 1f);
-            Material glowMaterial = RuntimeMaterialFactory.CreateUnlit("Sword slash glow material", glowColor);
-            Material coreMaterial = RuntimeMaterialFactory.CreateUnlit("Sword slash core material", coreColor);
-            LineRenderer glow = CreateSlashLine(effect.transform, "Glow", 0.022f, glowColor, glowMaterial);
-            LineRenderer core = CreateSlashLine(effect.transform, "Core", 0.007f, coreColor, coreMaterial);
+            Material glowMaterial = CombatGlowVisuals.CreateMaterial("Sword slash glow material", glowColor);
+            Material coreMaterial = CombatGlowVisuals.CreateMaterial("Sword slash core material", coreColor);
+            LineRenderer glow = CreateSlashLine(effect.transform, "Glow", 0.16f, Color.white, glowMaterial);
+            LineRenderer core = CreateSlashLine(effect.transform, "Core", 0.035f, Color.white, coreMaterial);
 
-            Mesh ribbonMesh = SwordSlashTrailGeometry.BuildRibbon(path, radius * 0.048f);
+            Mesh ribbonMesh = SwordSlashTrailGeometry.BuildRibbon(path, radius * 0.15f);
             MeshRenderer ribbon = null;
             Material ribbonMaterial = null;
             if (ribbonMesh != null)
@@ -149,7 +149,7 @@ namespace CoffeeGame.Combat
                 ribbonObject.AddComponent<MeshFilter>().sharedMesh = ribbonMesh;
                 ribbon = ribbonObject.AddComponent<MeshRenderer>();
                 Color ribbonColor = new Color(1f, 0.94f, 0.7f, 0.62f);
-                ribbonMaterial = RuntimeMaterialFactory.CreateUnlit("Sword slash ribbon material", ribbonColor);
+                ribbonMaterial = CombatGlowVisuals.CreateMaterial("Sword slash ribbon material", ribbonColor);
                 if (ribbonMaterial != null)
                 {
                     ribbon.sharedMaterial = ribbonMaterial;
@@ -167,6 +167,12 @@ namespace CoffeeGame.Combat
                 glowMaterial,
                 coreMaterial,
                 ribbonMaterial);
+            CombatGlowVisuals.Sparks(effect.transform.position + effect.transform.TransformVector(path[path.Length - 1]), planarFacing, false);
+        }
+
+        public static void SpawnSwordImpact(Vector3 center, Vector3 facing)
+        {
+            CombatGlowVisuals.Sparks(center + Vector3.up * 0.65f, facing, true);
         }
 
         private static LineRenderer CreateSlashLine(
@@ -361,7 +367,7 @@ namespace CoffeeGame.Combat
                     Mathf.CeilToInt(sweep * (path.Length - 1)),
                     1,
                     path.Length - 1);
-                int trailPoints = Mathf.Max(2, Mathf.CeilToInt(path.Length * 0.16f));
+                int trailPoints = Mathf.Max(2, Mathf.CeilToInt(path.Length * 0.58f));
                 int tail = Mathf.Max(0, head - trailPoints);
                 ApplyVisibleSegment(tail, head);
 
@@ -371,8 +377,8 @@ namespace CoffeeGame.Combat
                     : t < 0.48f
                         ? 1f
                         : 1f - Mathf.InverseLerp(0.48f, 1f, t);
-                ApplyTrailColor(glow, glowColor, opacity);
-                ApplyTrailColor(core, coreColor, opacity);
+                ApplyTrailColor(glow, Color.white, opacity);
+                ApplyTrailColor(core, Color.white, opacity);
                 SetRibbonOpacity(ribbonOpacity * 0.7f);
                 if (t >= 1f)
                 {
@@ -421,6 +427,11 @@ namespace CoffeeGame.Combat
 
             private void OnDestroy()
             {
+                if (ribbon != null)
+                {
+                    MeshFilter filter = ribbon.GetComponent<MeshFilter>();
+                    if (filter != null && filter.sharedMesh != null) Destroy(filter.sharedMesh);
+                }
                 if (glowMaterial != null)
                 {
                     Destroy(glowMaterial);
