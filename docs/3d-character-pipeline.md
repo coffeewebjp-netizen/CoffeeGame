@@ -22,6 +22,7 @@
 | Heroine | `art/3d/source/heroine-v4.blend` | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/heroine-v4.fbx` |
 | Slime | `art/3d/source/slime-v2.blend` | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Slime/slime-v2.fbx` |
 | Meshy Snow Kimono | `art/3d/trials/meshy-snow-kimono/source/meshy-snow-kimono.blend` | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono.fbx` |
+| Upgraded Azure Maiden trial | local rejected-candidate backups only; see `art/3d/trials/azure-maiden-upgraded/README.md` | no accepted runtime FBX yet |
 
 Generators live under `tools/blender/`. Manifests under `art/3d/manifests/` record
 model, rig, action, and export facts so generated blockouts can be reproduced.
@@ -33,6 +34,27 @@ Unity uses the separate `MeshySnowKimono` style so its base-color atlas, normal
 map, and packed metallic/smoothness map bypass the procedural
 SnowKimono palette branch.
 
+The Upgraded Azure Maiden work has verified real Meshy RunFast, RegularJump,
+Katana Power Slash, Charged Spell Cast, and Charged Slash donor clips, plus a
+runtime timing path that leaves combat events unchanged while showing longer
+visual follow-through. The old saved body is not accepted for runtime use: its
+skin, sleeves, skirt, and weapon share fused/discontinuous surfaces, and both
+provider weights and bounded local re-rig attempts produce large cloth sheets
+or detached skin/garment fragments during expressive motion. Frame cropping
+only hides that defect. A fresh clean A-pose body which preserves the original
+red-haori design and proportions is required before retargeting and final
+integration. Until that gate passes, value 4 remains an explicit development
+trial and ordinary/first launch continues to select Meshy Snow Kimono value 3.
+
+The prepared runtime policy remains applicable to the replacement body:
+`PlayerMotor3D` owns translation and jump flight; Sword damage and magic
+projectile creation remain immediate combat events; Azure-only visual recovery
+may continue after the combat-owned duration but becomes interruptible by
+nonzero locomotion after that duration. The evidence capture samples the early
+Sword cut densely, records actual elapsed time and Animator state/progress,
+buffers PNG encoding, and frames the currently baked skinned surface so extreme
+imported animation bounds cannot shrink the figure.
+
 ## Required animation names
 
 Heroine:
@@ -42,7 +64,7 @@ Heroine:
 - `Sword`, `AirSlash`, `Plunge`
 - `SpinCharge`, `SpinRelease`
 - `MagicCharge`, `MagicRelease`
-- `Hurt`, `Defeated`
+- `Hurt`, `Defeated`, `Dodge`
 
 Slime:
 

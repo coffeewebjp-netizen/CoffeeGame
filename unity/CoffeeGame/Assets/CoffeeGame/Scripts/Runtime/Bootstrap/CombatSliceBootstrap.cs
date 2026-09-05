@@ -30,7 +30,8 @@ namespace CoffeeGame.Bootstrap
         Hd2d = 0,
         TrialAnimeGirl3D = 1,
         SnowKimono3D = 2,
-        MeshySnowKimono3D = 3
+        MeshySnowKimono3D = 3,
+        AzureMaidenUpgraded3D = 4
     }
 
     [DefaultExecutionOrder(-1000)]
@@ -49,6 +50,8 @@ namespace CoffeeGame.Bootstrap
         private const string SnowKimonoControllerResource = "Animations/Hero/SnowKimonoRuntime";
         private const string MeshySnowKimonoModelResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono";
         private const string MeshySnowKimonoControllerResource = "Animations/Hero/MeshySnowKimonoRuntime";
+        private const string AzureMaidenUpgradedModelResource = "Models/Hero/AzureMaidenUpgraded/azure-maiden-upgraded";
+        private const string AzureMaidenUpgradedControllerResource = "Animations/Hero/AzureMaidenUpgradedRuntime";
         public const string SnowKimonoPrefKey = "CoffeeGAME.SnowKimono3D";
         public const string PreviousCharacterSelectionPrefKey = "CoffeeGAME.PreviousCharacterSelection.v1";
         public const string CharacterSelectionDefaultAppliedPrefKey = "CoffeeGAME.CharacterSelectionDefaultApplied.v1";
@@ -56,7 +59,9 @@ namespace CoffeeGame.Bootstrap
         private const string RestorePreviousCharacterArg = "-restorePreviousCharacter";
         private const string SetSnowKimonoDefaultArg = "-useSnowKimonoDefault";
         private const string SetMeshySnowKimonoDefaultArg = "-useMeshySnowKimonoDefault";
+        private const string SetAzureMaidenUpgradedDefaultArg = "-useAzureMaidenUpgradedDefault";
         private const string CaptureSceneArg = "-captureScene";
+        private const string CaptureMeshyMotionArg = "-captureMeshyMotion";
         private const string SlimeModelResource = "Models/Slime/slime-v2";
         private const string SlimeControllerResource = "Animations/Slime/SlimeRuntime";
         private const string SlimeHd2dManifestResource = "Art/HD2D/slime-hd2d";
@@ -100,6 +105,11 @@ namespace CoffeeGame.Bootstrap
             return GetCharacterSelection() == CharacterSelection.MeshySnowKimono3D;
         }
 
+        public static bool ShouldUseAzureMaidenUpgraded()
+        {
+            return GetCharacterSelection() == CharacterSelection.AzureMaidenUpgraded3D;
+        }
+
         public static CharacterSelection GetCharacterSelection()
         {
             if (HasCommandLineFlag(RestorePreviousCharacterArg))
@@ -119,6 +129,17 @@ namespace CoffeeGame.Bootstrap
             {
                 SetCharacterSelectionOverride(CharacterSelection.MeshySnowKimono3D);
                 return CharacterSelection.MeshySnowKimono3D;
+            }
+
+            if (HasCommandLineFlag(SetAzureMaidenUpgradedDefaultArg))
+            {
+                SetCharacterSelectionOverride(CharacterSelection.AzureMaidenUpgraded3D);
+                return CharacterSelection.AzureMaidenUpgraded3D;
+            }
+
+            if (HasCommandLineFlag("-azureMaidenUpgraded3D"))
+            {
+                return CharacterSelection.AzureMaidenUpgraded3D;
             }
 
             if (HasCommandLineFlag("-meshySnowKimono3D"))
@@ -152,9 +173,8 @@ namespace CoffeeGame.Bootstrap
                 return CharacterSelection.MeshySnowKimono3D;
             }
 
-            // The first ordinary launch performs the temporary adoption once.
-            // Snapshot legacy flags before the new default is applied so an
-            // existing anime-girl or 3D preference is restorable as well.
+            // Keep the accepted Meshy Snow Kimono as the ordinary default
+            // while the upgraded Azure body remains an explicit trial.
             RememberPreviousCharacterSelection(GetLegacyCharacterSelection());
             SetCharacterSelectionOverride(CharacterSelection.MeshySnowKimono3D);
             return CharacterSelection.MeshySnowKimono3D;
@@ -243,17 +263,40 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            string captureKey = TryGetCommandLineValue(CaptureSceneArg, out string capturePath)
-                ? CaptureSceneArg
-                : "-captureSnowKimono";
-            if (captureKey == "-captureSnowKimono" && !TryGetCommandLineValue(captureKey, out capturePath))
+            if (TryGetCommandLineValue(CaptureMeshyMotionArg, out string motionCapturePath))
             {
-                capturePath = string.Empty;
+                Transform playerRoot = runtimeRoot.Find("Player");
+                ModelCharacterVisual modelVisual = playerRoot != null
+                    ? playerRoot.GetComponentInChildren<ModelCharacterVisual>(true)
+                    : null;
+                if (modelVisual == null)
+                {
+                    Debug.LogError("CoffeeGAME Meshy motion capture requires ModelCharacterVisual.");
+                    Application.Quit(2);
+                }
+                else
+                {
+                    PlayerMotor3D motor = playerRoot.GetComponent<PlayerMotor3D>();
+                    PlayerCombatController combat = playerRoot.GetComponent<PlayerCombatController>();
+                    if (motor != null) motor.enabled = false;
+                    if (combat != null) combat.enabled = false;
+                    MeshyMotionEvidenceCapture.Begin(gameObject, sceneCamera, modelVisual, motionCapturePath);
+                }
             }
-            if (!string.IsNullOrWhiteSpace(capturePath))
+            else
             {
-                Application.runInBackground = true;
-                StartCoroutine(CaptureRuntimeScene(capturePath));
+                string captureKey = TryGetCommandLineValue(CaptureSceneArg, out string capturePath)
+                    ? CaptureSceneArg
+                    : "-captureSnowKimono";
+                if (captureKey == "-captureSnowKimono" && !TryGetCommandLineValue(captureKey, out capturePath))
+                {
+                    capturePath = string.Empty;
+                }
+                if (!string.IsNullOrWhiteSpace(capturePath))
+                {
+                    Application.runInBackground = true;
+                    StartCoroutine(CaptureRuntimeScene(capturePath));
+                }
             }
 #endif
         }
@@ -660,15 +703,16 @@ namespace CoffeeGame.Bootstrap
             CharacterSelection selection = GetCharacterSelection();
             bool snowKimono = selection == CharacterSelection.SnowKimono3D;
             bool meshySnowKimono = selection == CharacterSelection.MeshySnowKimono3D;
+            bool azureMaidenUpgraded = selection == CharacterSelection.AzureMaidenUpgraded3D;
             bool trialAnimeGirl = selection == CharacterSelection.TrialAnimeGirl3D;
             Debug.Log($"CoffeeGAME heroine selection: {selection}.");
             ICharacterVisual visual = CreatePreferredVisual(
                 player.transform,
                 "Hero VisualSlot",
-                trialAnimeGirl || snowKimono || meshySnowKimono ? null : HeroHd2dManifestResource,
-                meshySnowKimono ? MeshySnowKimonoModelResource : snowKimono ? SnowKimonoModelResource : trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
-                meshySnowKimono ? MeshySnowKimonoControllerResource : snowKimono ? SnowKimonoControllerResource : trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
-                meshySnowKimono ? CharacterModelStyle.MeshySnowKimono : snowKimono ? CharacterModelStyle.SnowKimono : trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
+                trialAnimeGirl || snowKimono || meshySnowKimono || azureMaidenUpgraded ? null : HeroHd2dManifestResource,
+                azureMaidenUpgraded ? AzureMaidenUpgradedModelResource : meshySnowKimono ? MeshySnowKimonoModelResource : snowKimono ? SnowKimonoModelResource : trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
+                azureMaidenUpgraded ? AzureMaidenUpgradedControllerResource : meshySnowKimono ? MeshySnowKimonoControllerResource : snowKimono ? SnowKimonoControllerResource : trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
+                azureMaidenUpgraded ? CharacterModelStyle.AzureMaidenUpgraded : meshySnowKimono ? CharacterModelStyle.MeshySnowKimono : snowKimono ? CharacterModelStyle.SnowKimono : trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
                 180f,
                 1f,
                 Resources.Load<Sprite>("Art/Hero/hero-sprite"),
@@ -683,6 +727,10 @@ namespace CoffeeGame.Bootstrap
             else if (meshySnowKimono)
             {
                 Debug.Log($"CoffeeGAME heroine visual: Meshy snow-kimono 3D selected ({visual.GetType().Name}).");
+            }
+            else if (azureMaidenUpgraded)
+            {
+                Debug.Log($"CoffeeGAME heroine visual: upgraded Azure Maiden 3D selected ({visual.GetType().Name}).");
             }
 
             PlayerMotor3D motor = player.AddComponent<PlayerMotor3D>();

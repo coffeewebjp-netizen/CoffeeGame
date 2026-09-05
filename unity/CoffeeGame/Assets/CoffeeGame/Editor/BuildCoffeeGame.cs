@@ -36,6 +36,22 @@ namespace CoffeeGame.Editor
             Build(output, BuildTarget.StandaloneWindows64, BuildOptions.Development);
         }
 
+        // Evidence-only build: compile the current scene/resources exactly as
+        // they are, without running setup or regenerating shared controllers.
+        public static void BuildAzureMotionDiagnosticNoSetup()
+        {
+            EnsureCombatSceneExists();
+            if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
+            {
+                throw new InvalidOperationException("Could not switch to the Windows x64 build target.");
+            }
+
+            string output = GetOutputPath(
+                "Windows-AzureMotionDiagnostic",
+                "CoffeeGAME-AzureMotionDiagnostic.exe");
+            Build(output, BuildTarget.StandaloneWindows64, BuildOptions.Development);
+        }
+
         [MenuItem("CoffeeGAME/Build/Android development APK", priority = 21)]
         public static void BuildAndroid()
         {

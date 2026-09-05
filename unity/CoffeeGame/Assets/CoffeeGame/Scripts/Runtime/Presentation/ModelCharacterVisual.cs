@@ -11,7 +11,8 @@ namespace CoffeeGame.Presentation
         Heroine,
         Slime,
         SnowKimono,
-        MeshySnowKimono
+        MeshySnowKimono,
+        AzureMaidenUpgraded
     }
 
     [DisallowMultipleComponent]
@@ -26,6 +27,8 @@ namespace CoffeeGame.Presentation
         private const string MeshySnowKimonoNormalResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-2";
         private const string MeshySnowKimonoPackedResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono-metallic-smoothness";
         private const string MeshySnowKimonoMaterialResource = "Materials/MeshySnowKimonoLit";
+        private const string AzureMaidenBaseResource = "Models/Hero/AzureMaidenUpgraded/azure-maiden-base";
+        private const string AzureMaidenMaterialResource = "Materials/AzureMaidenUpgradedLit";
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -70,6 +73,8 @@ namespace CoffeeGame.Presentation
         private float airHeightTrend;
         private bool hasLocomotionSpeedParameter;
         private bool actionPlaying;
+        private float actionElapsed;
+        private float actionMovementLockDuration;
         private bool defeated;
         private Transform locomotionRoot;
         private Animator locomotionAnimator;
@@ -295,6 +300,8 @@ namespace CoffeeGame.Presentation
             StopActionRoutine();
             defeated = false;
             actionPlaying = false;
+            actionElapsed = 0f;
+            actionMovementLockDuration = 0f;
             SetHeldSwordVisible(false);
             locomotion = CharacterAction.Idle;
             currentState = CharacterAction.Idle;
@@ -371,6 +378,17 @@ namespace CoffeeGame.Presentation
                 animator.SetFloat(LocomotionSpeedId, Mathf.Clamp01(normalizedSpeed));
             }
 
+            if (actionPlaying &&
+                modelStyle == CharacterModelStyle.AzureMaidenUpgraded &&
+                normalizedSpeed > 0.01f &&
+                actionElapsed >= actionMovementLockDuration &&
+                !defeated)
+            {
+                StopActionRoutine();
+                actionPlaying = false;
+                SetTint(Color.white);
+            }
+
             if (actionPlaying || defeated)
             {
                 return;
@@ -394,7 +412,9 @@ namespace CoffeeGame.Presentation
             }
             if (actionPlaying &&
                 GetActionPriority(action) < GetActionPriority(currentState) &&
-                !CharacterVisualTransitionPolicy.IsForcedPhysicsTransition(currentState, action))
+                !CharacterVisualTransitionPolicy.IsForcedPhysicsTransition(currentState, action) &&
+                !(modelStyle == CharacterModelStyle.AzureMaidenUpgraded &&
+                  actionElapsed >= actionMovementLockDuration))
             {
                 return;
             }
@@ -414,8 +434,42 @@ namespace CoffeeGame.Presentation
                     ? 0.16f
                     : actionCrossFadeSeconds;
             TryPlayState(action, playCrossFade);
-            MatchClipPlaybackToDuration(action, Mathf.Max(0.05f, duration));
-            actionRoutine = StartCoroutine(FinishActionAfter(action, Mathf.Max(0.05f, duration)));
+            float requestedDuration = Mathf.Max(0.05f, duration);
+            float presentationDuration = ResolvePresentationDuration(action, requestedDuration);
+            actionElapsed = 0f;
+            actionMovementLockDuration = requestedDuration;
+            MatchClipPlaybackToDuration(action, presentationDuration);
+            actionRoutine = StartCoroutine(FinishActionAfter(action, presentationDuration));
+        }
+
+        private float ResolvePresentationDuration(CharacterAction action, float requestedDuration)
+        {
+            if (modelStyle != CharacterModelStyle.AzureMaidenUpgraded || float.IsInfinity(requestedDuration))
+            {
+                return requestedDuration;
+            }
+
+            // Combat events and cooldowns remain owned by PlayerCombatController.
+            // These minima only let the authored visual follow-through remain
+            // visible after an immediate hit/projectile event.
+            switch (action)
+            {
+                case CharacterAction.Sword:
+                case CharacterAction.AirSlash:
+                case CharacterAction.Plunge:
+                case CharacterAction.SpinRelease:
+                    return Mathf.Max(requestedDuration, 1.05f);
+                case CharacterAction.MagicRelease:
+                    return Mathf.Max(requestedDuration, 0.8f);
+                case CharacterAction.Dodge:
+                    return Mathf.Max(requestedDuration, 0.72f);
+                case CharacterAction.Hurt:
+                    return Mathf.Max(requestedDuration, 0.34f);
+                case CharacterAction.Defeated:
+                    return Mathf.Max(requestedDuration, 1f);
+                default:
+                    return requestedDuration;
+            }
         }
 
         private void MatchClipPlaybackToDuration(CharacterAction action, float duration)
@@ -426,7 +480,9 @@ namespace CoffeeGame.Presentation
             }
 
             bool snowKimonoTimedAction =
-                (modelStyle == CharacterModelStyle.SnowKimono || modelStyle == CharacterModelStyle.MeshySnowKimono) &&
+                (modelStyle == CharacterModelStyle.SnowKimono ||
+                 modelStyle == CharacterModelStyle.MeshySnowKimono ||
+                 modelStyle == CharacterModelStyle.AzureMaidenUpgraded) &&
                 IsSnowKimonoTimedAction(action);
             if (!snowKimonoTimedAction && !showingHeldSwordSet &&
                 action != CharacterAction.MagicCharge &&
@@ -593,6 +649,7 @@ namespace CoffeeGame.Presentation
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
+                actionElapsed = elapsed;
                 yield return null;
             }
 
@@ -676,7 +733,14 @@ namespace CoffeeGame.Presentation
             }
             else
             {
-                animator.CrossFade(stateHash, crossFadeSeconds, 0, 0f);
+                if (modelStyle == CharacterModelStyle.AzureMaidenUpgraded)
+                {
+                    animator.CrossFadeInFixedTime(stateHash, crossFadeSeconds, 0, 0f);
+                }
+                else
+                {
+                    animator.CrossFade(stateHash, crossFadeSeconds, 0, 0f);
+                }
             }
             currentState = action;
             return true;
@@ -914,11 +978,12 @@ namespace CoffeeGame.Presentation
                         Color displayColor = ResolveReferenceColor(imported.name, importedColor);
                         bool meshyBody = modelStyle == CharacterModelStyle.MeshySnowKimono &&
                             IsMeshySnowKimonoBodyMaterial(imported.name);
-                        Material meshyTemplate = meshyBody
+                        bool azureBody = modelStyle == CharacterModelStyle.AzureMaidenUpgraded;
+                        Material authoredTemplate = meshyBody
                             ? Resources.Load<Material>(MeshySnowKimonoMaterialResource)
-                            : null;
-                        replacement = meshyTemplate != null
-                            ? new Material(meshyTemplate) { name = $"{imported.name} CoffeeGAME display" }
+                            : azureBody ? Resources.Load<Material>(AzureMaidenMaterialResource) : null;
+                        replacement = authoredTemplate != null
+                            ? new Material(authoredTemplate) { name = $"{imported.name} CoffeeGAME display" }
                             : RuntimeMaterialFactory.CreateLit(
                                 $"{imported.name} CoffeeGAME display",
                                 displayColor);
@@ -938,6 +1003,10 @@ namespace CoffeeGame.Presentation
                         if (modelStyle == CharacterModelStyle.MeshySnowKimono)
                         {
                             ApplyMeshySnowKimonoTextures(imported.name, replacement);
+                        }
+                        else if (modelStyle == CharacterModelStyle.AzureMaidenUpgraded)
+                        {
+                            ApplyAzureMaidenTextures(replacement);
                         }
                         replacements.Add(imported, replacement);
                         ownedDisplayMaterials.Add(replacement);
@@ -1150,6 +1219,28 @@ namespace CoffeeGame.Presentation
         {
             string normalized = (sourceName ?? string.Empty).Replace("_", string.Empty).ToLowerInvariant();
             return normalized.Contains("material0");
+        }
+
+        private static void ApplyAzureMaidenTextures(Material destination)
+        {
+            Texture2D baseMap = Resources.Load<Texture2D>(AzureMaidenBaseResource);
+            if (baseMap == null || !destination.HasProperty(BaseMapId))
+            {
+                return;
+            }
+
+            destination.SetTexture(BaseMapId, baseMap);
+            destination.SetColor(BaseColorId, Color.white);
+            if (destination.HasProperty("_EmissionMap"))
+            {
+                destination.SetTexture("_EmissionMap", baseMap);
+                RuntimeMaterialFactory.SetSrgbColor(
+                    destination, "_EmissionColor", new Color(0.12f, 0.12f, 0.12f, 1f));
+                destination.EnableKeyword("_EMISSION");
+            }
+            if (destination.HasProperty("_Metallic")) destination.SetFloat("_Metallic", 0f);
+            if (destination.HasProperty("_Smoothness")) destination.SetFloat("_Smoothness", 0.16f);
+            if (destination.HasProperty("_Cull")) destination.SetFloat("_Cull", 0f);
         }
 
         private static bool CopyTexture(

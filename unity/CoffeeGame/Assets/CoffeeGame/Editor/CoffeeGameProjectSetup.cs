@@ -39,6 +39,10 @@ namespace CoffeeGame.Editor
         private const string MeshySnowKimonoNormalPath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-2.png";
         private const string MeshySnowKimonoPackedPath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-metallic-smoothness.png";
         private const string MeshySnowKimonoMaterialPath = "Assets/CoffeeGame/Resources/Materials/MeshySnowKimonoLit.mat";
+        private const string AzureMaidenUpgradedModelPath = "Assets/CoffeeGame/Resources/Models/Hero/AzureMaidenUpgraded/azure-maiden-upgraded.fbx";
+        private const string AzureMaidenUpgradedControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/AzureMaidenUpgradedRuntime.controller";
+        private const string AzureMaidenUpgradedBasePath = "Assets/CoffeeGame/Resources/Models/Hero/AzureMaidenUpgraded/azure-maiden-base.png";
+        private const string AzureMaidenUpgradedMaterialPath = "Assets/CoffeeGame/Resources/Materials/AzureMaidenUpgradedLit.mat";
         private const string Hd2dArtPath = "Assets/CoffeeGame/Resources/Art/HD2D";
         private const string SessionKey = "CoffeeGame.FirstSetupAttempted";
         private static bool setupRunning;
@@ -163,6 +167,28 @@ namespace CoffeeGame.Editor
             AssetDatabase.Refresh();
         }
 
+        [MenuItem("CoffeeGAME/Trial/Setup upgraded Azure Maiden 3D", priority = 56)]
+        public static void SetupAzureMaidenUpgraded()
+        {
+            ConfigureModel(AzureMaidenUpgradedModelPath);
+            RefreshImportedClipList(AzureMaidenUpgradedModelPath);
+            ConfigureMeshyTexture(AzureMaidenUpgradedBasePath, TextureImporterType.Default, true);
+            EnsureAzureMaidenUpgradedMaterial();
+            EnsureModelAnimatorController(
+                AzureMaidenUpgradedModelPath,
+                AzureMaidenUpgradedControllerPath,
+                false);
+            AnimatorController controller =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(AzureMaidenUpgradedControllerPath);
+            if (controller != null && controller.name != "AzureMaidenUpgradedRuntime")
+            {
+                controller.name = "AzureMaidenUpgradedRuntime";
+                EditorUtility.SetDirty(controller);
+            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
         private static void ConfigureMeshyTexture(string path, TextureImporterType type, bool srgb)
         {
             TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -213,6 +239,36 @@ namespace CoffeeGame.Editor
             material.SetFloat("_Cull", 0f);
             material.EnableKeyword("_NORMALMAP");
             material.EnableKeyword("_METALLICSPECGLOSSMAP");
+            material.EnableKeyword("_EMISSION");
+            EditorUtility.SetDirty(material);
+        }
+
+        private static void EnsureAzureMaidenUpgradedMaterial()
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+            {
+                throw new InvalidOperationException("URP Lit shader is unavailable for the upgraded Azure Maiden.");
+            }
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(AzureMaidenUpgradedMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "AzureMaidenUpgradedLit" };
+                AssetDatabase.CreateAsset(material, AzureMaidenUpgradedMaterialPath);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+
+            Texture2D baseMap = AssetDatabase.LoadAssetAtPath<Texture2D>(AzureMaidenUpgradedBasePath);
+            material.SetColor("_BaseColor", Color.white);
+            material.SetTexture("_BaseMap", baseMap);
+            material.SetTexture("_EmissionMap", baseMap);
+            material.SetColor("_EmissionColor", new Color(0.12f, 0.12f, 0.12f, 1f));
+            material.SetFloat("_Metallic", 0f);
+            material.SetFloat("_Smoothness", 0.16f);
+            material.SetFloat("_Cull", 0f);
             material.EnableKeyword("_EMISSION");
             EditorUtility.SetDirty(material);
         }
