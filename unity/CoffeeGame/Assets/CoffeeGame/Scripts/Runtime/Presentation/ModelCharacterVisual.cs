@@ -9,7 +9,8 @@ namespace CoffeeGame.Presentation
     {
         Imported,
         Heroine,
-        Slime
+        Slime,
+        SnowKimono
     }
 
     [DisallowMultipleComponent]
@@ -418,7 +419,9 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            if (!showingHeldSwordSet &&
+            bool snowKimonoTimedAction = modelStyle == CharacterModelStyle.SnowKimono &&
+                IsSnowKimonoTimedAction(action);
+            if (!snowKimonoTimedAction && !showingHeldSwordSet &&
                 action != CharacterAction.MagicCharge &&
                 action != CharacterAction.MagicRelease &&
                 action != CharacterAction.Dodge)
@@ -426,12 +429,17 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            animator.Update(0f);
-            float length = 0f;
-            AnimatorClipInfo[] clipInfo = animator.GetCurrentAnimatorClipInfo(0);
-            if (clipInfo != null && clipInfo.Length > 0 && clipInfo[0].clip != null)
+            float length = snowKimonoTimedAction
+                ? FindControllerClipLength(action)
+                : 0f;
+            if (length < 0.08f)
             {
-                length = clipInfo[0].clip.length;
+                animator.Update(0f);
+                AnimatorClipInfo[] clipInfo = animator.GetCurrentAnimatorClipInfo(0);
+                if (clipInfo != null && clipInfo.Length > 0 && clipInfo[0].clip != null)
+                {
+                    length = clipInfo[0].clip.length;
+                }
             }
 
             if (length < 0.08f)
@@ -445,6 +453,58 @@ namespace CoffeeGame.Presentation
             }
 
             animator.speed = length / duration;
+        }
+
+        private static bool IsSnowKimonoTimedAction(CharacterAction action)
+        {
+            switch (action)
+            {
+                case CharacterAction.Sword:
+                case CharacterAction.AirSlash:
+                case CharacterAction.Plunge:
+                case CharacterAction.SpinCharge:
+                case CharacterAction.SpinRelease:
+                case CharacterAction.MagicCharge:
+                case CharacterAction.MagicRelease:
+                case CharacterAction.Hurt:
+                case CharacterAction.Defeated:
+                case CharacterAction.Dodge:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private float FindControllerClipLength(CharacterAction action)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null)
+            {
+                return 0f;
+            }
+
+            string target = ResolveStateName(action);
+            AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                AnimationClip clip = clips[i];
+                if (clip == null)
+                {
+                    continue;
+                }
+
+                string clipName = clip.name;
+                int separator = Math.Max(clipName.LastIndexOf('|'), clipName.LastIndexOf('/'));
+                if (separator >= 0 && separator + 1 < clipName.Length)
+                {
+                    clipName = clipName.Substring(separator + 1);
+                }
+                if (string.Equals(clipName, target, StringComparison.OrdinalIgnoreCase))
+                {
+                    return clip.length;
+                }
+            }
+
+            return 0f;
         }
 
         private static int GetActionPriority(CharacterAction action)
@@ -853,7 +913,13 @@ namespace CoffeeGame.Presentation
                             continue;
                         }
 
-                        CopyDisplayTextures(imported, replacement);
+                        // snow-kimono is authored as a palette-only procedural asset. FBX
+                        // importer/template texture bindings can multiply the replacement
+                        // color and make the palette unreadable, so do not inherit them.
+                        if (modelStyle != CharacterModelStyle.SnowKimono)
+                        {
+                            CopyDisplayTextures(imported, replacement);
+                        }
                         ConfigureDisplayMaterial(replacement, imported.name, displayColor);
                         replacements.Add(imported, replacement);
                         ownedDisplayMaterials.Add(replacement);
@@ -893,7 +959,7 @@ namespace CoffeeGame.Presentation
                 disableSpecularHighlights = true;
                 disableEnvironmentReflections = true;
             }
-            if (name.Contains("haori") || name.Contains("skirt") || name.Contains("textile") || name.Contains("top"))
+            if (name.Contains("haori") || name.Contains("skirt") || name.Contains("textile") || name.Contains("top") || name.Contains("kimono"))
             {
                 smoothness = 0.08f;
                 disableSpecularHighlights = true;
@@ -1075,6 +1141,34 @@ namespace CoffeeGame.Presentation
                 .Replace("_", string.Empty)
                 .Replace("-", string.Empty)
                 .ToLowerInvariant();
+
+            if (modelStyle == CharacterModelStyle.SnowKimono)
+            {
+                // Resolve the generator's named palette explicitly so the textureless
+                // trial has stable authored colors across Blender and Unity importers.
+                if (name.Contains("hair") && name.Contains("shadow")) return Rgb(16, 30, 78, fallback.a);
+                if (name.Contains("hair") && name.Contains("light")) return Rgb(67, 141, 216, fallback.a);
+                if (name.Contains("hair")) return Rgb(34, 94, 184, fallback.a);
+                if (name.Contains("skin") && name.Contains("shadow")) return Rgb(197, 138, 131, fallback.a);
+                if (name.Contains("skin")) return Rgb(243, 205, 196, fallback.a);
+                if (name.Contains("softwhite")) return Rgb(242, 240, 233, fallback.a);
+                if (name.Contains("eye") && name.Contains("amber")) return Rgb(255, 140, 25, fallback.a);
+                if (name.Contains("eye") && name.Contains("gold")) return Rgb(255, 210, 77, fallback.a);
+                if (name.Contains("face") && name.Contains("ink")) return Rgb(23, 18, 29, fallback.a);
+                if (name.Contains("lip")) return Rgb(166, 90, 100, fallback.a);
+                if (name.Contains("kimono") && name.Contains("deep")) return Rgb(10, 13, 22, fallback.a);
+                if (name.Contains("kimono") && name.Contains("fold")) return Rgb(43, 51, 72, fallback.a);
+                if (name.Contains("kimono")) return Rgb(23, 27, 39, fallback.a);
+                if (name.Contains("trim")) return Rgb(167, 25, 44, fallback.a);
+                if (name.Contains("obi")) return Rgb(37, 43, 59, fallback.a);
+                if (name.Contains("tabi")) return Rgb(232, 231, 225, fallback.a);
+                if (name.Contains("sandal")) return Rgb(24, 19, 23, fallback.a);
+                if (name.Contains("katana") && name.Contains("edge")) return Rgb(238, 248, 250, fallback.a);
+                if (name.Contains("katana") && name.Contains("steel")) return Rgb(185, 211, 222, fallback.a);
+                if (name.Contains("katana") && name.Contains("fitting")) return Rgb(64, 56, 48, fallback.a);
+                if (name.Contains("katana") && name.Contains("wrap")) return Rgb(105, 42, 55, fallback.a);
+                return fallback;
+            }
 
             if (modelStyle == CharacterModelStyle.Heroine)
             {

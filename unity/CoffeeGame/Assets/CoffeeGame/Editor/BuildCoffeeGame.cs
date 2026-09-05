@@ -22,6 +22,19 @@ namespace CoffeeGame.Editor
             Build(output, BuildTarget.StandaloneWindows64, BuildOptions.Development);
         }
 
+        public static void BuildSnowKimonoTrialWindows()
+        {
+            CoffeeGameProjectSetup.SetupSnowKimono();
+            EnsureCombatSceneExists();
+            if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
+            {
+                throw new InvalidOperationException("Could not switch to the Windows x64 build target.");
+            }
+
+            string output = GetOutputPath("Windows-SnowKimono", "CoffeeGAME-SnowKimono.exe");
+            Build(output, BuildTarget.StandaloneWindows64, BuildOptions.Development);
+        }
+
         [MenuItem("CoffeeGAME/Build/Android development APK", priority = 21)]
         public static void BuildAndroid()
         {

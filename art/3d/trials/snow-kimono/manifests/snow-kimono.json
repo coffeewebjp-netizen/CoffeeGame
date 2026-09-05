@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "asset": "snow-kimono",
+  "status": "reference-guided-prototype",
+  "fidelityDisclosure": "Front view is reference-guided; unseen side/back are conservative first-pass reconstruction.",
+  "reference": "owner-local image; intentionally not included",
+  "generator": "tools/blender/generate_snow_kimono.py",
+  "source": "art/3d/trials/snow-kimono/source/snow-kimono.blend",
+  "archivedFbx": "art/3d/trials/snow-kimono/export/snow-kimono.fbx",
+  "unityFbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/snow-kimono.fbx",
+  "previews": {
+    "beauty-three-quarter": "art/3d/trials/snow-kimono/previews/beauty-three-quarter.png",
+    "front": "art/3d/trials/snow-kimono/previews/front.png",
+    "side": "art/3d/trials/snow-kimono/previews/side.png",
+    "back": "art/3d/trials/snow-kimono/previews/back.png",
+    "walk": "art/3d/trials/snow-kimono/previews/walk.png",
+    "run": "art/3d/trials/snow-kimono/previews/run.png",
+    "sword": "art/3d/trials/snow-kimono/previews/sword.png",
+    "dodge": "art/3d/trials/snow-kimono/previews/dodge.png"
+  },
+  "units": "meters",
+  "heightMeters": 1.64,
+  "sourceAxes": {
+    "up": "+Z",
+    "forward": "-Y"
+  },
+  "unityAxes": {
+    "up": "+Y",
+    "forward": "+Z"
+  },
+  "origin": "ground-center",
+  "locomotion": "in-place",
+  "runtimeMeshes": [
+    "SnowKimonoBody",
+    "SnowKimonoKatana",
+    "SnowKimonoSaya"
+  ],
+  "separateRigidProps": {
+    "katana": "Weapon/Hand.R",
+    "saya": "Sheath/Pelvis"
+  },
+  "boneContract": {
+    "count": 20,
+    "compatibleNames": true,
+    "weaponParent": "Hand.R"
+  },
+  "requiredActions": [
+    "Idle",
+    "Walk",
+    "Run",
+    "Jump",
+    "Fall",
+    "Land",
+    "Sword",
+    "AirSlash",
+    "Plunge",
+    "SpinCharge",
+    "SpinRelease",
+    "MagicCharge",
+    "MagicRelease",
+    "Hurt",
+    "Defeated",
+    "Dodge"
+  ],
+  "counts": {
+    "objects": 4,
+    "meshObjects": 3,
+    "vertices": 26364,
+    "triangles": 52108,
+    "materials": 21,
+    "armatures": 1,
+    "bones": 20,
+    "actions": 16,
+    "actionNames": [
+      "AirSlash",
+      "Defeated",
+      "Dodge",
+      "Fall",
+      "Hurt",
+      "Idle",
+      "Jump",
+      "Land",
+      "MagicCharge",
+      "MagicRelease",
+      "Plunge",
+      "Run",
+      "SpinCharge",
+      "SpinRelease",
+      "Sword",
+      "Walk"
+    ]
+  },
+  "materialPalette": {
+    "SK_Eye_Amber": {
+      "baseColor": "#FF8C19",
+      "role": "iris",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Eye_Gold": {
+      "baseColor": "#FFD24D",
+      "role": "iris-highlight",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Eye_SoftWhite": {
+      "baseColor": "#F2F0E9",
+      "role": "eye-white",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Face_Ink": {
+      "baseColor": "#17121D",
+      "role": "face-ink",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Hair_AzureLight": {
+      "baseColor": "#438DD8",
+      "role": "hair-highlight",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Hair_Cobalt": {
+      "baseColor": "#225EB8",
+      "role": "hair-main",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Hair_IndigoShadow": {
+      "baseColor": "#101E4E",
+      "role": "hair-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Katana_Edge": {
+      "baseColor": "#EEF8FA",
+      "role": "blade-edge",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Katana_Fittings": {
+      "baseColor": "#403830",
+      "role": "metal-fitting",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Katana_Steel": {
+      "baseColor": "#B9D3DE",
+      "role": "blade",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Katana_Wrap": {
+      "baseColor": "#692A37",
+      "role": "handle-wrap",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Kimono_BlackSilk": {
+      "baseColor": "#171B27",
+      "role": "kimono-main",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Kimono_DeepFold": {
+      "baseColor": "#0A0D16",
+      "role": "kimono-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Kimono_FoldLight": {
+      "baseColor": "#2B3348",
+      "role": "kimono-fold",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Lip_DryRose": {
+      "baseColor": "#A65A64",
+      "role": "lip",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Obi_Satin": {
+      "baseColor": "#252B3B",
+      "role": "obi",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Sandal_Sole": {
+      "baseColor": "#181317",
+      "role": "sandal-sole",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Skin_Porcelain": {
+      "baseColor": "#F3CDC4",
+      "role": "skin",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Skin_WarmShadow": {
+      "baseColor": "#C58A83",
+      "role": "skin-shadow",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Tabi_White": {
+      "baseColor": "#E8E7E1",
+      "role": "tabi",
+      "shader": "Universal Render Pipeline/Lit"
+    },
+    "SK_Trim_Oxblood": {
+      "baseColor": "#A7192C",
+      "role": "narrow-red-piping",
+      "shader": "Universal Render Pipeline/Lit"
+    }
+  },
+  "validation": {
+    "blendReadable": true,
+    "fbxArchiveExists": true,
+    "unityFbxExists": true,
+    "meshNames": [
+      "SnowKimonoBody",
+      "SnowKimonoKatana",
+      "SnowKimonoSaya"
+    ],
+    "requiredMeshesPresent": true,
+    "armatureCount": 1,
+    "boneCount": 20,
+    "actionCount": 16,
+    "missingActions": [],
+    "weaponParent": "Hand.R",
+    "sayaParent": "Pelvis",
+    "previewsPresent": true,
+    "passed": true
+  }
+}

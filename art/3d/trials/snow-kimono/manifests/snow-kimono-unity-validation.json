@@ -1,0 +1,544 @@
+{
+    "unityVersion": "6000.5.7f1",
+    "modelPath": "Assets/CoffeeGame/Resources/Models/Hero/snow-kimono.fbx",
+    "controllerPath": "Assets/CoffeeGame/Resources/Animations/Hero/SnowKimonoRuntime.controller",
+    "importedClipCount": 16,
+    "missingActions": [],
+    "meshCount": 3,
+    "vertexCount": 27638,
+    "missingNormalMeshCount": 0,
+    "missingMaterialSlotCount": 0,
+    "activeColorSpace": "Linear",
+    "runtimeMaterialCount": 21,
+    "visiblePaletteRoleCount": 4,
+    "materialSamples": [
+        {
+            "name": "SK_Hair_Cobalt CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.015996292233467103,
+                "g": 0.11193240433931351,
+                "b": 0.4793201684951782,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.13333329558372498,
+                "g": 0.3686273694038391,
+                "b": 0.7215685844421387,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Tabi_White CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.8069523572921753,
+                "g": 0.7991028428077698,
+                "b": 0.7529423236846924,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.9098039269447327,
+                "g": 0.9058823585510254,
+                "b": 0.8823529481887817,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Sandal_Sole CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.009134056977927685,
+                "g": 0.0065120914950966839,
+                "b": 0.00856812484562397,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.09411760419607163,
+                "g": 0.07450979202985764,
+                "b": 0.09019606560468674,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Trim_Oxblood CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.38642945885658266,
+                "g": 0.009721217676997185,
+                "b": 0.02518685720860958,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.654901921749115,
+                "g": 0.0980391874909401,
+                "b": 0.17254897952079774,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Kimono_BlackSilk CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.00856812484562397,
+                "g": 0.010960093699395657,
+                "b": 0.020288562402129175,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.09019606560468674,
+                "g": 0.10588232427835465,
+                "b": 0.15294113755226136,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Kimono_FoldLight CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.024157630279660226,
+                "g": 0.03310476243495941,
+                "b": 0.06480325758457184,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.16862741112709046,
+                "g": 0.19999995827674867,
+                "b": 0.28235286474227908,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Kimono_DeepFold CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.0030352699104696514,
+                "g": 0.004024717025458813,
+                "b": 0.008023192174732685,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.03921568766236305,
+                "g": 0.050980374217033389,
+                "b": 0.08627448230981827,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Obi_Satin CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.01850021816790104,
+                "g": 0.024157630279660226,
+                "b": 0.04373500496149063,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.1450980007648468,
+                "g": 0.16862741112709046,
+                "b": 0.23137244582176209,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Skin_Porcelain CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.8962693810462952,
+                "g": 0.6104955673217773,
+                "b": 0.5520114302635193,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.9529411196708679,
+                "g": 0.8039215207099915,
+                "b": 0.768627405166626,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Skin_WarmShadow CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.5583404898643494,
+                "g": 0.2541521489620209,
+                "b": 0.22696584463119508,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.772549033164978,
+                "g": 0.541176438331604,
+                "b": 0.5137253999710083,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Face_Ink CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.00856812484562397,
+                "g": 0.006048832554370165,
+                "b": 0.01228648703545332,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.09019606560468674,
+                "g": 0.07058820873498917,
+                "b": 0.1137254610657692,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Eye_SoftWhite CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.8879231810569763,
+                "g": 0.8713672161102295,
+                "b": 0.8148466944694519,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.9490196108818054,
+                "g": 0.9411764740943909,
+                "b": 0.9137254953384399,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Eye_Amber CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 1.0,
+                "g": 0.262250691652298,
+                "b": 0.009721217676997185,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 1.0,
+                "g": 0.5490195751190186,
+                "b": 0.0980391874909401,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Eye_Gold CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 1.0,
+                "g": 0.6444797515869141,
+                "b": 0.07421354204416275,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 1.0,
+                "g": 0.8235294222831726,
+                "b": 0.30196070671081545,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Hair_IndigoShadow CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.005181516986340284,
+                "g": 0.012983030639588833,
+                "b": 0.07618535310029984,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.06274507939815521,
+                "g": 0.11764702945947647,
+                "b": 0.3058822751045227,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Lip_DryRose CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.3813260793685913,
+                "g": 0.10224171727895737,
+                "b": 0.12743765115737916,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.6509803533554077,
+                "g": 0.35294109582901,
+                "b": 0.39215677976608279,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Hair_AzureLight CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.056128472089767459,
+                "g": 0.26635560393333437,
+                "b": 0.6866854429244995,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.2627450227737427,
+                "g": 0.5529411435127258,
+                "b": 0.8470588326454163,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Katana_Steel CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.48514997959136965,
+                "g": 0.6514056921005249,
+                "b": 0.7304608821868897,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.7254902124404907,
+                "g": 0.8274509906768799,
+                "b": 0.8705882430076599,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Katana_Edge CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.854992687702179,
+                "g": 0.9386858940124512,
+                "b": 0.9559734463691711,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.9333333373069763,
+                "g": 0.9725490212440491,
+                "b": 0.9803921580314636,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Katana_Wrap CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.14126327633857728,
+                "g": 0.023153364658355714,
+                "b": 0.038204364478588107,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.41176465153694155,
+                "g": 0.16470584273338319,
+                "b": 0.21568620204925538,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        },
+        {
+            "name": "SK_Katana_Fittings CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.05126944184303284,
+                "g": 0.039546236395835879,
+                "b": 0.02955683320760727,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.25098031759262087,
+                "g": 0.21960780024528504,
+                "b": 0.18823525309562684,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>"
+        }
+    ],
+    "normalSamples": [
+        {
+            "renderer": "SnowKimonoBody",
+            "sampledVertexCount": 2049,
+            "outwardRatio": 0.5671058893203735
+        },
+        {
+            "renderer": "SnowKimonoKatana",
+            "sampledVertexCount": 852,
+            "outwardRatio": 0.591549277305603
+        },
+        {
+            "renderer": "SnowKimonoSaya",
+            "sampledVertexCount": 157,
+            "outwardRatio": 0.7579618096351624
+        }
+    ],
+    "actionSamples": [
+        {
+            "action": "Walk",
+            "clipLengthSeconds": 1.033333420753479,
+            "motionMagnitude": 1.6047886610031129,
+            "rootDisplacement": 0.0
+        },
+        {
+            "action": "Run",
+            "clipLengthSeconds": 0.7666667103767395,
+            "motionMagnitude": 2.6401989459991457,
+            "rootDisplacement": 0.0
+        },
+        {
+            "action": "Sword",
+            "clipLengthSeconds": 0.9000000357627869,
+            "motionMagnitude": 0.867965817451477,
+            "rootDisplacement": 0.0
+        },
+        {
+            "action": "Dodge",
+            "clipLengthSeconds": 0.7666667103767395,
+            "motionMagnitude": 1.916087031364441,
+            "rootDisplacement": 0.0
+        }
+    ],
+    "previewPath": "art/3d/trials/snow-kimono/previews/unity-unlit-palette-diagnostic.png",
+    "passed": true
+}

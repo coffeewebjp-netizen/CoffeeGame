@@ -30,6 +30,8 @@ namespace CoffeeGame.Editor
         private const string TrialAnimeGirlControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/TrialAnimeGirlRuntime.controller";
         private const string TrialAnimeGirlAttackModelPath = "Assets/CoffeeGame/Resources/Models/Hero/trial-anime-girl-attack.fbx";
         private const string TrialAnimeGirlAttackControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/TrialAnimeGirlAttackRuntime.controller";
+        private const string SnowKimonoModelPath = "Assets/CoffeeGame/Resources/Models/Hero/snow-kimono.fbx";
+        private const string SnowKimonoControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/SnowKimonoRuntime.controller";
         private const string Hd2dArtPath = "Assets/CoffeeGame/Resources/Art/HD2D";
         private const string SessionKey = "CoffeeGame.FirstSetupAttempted";
         private static bool setupRunning;
@@ -74,6 +76,7 @@ namespace CoffeeGame.Editor
         public static void EnableTrialAnimeGirl()
         {
             SetupTrialAnimeGirl();
+            PlayerPrefs.SetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 0);
             PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 1);
             PlayerPrefs.Save();
             Debug.Log("CoffeeGAME trial anime-girl 3D is enabled for the next Play. HD-2D remains the default when this is off.");
@@ -90,8 +93,45 @@ namespace CoffeeGame.Editor
         public static void DisableTrialAnimeGirl()
         {
             PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 0);
+            PlayerPrefs.SetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 0);
             PlayerPrefs.Save();
             Debug.Log("CoffeeGAME trial anime-girl 3D is off. Play uses the HD-2D heroine.");
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Setup snow-kimono 3D", priority = 53)]
+        public static void SetupSnowKimono()
+        {
+            ConfigureModel(SnowKimonoModelPath);
+            RefreshImportedClipList(SnowKimonoModelPath);
+            EnsureModelAnimatorController(SnowKimonoModelPath, SnowKimonoControllerPath, false);
+            AnimatorController controller =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(SnowKimonoControllerPath);
+            if (controller != null && controller.name != "SnowKimonoRuntime")
+            {
+                controller.name = "SnowKimonoRuntime";
+                EditorUtility.SetDirty(controller);
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("CoffeeGAME snow-kimono 3D controller is ready. Enable it from CoffeeGAME > Trial > Use snow-kimono 3D.");
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Use snow-kimono 3D", priority = 54)]
+        public static void EnableSnowKimono()
+        {
+            SetupSnowKimono();
+            PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 0);
+            PlayerPrefs.SetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 1);
+            PlayerPrefs.Save();
+            Debug.Log("CoffeeGAME snow-kimono 3D is enabled for the next Play. HD-2D remains the default when this is off.");
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Use snow-kimono 3D", true)]
+        public static bool EnableSnowKimonoValidate()
+        {
+            Menu.SetChecked("CoffeeGAME/Trial/Use snow-kimono 3D", PlayerPrefs.GetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 0) == 1);
+            return true;
         }
 
         [MenuItem("CoffeeGAME/Setup first combat slice", priority = 1)]

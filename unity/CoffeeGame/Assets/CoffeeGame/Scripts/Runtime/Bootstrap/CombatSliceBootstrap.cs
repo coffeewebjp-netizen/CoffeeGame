@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.IO;
 using CoffeeGame.Actors;
 using CoffeeGame.Audio;
 using CoffeeGame.Combat;
@@ -35,6 +37,9 @@ namespace CoffeeGame.Bootstrap
         private const string TrialHeroAttackModelResource = "Models/Hero/trial-anime-girl-attack";
         private const string TrialHeroAttackControllerResource = "Animations/Hero/TrialAnimeGirlAttackRuntime";
         public const string TrialAnimeGirlPrefKey = "CoffeeGAME.TrialAnimeGirl3D";
+        private const string SnowKimonoModelResource = "Models/Hero/snow-kimono";
+        private const string SnowKimonoControllerResource = "Animations/Hero/SnowKimonoRuntime";
+        public const string SnowKimonoPrefKey = "CoffeeGAME.SnowKimono3D";
         private const string SlimeModelResource = "Models/Slime/slime-v2";
         private const string SlimeControllerResource = "Animations/Slime/SlimeRuntime";
         private const string SlimeHd2dManifestResource = "Art/HD2D/slime-hd2d";
@@ -82,6 +87,25 @@ namespace CoffeeGame.Bootstrap
             return false;
         }
 
+        public static bool ShouldUseSnowKimono()
+        {
+            if (PlayerPrefs.GetInt(SnowKimonoPrefKey, 0) == 1)
+            {
+                return true;
+            }
+
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], "-snowKimono3D", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void Awake()
         {
             if (FindObjectsByType<CombatSliceBootstrap>(FindObjectsInactive.Exclude).Length > 1)
@@ -91,6 +115,13 @@ namespace CoffeeGame.Bootstrap
             }
 
             BuildCombatSlice();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (ShouldUseSnowKimono() && TryGetCommandLineValue("-captureSnowKimono", out string capturePath))
+            {
+                Application.runInBackground = true;
+                StartCoroutine(CaptureSnowKimonoTrial(capturePath));
+            }
+#endif
         }
 
         private void OnApplicationFocus(bool hasFocus)
@@ -492,14 +523,15 @@ namespace CoffeeGame.Bootstrap
             PlayerResources resources = player.AddComponent<PlayerResources>();
             resources.Initialize(tuning.MaxStamina, tuning.PlayerMaxMp, tuning.MagicMpRegenPerSecond);
 
-            bool trialAnimeGirl = ShouldUseTrialAnimeGirl();
+            bool snowKimono = ShouldUseSnowKimono();
+            bool trialAnimeGirl = !snowKimono && ShouldUseTrialAnimeGirl();
             ICharacterVisual visual = CreatePreferredVisual(
                 player.transform,
                 "Hero VisualSlot",
-                trialAnimeGirl ? null : HeroHd2dManifestResource,
-                trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
-                trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
-                trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
+                trialAnimeGirl || snowKimono ? null : HeroHd2dManifestResource,
+                snowKimono ? SnowKimonoModelResource : trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
+                snowKimono ? SnowKimonoControllerResource : trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
+                snowKimono ? CharacterModelStyle.SnowKimono : trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
                 180f,
                 1f,
                 Resources.Load<Sprite>("Art/Hero/hero-sprite"),
@@ -507,6 +539,10 @@ namespace CoffeeGame.Bootstrap
                 sceneCamera,
                 new Color(0.35f, 0.76f, 1f),
                 2);
+            if (snowKimono)
+            {
+                Debug.Log($"CoffeeGAME heroine visual: snow-kimono 3D selected ({visual.GetType().Name}).");
+            }
 
             PlayerMotor3D motor = player.AddComponent<PlayerMotor3D>();
             motor.Initialize(input, tuning, sceneCamera, visual);
@@ -527,6 +563,59 @@ namespace CoffeeGame.Bootstrap
 
             return new PlayerParts(player, health, resources, motor, combat);
         }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static bool TryGetCommandLineValue(string key, out string value)
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i + 1 < args.Length; i++)
+            {
+                if (string.Equals(args[i], key, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = args[i + 1];
+                    return !string.IsNullOrWhiteSpace(value);
+                }
+            }
+            value = string.Empty;
+            return false;
+        }
+
+        private IEnumerator CaptureSnowKimonoTrial(string capturePath)
+        {
+            string fullPath = Path.GetFullPath(capturePath);
+            string directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            yield return new WaitForSecondsRealtime(2f);
+            var target = new RenderTexture(1280, 720, 24, RenderTextureFormat.ARGB32);
+            RenderTexture previous = RenderTexture.active;
+            Texture2D image = null;
+            try
+            {
+                target.Create();
+                var request = new RenderPipeline.StandardRequest { destination = target };
+                RenderPipeline.SubmitRenderRequest(sceneCamera, request);
+                RenderTexture.active = target;
+                image = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
+                image.ReadPixels(new Rect(0f, 0f, target.width, target.height), 0, 0);
+                image.Apply();
+                File.WriteAllBytes(fullPath, image.EncodeToPNG());
+                Debug.Log("CoffeeGAME snow-kimono runtime scene captured: " + fullPath);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                if (image != null) Destroy(image);
+                target.Release();
+                Destroy(target);
+            }
+            yield return null;
+            Application.Quit(0);
+        }
+#endif
 
         private SlimeController CreateSlime(string claimId, Transform target, Health targetHealth)
         {
