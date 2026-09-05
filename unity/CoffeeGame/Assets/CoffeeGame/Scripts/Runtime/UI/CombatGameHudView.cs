@@ -28,7 +28,7 @@ namespace CoffeeGame.UI
 
         private const string FullBodyResource = "Art/UI/Hero/hero_fullbody_ui";
 
-        private const string RivalPortraitResource = "Art/UI/Rivals/rival_weakness_challenger_v1";
+        private const string RivalPortraitResource = RivalPortraitCatalog.WeaknessChallengerResource;
 
 
         private static readonly Color Ink = new Color(0.94f, 0.96f, 1f, 1f);
@@ -116,6 +116,12 @@ namespace CoffeeGame.UI
         private Text controlsStatusText;
 
         private Text coffeeLearningStatusText;
+
+        private Text rivalNameText;
+
+        private RawImage rivalPortrait;
+
+        private AspectRatioFitter rivalPortraitFitter;
 
         private Text rivalMessageText;
 
@@ -228,6 +234,10 @@ namespace CoffeeGame.UI
             gameplayHud.SetActive(gameplayVisible && !pauseMenuOpen);
             pauseOverlay.SetActive(pauseMenuOpen);
             rivalOverlay.SetActive(!pauseMenuOpen && run.Mode == CombatRunMode.RivalEncounter);
+            if (run.Mode == CombatRunMode.RivalEncounter)
+            {
+                ApplyRivalIdentity(run.CurrentRivalId);
+            }
             RefreshFrameStats(gameplayVisible && !pauseMenuOpen);
 
             bool showRunOverlay = !pauseMenuOpen &&
@@ -327,14 +337,25 @@ namespace CoffeeGame.UI
                     break;
                 case CharacterMenuTab.Companions:
                 {
-                    int affinity = run.Progression.GetRivalAffinity(RivalCharacterIds.WeaknessChallenger);
-                    bool recruited = run.Progression.IsRivalRecruited(RivalCharacterIds.WeaknessChallenger);
-                    BuildTextContent(
-                        "仲間",
-                        recruited
-                            ? $"<size=29><b>銀髪のライバル</b></size>\n仲間になりました。\n親密度　{affinity} / {LearningRewardPolicyV1.RecruitmentThreshold}"
-                            : $"<size=29><b>銀髪のライバル</b></size>\n親密度　{affinity} / {LearningRewardPolicyV1.RecruitmentThreshold}\n\n正解を重ねて親密度が100になると仲間になります。",
-                        420f);
+                    var companions = new StringBuilder();
+                    for (int index = 0; index < RivalCharacterIds.All.Length; index++)
+                    {
+                        string rivalId = RivalCharacterIds.All[index];
+                        int affinity = run.Progression.GetRivalAffinity(rivalId);
+                        bool recruited = run.Progression.IsRivalRecruited(rivalId);
+                        if (index > 0)
+                        {
+                            companions.Append("\n\n");
+                        }
+
+                        companions.Append($"<size=29><b>{RivalCharacterIds.DisplayName(rivalId)}</b></size>\n");
+                        companions.Append(
+                            recruited
+                                ? $"仲間になりました。\n親密度　{affinity} / {LearningRewardPolicyV1.RecruitmentThreshold}"
+                                : $"親密度　{affinity} / {LearningRewardPolicyV1.RecruitmentThreshold}\n正解を重ねて親密度が100になると仲間になります。");
+                    }
+
+                    BuildTextContent("仲間", companions.ToString(), 420f);
                     break;
                 }
             }

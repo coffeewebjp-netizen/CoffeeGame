@@ -71,6 +71,17 @@ namespace CoffeeGame.Presentation.Tests
                     .Single(image => image.name == "Rival Portrait");
                 Assert.That(portrait.texture, Is.Not.Null);
                 Assert.That(portrait.texture.name, Is.EqualTo("rival_weakness_challenger_v1"));
+                Text name = root.GetComponentsInChildren<Text>(true)
+                    .Single(text => text.name == "Rival Name");
+                Assert.That(name.text, Is.EqualTo("白銀のライバル"));
+
+                view.ApplyRivalIdentity(RivalCharacterIds.SplitInk);
+                Assert.That(name.text, Is.EqualTo("白黒のライバル"));
+                Texture2D splitPortrait = Resources.Load<Texture2D>(RivalPortraitCatalog.SplitInkResource);
+                if (splitPortrait != null)
+                {
+                    Assert.That(portrait.texture.name, Is.EqualTo("rival_split_ink_v1"));
+                }
 
                 bool continued = false;
                 view.RivalContinueRequested += () => continued = true;

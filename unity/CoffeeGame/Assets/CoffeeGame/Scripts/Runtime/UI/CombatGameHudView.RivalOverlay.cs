@@ -64,6 +64,30 @@ namespace CoffeeGame.UI
         }
 
 
+        public void ApplyRivalIdentity(string rivalId)
+        {
+            string id = string.IsNullOrWhiteSpace(rivalId)
+                ? RivalCharacterIds.WeaknessChallenger
+                : rivalId;
+            if (rivalNameText != null)
+            {
+                rivalNameText.text = RivalCharacterIds.DisplayName(id);
+            }
+
+            if (rivalPortrait == null)
+            {
+                return;
+            }
+
+            Texture2D texture = Resources.Load<Texture2D>(RivalPortraitCatalog.ResourcePath(id));
+            rivalPortrait.texture = texture;
+            if (rivalPortraitFitter != null && texture != null && texture.height > 0)
+            {
+                rivalPortraitFitter.aspectRatio = (float)texture.width / texture.height;
+            }
+        }
+
+
         public void RefreshRivalLearning(RivalLearningQuestionSession session)
         {
             if (session == null || rivalMessageText == null || rivalAnswerInput == null)
@@ -284,17 +308,11 @@ namespace CoffeeGame.UI
                 portraitFrame.transform,
                 new Vector2(0.02f, 0.02f),
                 new Vector2(0.98f, 0.98f));
-            RawImage portrait = portraitRect.gameObject.AddComponent<RawImage>();
-            Texture2D texture = Resources.Load<Texture2D>(RivalPortraitResource);
-            portrait.texture = texture;
-            portrait.color = Color.white;
-            portrait.raycastTarget = false;
-            if (texture != null && texture.height > 0)
-            {
-                AspectRatioFitter fitter = portraitRect.gameObject.AddComponent<AspectRatioFitter>();
-                fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-                fitter.aspectRatio = (float)texture.width / texture.height;
-            }
+            rivalPortrait = portraitRect.gameObject.AddComponent<RawImage>();
+            rivalPortrait.color = Color.white;
+            rivalPortrait.raycastTarget = false;
+            rivalPortraitFitter = portraitRect.gameObject.AddComponent<AspectRatioFitter>();
+            rivalPortraitFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
 
             Text encounter = CreateText(
                 "Rival Encounter Heading",
@@ -306,15 +324,15 @@ namespace CoffeeGame.UI
             Anchor(encounter.rectTransform, new Vector2(0.535f, 0.82f), new Vector2(0.955f, 0.92f));
             encounter.text = "RIVAL ENCOUNTER";
 
-            Text name = CreateText(
+            rivalNameText = CreateText(
                 "Rival Name",
                 panel.transform,
                 48,
                 FontStyle.Bold,
                 TextAnchor.MiddleLeft,
                 Ink);
-            Anchor(name.rectTransform, new Vector2(0.535f, 0.69f), new Vector2(0.955f, 0.81f));
-            name.text = "白銀のライバル";
+            Anchor(rivalNameText.rectTransform, new Vector2(0.535f, 0.69f), new Vector2(0.955f, 0.81f));
+            ApplyRivalIdentity(RivalCharacterIds.WeaknessChallenger);
 
             rivalMessageText = CreateText(
                 "Rival Message",

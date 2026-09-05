@@ -17,6 +17,24 @@ namespace CoffeeGame.Domain.Tests
         }
 
         [Test]
+        public void RivalCatalog_ListsSilverAndSplitInkPortraits()
+        {
+            Assert.That(
+                RivalCharacterIds.All,
+                Is.EqualTo(new[]
+                {
+                    RivalCharacterIds.WeaknessChallenger,
+                    RivalCharacterIds.SplitInk
+                }));
+            Assert.That(
+                RivalCharacterIds.DisplayName(RivalCharacterIds.WeaknessChallenger),
+                Is.EqualTo("白銀のライバル"));
+            Assert.That(
+                RivalCharacterIds.DisplayName(RivalCharacterIds.SplitInk),
+                Is.EqualTo("白黒のライバル"));
+        }
+
+        [Test]
         public void NewPlayer_StartsAtLevelOneWithThreeXpRequirement()
         {
             var progression = new PlayerProgression();

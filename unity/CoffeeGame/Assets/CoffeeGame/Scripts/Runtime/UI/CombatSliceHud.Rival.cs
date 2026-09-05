@@ -153,7 +153,9 @@ namespace CoffeeGame.UI
 
             PlayerLearningRewardApplication application = run.Progression.TryApplyLearningOutcome(
                 rivalLearningQuestion.AuthoritativeOutcome.Value,
-                RivalCharacterIds.WeaknessChallenger);
+                string.IsNullOrWhiteSpace(run.CurrentRivalId)
+                    ? RivalCharacterIds.WeaknessChallenger
+                    : run.CurrentRivalId);
             rivalLearningQuestion.RecordGameRewardApplication(application);
         }
 

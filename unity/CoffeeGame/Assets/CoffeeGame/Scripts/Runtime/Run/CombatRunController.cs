@@ -53,6 +53,10 @@ namespace CoffeeGame.Run
         public PlayerProgression Progression { get; private set; } = new PlayerProgression();
         public int Kills { get; private set; }
         public int RivalEncounterIntervalKills => tuning != null ? tuning.RivalEncounterIntervalKills : 5;
+        public string CurrentRivalId { get; private set; } = RivalCharacterIds.WeaknessChallenger;
+        private string lastSeenRivalId;
+        private readonly DeterministicRivalSelector rivalSelector =
+            new DeterministicRivalSelector(new UnityBoundedIntegerSource());
         public string LastEvent { get; private set; } = "A / Enter / Startで開始";
         public Health PlayerHealth => playerHealth;
         public PlayerResources PlayerResources => playerResources;
@@ -93,6 +97,14 @@ namespace CoffeeGame.Run
                 {
                     StartNewRun();
                 }
+            }
+        }
+
+        private sealed class UnityBoundedIntegerSource : IBoundedIntegerSource
+        {
+            public int Next(int exclusiveUpperBound)
+            {
+                return UnityEngine.Random.Range(0, exclusiveUpperBound);
             }
         }
 
@@ -430,6 +442,7 @@ namespace CoffeeGame.Run
                 return;
             }
 
+            lastSeenRivalId = CurrentRivalId;
             Time.timeScale = 1f;
             Mode = CombatRunMode.Playing;
             playerMotor.CanMove = true;
@@ -496,6 +509,7 @@ namespace CoffeeGame.Run
                 yield break;
             }
 
+            CurrentRivalId = rivalSelector.Select(RivalCharacterIds.All, lastSeenRivalId);
             Mode = CombatRunMode.RivalEncounter;
             playerMotor.CanMove = false;
             playerCombat.CancelPendingActions();

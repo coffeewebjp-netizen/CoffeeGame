@@ -6,6 +6,26 @@ namespace CoffeeGame.Domain
     public static class RivalCharacterIds
     {
         public const string WeaknessChallenger = "rival-silver-001";
+        public const string SplitInk = "rival-split-001";
+
+        public static readonly string[] All =
+        {
+            WeaknessChallenger,
+            SplitInk
+        };
+
+        public static string DisplayName(string rivalId)
+        {
+            switch (rivalId)
+            {
+                case WeaknessChallenger:
+                    return "白銀のライバル";
+                case SplitInk:
+                    return "白黒のライバル";
+                default:
+                    return "ライバル";
+            }
+        }
     }
 
     public enum AuthoritativeLearningResultStatus
