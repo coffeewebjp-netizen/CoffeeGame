@@ -12,6 +12,7 @@ namespace CoffeeGame.Editor
         public static void BuildWindows()
         {
             CoffeeGameProjectSetup.SetupFirstCombatSliceOrThrow();
+            CoffeeGameProjectSetup.SetupMeshySnowKimono();
             EnsureCombatSceneExists();
             if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
             {

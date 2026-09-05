@@ -21,9 +21,17 @@
 | --- | --- | --- |
 | Heroine | `art/3d/source/heroine-v4.blend` | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/heroine-v4.fbx` |
 | Slime | `art/3d/source/slime-v2.blend` | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Slime/slime-v2.fbx` |
+| Meshy Snow Kimono | `art/3d/trials/meshy-snow-kimono/source/meshy-snow-kimono.blend` | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono.fbx` |
 
 Generators live under `tools/blender/`. Manifests under `art/3d/manifests/` record
 model, rig, action, and export facts so generated blockouts can be reproduced.
+
+The approved Meshy source stays local under the trial `drop/` directory. Its
+deterministic `prepare_meshy_snow_kimono.py` derivative uses one skinned body for
+all sixteen actions and reimports the FBX to sample Walk, Run, Sword, and Dodge.
+Unity uses the separate `MeshySnowKimono` style so its base-color atlas, normal
+map, and packed metallic/smoothness map bypass the procedural
+SnowKimono palette branch.
 
 ## Required animation names
 

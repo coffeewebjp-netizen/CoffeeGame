@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ORC-20260905-001",
+  "asset": "meshy-snow-kimono",
+  "appearanceSource": "art/3d/trials/meshy-snow-kimono/drop/approved-highres.glb",
+  "source": "art/3d/trials/meshy-snow-kimono/source/meshy-snow-kimono.blend",
+  "fbx": "art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx",
+  "unityFbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono.fbx",
+  "textures": [
+    "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-0.png",
+    "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-1.png",
+    "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-2.png",
+    "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-metallic-smoothness.png"
+  ],
+  "heightMeters": 1.68,
+  "sourceAxes": {
+    "up": "+Z",
+    "forward": "-Y"
+  },
+  "unityAxes": {
+    "up": "+Y",
+    "forward": "+Z"
+  },
+  "origin": "ground-center",
+  "vertices": 204469,
+  "triangles": 239999,
+  "unweightedVertices": 0,
+  "bones": 20,
+  "actions": [
+    "AirSlash",
+    "Defeated",
+    "Dodge",
+    "Fall",
+    "Hurt",
+    "Idle",
+    "Jump",
+    "Land",
+    "MagicCharge",
+    "MagicRelease",
+    "Plunge",
+    "Run",
+    "SpinCharge",
+    "SpinRelease",
+    "Sword",
+    "Walk"
+  ],
+  "requiredActions": [
+    "Idle",
+    "Walk",
+    "Run",
+    "Jump",
+    "Fall",
+    "Land",
+    "Sword",
+    "AirSlash",
+    "Plunge",
+    "SpinCharge",
+    "SpinRelease",
+    "MagicCharge",
+    "MagicRelease",
+    "Hurt",
+    "Defeated",
+    "Dodge"
+  ],
+  "separateProps": [
+    "MeshySnowKimonoKatana",
+    "MeshySnowKimonoSaya"
+  ],
+  "fbxValidation": {
+    "passed": true,
+    "checks": {
+      "oneArmature": true,
+      "allActions": true,
+      "sampledActionsMove": true,
+      "locomotionRootInPlace": true
+    },
+    "actions": [
+      "AirSlash",
+      "Defeated",
+      "Dodge",
+      "Fall",
+      "Hurt",
+      "Idle",
+      "Jump",
+      "Land",
+      "MagicCharge",
+      "MagicRelease",
+      "Plunge",
+      "Run",
+      "SpinCharge",
+      "SpinRelease",
+      "Sword",
+      "Walk"
+    ],
+    "missingActions": [],
+    "samples": [
+      {
+        "action": "Walk",
+        "frames": [
+          1,
+          16,
+          32
+        ],
+        "motionMagnitude": 0.3018656649019867,
+        "rootDisplacement": 0.0
+      },
+      {
+        "action": "Run",
+        "frames": [
+          1,
+          12,
+          24
+        ],
+        "motionMagnitude": 0.5978126944438421,
+        "rootDisplacement": 0.0
+      },
+      {
+        "action": "Sword",
+        "frames": [
+          1,
+          14,
+          28
+        ],
+        "motionMagnitude": 0.9928077644095495,
+        "rootDisplacement": 0.0
+      },
+      {
+        "action": "Dodge",
+        "frames": [
+          1,
+          12,
+          24
+        ],
+        "motionMagnitude": 1.0424742493512749,
+        "rootDisplacement": 0.0
+      }
+    ],
+    "meshNames": [
+      "MeshySnowKimonoBody",
+      "MeshySnowKimonoKatana",
+      "MeshySnowKimonoKatanaEdge",
+      "MeshySnowKimonoKatanaGrip",
+      "MeshySnowKimonoKatanaGuard",
+      "MeshySnowKimonoObiBow.L",
+      "MeshySnowKimonoObiBow.R",
+      "MeshySnowKimonoObiKnot",
+      "MeshySnowKimonoObiTail.L",
+      "MeshySnowKimonoObiTail.R",
+      "MeshySnowKimonoSaya",
+      "MeshySnowKimonoSayaMouth"
+    ]
+  },
+  "actionSwitching": {
+    "runPoseDelta": 53.540143999999984,
+    "runHasMotion": true,
+    "idleAfterRun": true,
+    "idleAfterDodge": true
+  },
+  "notes": "One approved Meshy body is used for every action; no dual-body swap. The 240k-triangle derivative is a Windows prototype/runtime budget; Android and performance validation are not claimed."
+}

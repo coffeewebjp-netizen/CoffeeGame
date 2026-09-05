@@ -10,7 +10,8 @@ namespace CoffeeGame.Presentation
         Imported,
         Heroine,
         Slime,
-        SnowKimono
+        SnowKimono,
+        MeshySnowKimono
     }
 
     [DisallowMultipleComponent]
@@ -21,10 +22,15 @@ namespace CoffeeGame.Presentation
         private const string TrialNormalResource = "Models/Hero/Meshy_AI_Azure_Blade_Maiden_biped_texture_0_normal";
         public const string TrialHeldSwordAlbedoResource = "Models/Hero/Meshy_AI_Blue_Haired_Ronin_biped_texture_0";
         public const string TrialHeldSwordNormalResource = "Models/Hero/Meshy_AI_Blue_Haired_Ronin_biped_texture_0_normal";
+        private const string MeshySnowKimonoBaseResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-0";
+        private const string MeshySnowKimonoNormalResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-2";
+        private const string MeshySnowKimonoPackedResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono-metallic-smoothness";
+        private const string MeshySnowKimonoMaterialResource = "Materials/MeshySnowKimonoLit";
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int BumpMapId = Shader.PropertyToID("_BumpMap");
+        private static readonly int MetallicGlossMapId = Shader.PropertyToID("_MetallicGlossMap");
         private static readonly int LocomotionSpeedId = Animator.StringToHash(LocomotionSpeedParameter);
 
         [Serializable]
@@ -419,7 +425,8 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            bool snowKimonoTimedAction = modelStyle == CharacterModelStyle.SnowKimono &&
+            bool snowKimonoTimedAction =
+                (modelStyle == CharacterModelStyle.SnowKimono || modelStyle == CharacterModelStyle.MeshySnowKimono) &&
                 IsSnowKimonoTimedAction(action);
             if (!snowKimonoTimedAction && !showingHeldSwordSet &&
                 action != CharacterAction.MagicCharge &&
@@ -905,9 +912,16 @@ namespace CoffeeGame.Presentation
                             ? imported.GetColor(BaseColorId)
                             : imported.HasProperty(ColorId) ? imported.GetColor(ColorId) : Color.white;
                         Color displayColor = ResolveReferenceColor(imported.name, importedColor);
-                        replacement = RuntimeMaterialFactory.CreateLit(
-                            $"{imported.name} CoffeeGAME display",
-                            displayColor);
+                        bool meshyBody = modelStyle == CharacterModelStyle.MeshySnowKimono &&
+                            IsMeshySnowKimonoBodyMaterial(imported.name);
+                        Material meshyTemplate = meshyBody
+                            ? Resources.Load<Material>(MeshySnowKimonoMaterialResource)
+                            : null;
+                        replacement = meshyTemplate != null
+                            ? new Material(meshyTemplate) { name = $"{imported.name} CoffeeGAME display" }
+                            : RuntimeMaterialFactory.CreateLit(
+                                $"{imported.name} CoffeeGAME display",
+                                displayColor);
                         if (replacement == null)
                         {
                             continue;
@@ -921,6 +935,10 @@ namespace CoffeeGame.Presentation
                             CopyDisplayTextures(imported, replacement);
                         }
                         ConfigureDisplayMaterial(replacement, imported.name, displayColor);
+                        if (modelStyle == CharacterModelStyle.MeshySnowKimono)
+                        {
+                            ApplyMeshySnowKimonoTextures(imported.name, replacement);
+                        }
                         replacements.Add(imported, replacement);
                         ownedDisplayMaterials.Add(replacement);
                     }
@@ -1083,6 +1101,55 @@ namespace CoffeeGame.Presentation
             {
                 destination.EnableKeyword("_EMISSION");
             }
+        }
+
+        private static void ApplyMeshySnowKimonoTextures(string sourceName, Material destination)
+        {
+            if (!IsMeshySnowKimonoBodyMaterial(sourceName))
+            {
+                return;
+            }
+
+            Texture2D baseMap = Resources.Load<Texture2D>(MeshySnowKimonoBaseResource);
+            Texture2D normalMap = Resources.Load<Texture2D>(MeshySnowKimonoNormalResource);
+            Texture2D packedMap = Resources.Load<Texture2D>(MeshySnowKimonoPackedResource);
+            if (baseMap != null && destination.HasProperty(BaseMapId))
+            {
+                destination.SetTexture(BaseMapId, baseMap);
+                destination.SetColor(BaseColorId, Color.white);
+                if (destination.HasProperty("_EmissionMap"))
+                {
+                    destination.SetTexture("_EmissionMap", baseMap);
+                    RuntimeMaterialFactory.SetSrgbColor(
+                        destination, "_EmissionColor", new Color(0.42f, 0.42f, 0.42f, 1f));
+                    destination.EnableKeyword("_EMISSION");
+                }
+                if (destination.HasProperty("_Cull"))
+                {
+                    destination.SetFloat("_Cull", 0f);
+                }
+            }
+            if (normalMap != null && destination.HasProperty(BumpMapId))
+            {
+                destination.SetTexture(BumpMapId, normalMap);
+                destination.EnableKeyword("_NORMALMAP");
+            }
+            if (packedMap != null)
+            {
+                if (destination.HasProperty(MetallicGlossMapId))
+                {
+                    destination.SetTexture(MetallicGlossMapId, packedMap);
+                    destination.SetFloat("_Metallic", 1f);
+                    destination.SetFloat("_Smoothness", 1f);
+                    destination.EnableKeyword("_METALLICSPECGLOSSMAP");
+                }
+            }
+        }
+
+        private static bool IsMeshySnowKimonoBodyMaterial(string sourceName)
+        {
+            string normalized = (sourceName ?? string.Empty).Replace("_", string.Empty).ToLowerInvariant();
+            return normalized.Contains("material0");
         }
 
         private static bool CopyTexture(

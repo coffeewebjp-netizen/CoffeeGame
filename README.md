@@ -6,7 +6,7 @@ CoffeeLearningでの学習を、少女剣士の成長と結び付けるアクシ
 
 ゲームの土台はUnity 6 + URPで、移動・衝突・ジャンプ・戦闘判定は3D空間に置きます。表示は原画へ忠実なHD-2Dを優先し、Blender製3Dモデルは将来の本格3D化に備えたフォールバックとして残します。
 
-2026-09-05の一時差し替えでは、通常Windows版のキャラクターを青髪・黒着物のSnowKimono 3Dモデルに設定しています。元のキャラクターへ戻すには `tools/launch-previous-character.cmd`、着物モデルを再び通常設定にするには `tools/launch-snow-kimono-default.cmd` を実行してください。切り替えは次回起動にも保持され、元の素材は残っています。
+2026-09-05の一時差し替えでは、通常Windows版のキャラクターを青髪・黒着物のMeshy Snow Kimono 3Dモデルに設定しています。元のHD-2Dキャラクターへ戻すには `tools/launch-previous-character.cmd`、Meshy版を通常設定にするには `tools/launch-meshy-snow-kimono-default.cmd`、中間のプロシージャル版を選ぶには `tools/launch-snow-kimono-default.cmd` を実行してください。切り替えは次回の通常・Steam起動にも保持され、各素材は残っています。
 
 表示の優先順は次のとおりです。
 

@@ -29,7 +29,8 @@ namespace CoffeeGame.Bootstrap
     {
         Hd2d = 0,
         TrialAnimeGirl3D = 1,
-        SnowKimono3D = 2
+        SnowKimono3D = 2,
+        MeshySnowKimono3D = 3
     }
 
     [DefaultExecutionOrder(-1000)]
@@ -46,12 +47,15 @@ namespace CoffeeGame.Bootstrap
         public const string TrialAnimeGirlPrefKey = "CoffeeGAME.TrialAnimeGirl3D";
         private const string SnowKimonoModelResource = "Models/Hero/snow-kimono";
         private const string SnowKimonoControllerResource = "Animations/Hero/SnowKimonoRuntime";
+        private const string MeshySnowKimonoModelResource = "Models/Hero/MeshySnowKimono/meshy-snow-kimono";
+        private const string MeshySnowKimonoControllerResource = "Animations/Hero/MeshySnowKimonoRuntime";
         public const string SnowKimonoPrefKey = "CoffeeGAME.SnowKimono3D";
         public const string PreviousCharacterSelectionPrefKey = "CoffeeGAME.PreviousCharacterSelection.v1";
         public const string CharacterSelectionDefaultAppliedPrefKey = "CoffeeGAME.CharacterSelectionDefaultApplied.v1";
         public const string CharacterSelectionOverridePrefKey = "CoffeeGAME.CharacterSelectionOverride.v1";
         private const string RestorePreviousCharacterArg = "-restorePreviousCharacter";
         private const string SetSnowKimonoDefaultArg = "-useSnowKimonoDefault";
+        private const string SetMeshySnowKimonoDefaultArg = "-useMeshySnowKimonoDefault";
         private const string CaptureSceneArg = "-captureScene";
         private const string SlimeModelResource = "Models/Slime/slime-v2";
         private const string SlimeControllerResource = "Animations/Slime/SlimeRuntime";
@@ -91,6 +95,11 @@ namespace CoffeeGame.Bootstrap
             return GetCharacterSelection() == CharacterSelection.SnowKimono3D;
         }
 
+        public static bool ShouldUseMeshySnowKimono()
+        {
+            return GetCharacterSelection() == CharacterSelection.MeshySnowKimono3D;
+        }
+
         public static CharacterSelection GetCharacterSelection()
         {
             if (HasCommandLineFlag(RestorePreviousCharacterArg))
@@ -104,6 +113,17 @@ namespace CoffeeGame.Bootstrap
             {
                 SetCharacterSelectionOverride(CharacterSelection.SnowKimono3D);
                 return CharacterSelection.SnowKimono3D;
+            }
+
+            if (HasCommandLineFlag(SetMeshySnowKimonoDefaultArg))
+            {
+                SetCharacterSelectionOverride(CharacterSelection.MeshySnowKimono3D);
+                return CharacterSelection.MeshySnowKimono3D;
+            }
+
+            if (HasCommandLineFlag("-meshySnowKimono3D"))
+            {
+                return CharacterSelection.MeshySnowKimono3D;
             }
 
             if (HasCommandLineFlag("-snowKimono3D"))
@@ -122,22 +142,22 @@ namespace CoffeeGame.Bootstrap
                 {
                     int stored = PlayerPrefs.GetInt(
                         CharacterSelectionOverridePrefKey,
-                        (int)CharacterSelection.SnowKimono3D);
+                        (int)CharacterSelection.MeshySnowKimono3D);
                     if (Enum.IsDefined(typeof(CharacterSelection), stored))
                     {
                         return (CharacterSelection)stored;
                     }
                 }
 
-                return CharacterSelection.SnowKimono3D;
+                return CharacterSelection.MeshySnowKimono3D;
             }
 
             // The first ordinary launch performs the temporary adoption once.
             // Snapshot legacy flags before the new default is applied so an
             // existing anime-girl or 3D preference is restorable as well.
             RememberPreviousCharacterSelection(GetLegacyCharacterSelection());
-            SetCharacterSelectionOverride(CharacterSelection.SnowKimono3D);
-            return CharacterSelection.SnowKimono3D;
+            SetCharacterSelectionOverride(CharacterSelection.MeshySnowKimono3D);
+            return CharacterSelection.MeshySnowKimono3D;
         }
 
         public static void SetCharacterSelectionOverride(CharacterSelection selection)
@@ -639,15 +659,16 @@ namespace CoffeeGame.Bootstrap
 
             CharacterSelection selection = GetCharacterSelection();
             bool snowKimono = selection == CharacterSelection.SnowKimono3D;
+            bool meshySnowKimono = selection == CharacterSelection.MeshySnowKimono3D;
             bool trialAnimeGirl = selection == CharacterSelection.TrialAnimeGirl3D;
             Debug.Log($"CoffeeGAME heroine selection: {selection}.");
             ICharacterVisual visual = CreatePreferredVisual(
                 player.transform,
                 "Hero VisualSlot",
-                trialAnimeGirl || snowKimono ? null : HeroHd2dManifestResource,
-                snowKimono ? SnowKimonoModelResource : trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
-                snowKimono ? SnowKimonoControllerResource : trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
-                snowKimono ? CharacterModelStyle.SnowKimono : trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
+                trialAnimeGirl || snowKimono || meshySnowKimono ? null : HeroHd2dManifestResource,
+                meshySnowKimono ? MeshySnowKimonoModelResource : snowKimono ? SnowKimonoModelResource : trialAnimeGirl ? TrialHeroModelResource : HeroModelResource,
+                meshySnowKimono ? MeshySnowKimonoControllerResource : snowKimono ? SnowKimonoControllerResource : trialAnimeGirl ? TrialHeroControllerResource : HeroControllerResource,
+                meshySnowKimono ? CharacterModelStyle.MeshySnowKimono : snowKimono ? CharacterModelStyle.SnowKimono : trialAnimeGirl ? CharacterModelStyle.Imported : CharacterModelStyle.Heroine,
                 180f,
                 1f,
                 Resources.Load<Sprite>("Art/Hero/hero-sprite"),
@@ -658,6 +679,10 @@ namespace CoffeeGame.Bootstrap
             if (snowKimono)
             {
                 Debug.Log($"CoffeeGAME heroine visual: snow-kimono 3D selected ({visual.GetType().Name}).");
+            }
+            else if (meshySnowKimono)
+            {
+                Debug.Log($"CoffeeGAME heroine visual: Meshy snow-kimono 3D selected ({visual.GetType().Name}).");
             }
 
             PlayerMotor3D motor = player.AddComponent<PlayerMotor3D>();

@@ -36,11 +36,11 @@ all texture files, usable topology near the body and sleeves, and front/right/ba
 views that still match the approved direction. The report also records whether the
 download already contains an armature, skin weights, or actions; none are assumed.
 
-## Planned additive outputs
+## Additive outputs
 
 - Editable source: `source/meshy-snow-kimono.blend`
 - Game export: `export/meshy-snow-kimono.fbx`
-- Runtime model: `Resources/Models/Hero/meshy-snow-kimono.fbx`
+- Runtime model: `Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono.fbx`
 - Runtime controller: `Resources/Animations/Hero/MeshySnowKimonoRuntime.controller`
 - Evidence: `previews/` and `manifests/`
 
@@ -61,7 +61,27 @@ bound through their action slots before baking. The final FBX is reimported into
 clean Blender scene and sampled at start/middle/end for `Walk`, `Run`, `Sword`, and
 `Dodge`; action names alone are not acceptance evidence.
 
+Generate the runtime derivative from the approved source with:
+
+```powershell
+& 'C:\Program Files\Blender Foundation\Blender 4.5\blender.exe' -b `
+  --python tools/blender/prepare_meshy_snow_kimono.py
+```
+
+The current 240,000-triangle output is a Windows prototype/runtime budget. It
+does not establish Android or performance readiness. Automatic bone heat does
+not solve this Meshy surface, so the script records and applies its smooth
+coordinate fallback. The approved face, blue hair, black kimono and atlas are
+retained, with modest sleeve-edge and moving-hem irregularity as known prototype
+limits. The katana and saya are rigid; the grip crosses the open-finger hand,
+without a separate hand-grip deformation pass.
+
 Unity integration stays additive and reversible. Do not overwrite `snow-kimono.fbx`,
 `SnowKimonoRuntime.controller`, the HD-2D assets, or prior trial assets. Before any
 Unity setup or Windows build, make a byte backup of every dirty or untracked file
 that setup can rewrite, then restore and hash-compare those files after the build.
+The normal Windows executable selects this asset with
+`tools/launch-meshy-snow-kimono-default.cmd`. The saved choice then applies to
+ordinary and Steam launches. `tools/launch-previous-character.cmd` restores the
+remembered original HD-2D selection, while `tools/launch-snow-kimono-default.cmd`
+keeps the intermediate procedural model available.

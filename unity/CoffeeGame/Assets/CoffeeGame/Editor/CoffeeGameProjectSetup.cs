@@ -32,6 +32,13 @@ namespace CoffeeGame.Editor
         private const string TrialAnimeGirlAttackControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/TrialAnimeGirlAttackRuntime.controller";
         private const string SnowKimonoModelPath = "Assets/CoffeeGame/Resources/Models/Hero/snow-kimono.fbx";
         private const string SnowKimonoControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/SnowKimonoRuntime.controller";
+        private const string MeshySnowKimonoModelPath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono.fbx";
+        private const string MeshySnowKimonoControllerPath = "Assets/CoffeeGame/Resources/Animations/Hero/MeshySnowKimonoRuntime.controller";
+        private const string MeshySnowKimonoBasePath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-0.png";
+        private const string MeshySnowKimonoOrmPath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-1.png";
+        private const string MeshySnowKimonoNormalPath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-texture-2.png";
+        private const string MeshySnowKimonoPackedPath = "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono-metallic-smoothness.png";
+        private const string MeshySnowKimonoMaterialPath = "Assets/CoffeeGame/Resources/Materials/MeshySnowKimonoLit.mat";
         private const string Hd2dArtPath = "Assets/CoffeeGame/Resources/Art/HD2D";
         private const string SessionKey = "CoffeeGame.FirstSetupAttempted";
         private static bool setupRunning;
@@ -132,6 +139,82 @@ namespace CoffeeGame.Editor
         {
             Menu.SetChecked("CoffeeGAME/Trial/Use snow-kimono 3D", PlayerPrefs.GetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 0) == 1);
             return true;
+        }
+
+        [MenuItem("CoffeeGAME/Trial/Setup Meshy snow-kimono 3D", priority = 55)]
+        public static void SetupMeshySnowKimono()
+        {
+            ConfigureModel(MeshySnowKimonoModelPath);
+            RefreshImportedClipList(MeshySnowKimonoModelPath);
+            ConfigureMeshyTexture(MeshySnowKimonoBasePath, TextureImporterType.Default, true);
+            ConfigureMeshyTexture(MeshySnowKimonoOrmPath, TextureImporterType.Default, false);
+            ConfigureMeshyTexture(MeshySnowKimonoNormalPath, TextureImporterType.NormalMap, false);
+            ConfigureMeshyTexture(MeshySnowKimonoPackedPath, TextureImporterType.Default, false);
+            EnsureMeshySnowKimonoMaterial();
+            EnsureModelAnimatorController(MeshySnowKimonoModelPath, MeshySnowKimonoControllerPath, false);
+            AnimatorController controller =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(MeshySnowKimonoControllerPath);
+            if (controller != null && controller.name != "MeshySnowKimonoRuntime")
+            {
+                controller.name = "MeshySnowKimonoRuntime";
+                EditorUtility.SetDirty(controller);
+            }
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        private static void ConfigureMeshyTexture(string path, TextureImporterType type, bool srgb)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                return;
+            }
+            if (importer.textureType == type && importer.sRGBTexture == srgb && importer.maxTextureSize == 4096)
+            {
+                return;
+            }
+            importer.textureType = type;
+            importer.sRGBTexture = srgb;
+            importer.maxTextureSize = 4096;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.SaveAndReimport();
+        }
+
+        private static void EnsureMeshySnowKimonoMaterial()
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+            {
+                throw new InvalidOperationException("URP Lit shader is unavailable for Meshy Snow Kimono.");
+            }
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(MeshySnowKimonoMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "MeshySnowKimonoLit" };
+                AssetDatabase.CreateAsset(material, MeshySnowKimonoMaterialPath);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+
+            Texture2D baseMap = AssetDatabase.LoadAssetAtPath<Texture2D>(MeshySnowKimonoBasePath);
+            Texture2D normalMap = AssetDatabase.LoadAssetAtPath<Texture2D>(MeshySnowKimonoNormalPath);
+            Texture2D packedMap = AssetDatabase.LoadAssetAtPath<Texture2D>(MeshySnowKimonoPackedPath);
+            material.SetColor("_BaseColor", Color.white);
+            material.SetTexture("_BaseMap", baseMap);
+            material.SetTexture("_BumpMap", normalMap);
+            material.SetTexture("_MetallicGlossMap", packedMap);
+            material.SetTexture("_EmissionMap", baseMap);
+            material.SetColor("_EmissionColor", new Color(0.42f, 0.42f, 0.42f, 1f));
+            material.SetFloat("_Metallic", 1f);
+            material.SetFloat("_Smoothness", 1f);
+            material.SetFloat("_Cull", 0f);
+            material.EnableKeyword("_NORMALMAP");
+            material.EnableKeyword("_METALLICSPECGLOSSMAP");
+            material.EnableKeyword("_EMISSION");
+            EditorUtility.SetDirty(material);
         }
 
         [MenuItem("CoffeeGAME/Setup first combat slice", priority = 1)]

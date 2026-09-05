@@ -1,0 +1,84 @@
+{
+  "passed": true,
+  "checks": {
+    "oneArmature": true,
+    "allActions": true,
+    "sampledActionsMove": true,
+    "locomotionRootInPlace": true
+  },
+  "actions": [
+    "AirSlash",
+    "Defeated",
+    "Dodge",
+    "Fall",
+    "Hurt",
+    "Idle",
+    "Jump",
+    "Land",
+    "MagicCharge",
+    "MagicRelease",
+    "Plunge",
+    "Run",
+    "SpinCharge",
+    "SpinRelease",
+    "Sword",
+    "Walk"
+  ],
+  "missingActions": [],
+  "samples": [
+    {
+      "action": "Walk",
+      "frames": [
+        1,
+        16,
+        32
+      ],
+      "motionMagnitude": 0.3018656649019867,
+      "rootDisplacement": 0.0
+    },
+    {
+      "action": "Run",
+      "frames": [
+        1,
+        12,
+        24
+      ],
+      "motionMagnitude": 0.5978126944438421,
+      "rootDisplacement": 0.0
+    },
+    {
+      "action": "Sword",
+      "frames": [
+        1,
+        14,
+        28
+      ],
+      "motionMagnitude": 0.9928077644095495,
+      "rootDisplacement": 0.0
+    },
+    {
+      "action": "Dodge",
+      "frames": [
+        1,
+        12,
+        24
+      ],
+      "motionMagnitude": 1.0424742493512749,
+      "rootDisplacement": 0.0
+    }
+  ],
+  "meshNames": [
+    "MeshySnowKimonoBody",
+    "MeshySnowKimonoKatana",
+    "MeshySnowKimonoKatanaEdge",
+    "MeshySnowKimonoKatanaGrip",
+    "MeshySnowKimonoKatanaGuard",
+    "MeshySnowKimonoObiBow.L",
+    "MeshySnowKimonoObiBow.R",
+    "MeshySnowKimonoObiKnot",
+    "MeshySnowKimonoObiTail.L",
+    "MeshySnowKimonoObiTail.R",
+    "MeshySnowKimonoSaya",
+    "MeshySnowKimonoSayaMouth"
+  ]
+}

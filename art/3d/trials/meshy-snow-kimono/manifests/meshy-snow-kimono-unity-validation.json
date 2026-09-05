@@ -1,0 +1,271 @@
+{
+    "unityVersion": "6000.5.7f1",
+    "modelPath": "Assets/CoffeeGame/Resources/Models/Hero/MeshySnowKimono/meshy-snow-kimono.fbx",
+    "controllerPath": "Assets/CoffeeGame/Resources/Animations/Hero/MeshySnowKimonoRuntime.controller",
+    "importedClipCount": 16,
+    "missingActions": [],
+    "meshCount": 12,
+    "vertexCount": 214364,
+    "missingNormalMeshCount": 0,
+    "missingMaterialSlotCount": 0,
+    "activeColorSpace": "Linear",
+    "runtimeMaterialCount": 6,
+    "visiblePaletteRoleCount": 0,
+    "atlasMaterialCount": 1,
+    "normalMappedMaterialCount": 1,
+    "packedMaterialCount": 1,
+    "materialSamples": [
+        {
+            "name": "Material_0 CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.41999998688697817,
+                "g": 0.41999998688697817,
+                "b": 0.41999998688697817,
+                "a": 1.0
+            },
+            "baseMap": "meshy-snow-kimono-texture-0",
+            "normalMap": "meshy-snow-kimono-texture-2",
+            "metallicMap": "meshy-snow-kimono-metallic-smoothness",
+            "occlusionMap": "<none>",
+            "normalKeyword": true
+        },
+        {
+            "name": "MSK_Katana_Steel CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.1788673996925354,
+                "g": 0.2956997752189636,
+                "b": 0.4064483046531677,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.45999979972839358,
+                "g": 0.5799999237060547,
+                "b": 0.6699999570846558,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>",
+            "normalMap": "<none>",
+            "metallicMap": "<none>",
+            "occlusionMap": "<none>",
+            "normalKeyword": false
+        },
+        {
+            "name": "MSK_Katana_Edge CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.6382831931114197,
+                "g": 0.7874123454093933,
+                "b": 0.8900055289268494,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.8199999332427979,
+                "g": 0.8999999761581421,
+                "b": 0.949999988079071,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>",
+            "normalMap": "<none>",
+            "metallicMap": "<none>",
+            "occlusionMap": "<none>",
+            "normalKeyword": false
+        },
+        {
+            "name": "MSK_Katana_Wrap CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.027211779728531839,
+                "g": 0.0009287925204262137,
+                "b": 0.0018575850408524275,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.17999997735023499,
+                "g": 0.011999999172985554,
+                "b": 0.023999998345971109,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>",
+            "normalMap": "<none>",
+            "metallicMap": "<none>",
+            "occlusionMap": "<none>",
+            "normalKeyword": false
+        },
+        {
+            "name": "MSK_Katana_Fitting CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.005981056019663811,
+                "g": 0.003501013619825244,
+                "b": 0.0027089782524853946,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.06999994814395905,
+                "g": 0.044999949634075168,
+                "b": 0.03500000014901161,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>",
+            "normalMap": "<none>",
+            "metallicMap": "<none>",
+            "occlusionMap": "<none>",
+            "normalKeyword": false
+        },
+        {
+            "name": "MSK_Obi_BlackCloth CoffeeGAME display",
+            "shader": "Universal Render Pipeline/Lit",
+            "baseColorLinear": {
+                "r": 0.0001934984466060996,
+                "g": 0.0002708978427108377,
+                "b": 0.00046439626021310687,
+                "a": 1.0
+            },
+            "baseColorSrgb": {
+                "r": 0.0024999999441206457,
+                "g": 0.0035000001080334188,
+                "b": 0.005999999586492777,
+                "a": 1.0
+            },
+            "emissionLinear": {
+                "r": 0.0,
+                "g": 0.0,
+                "b": 0.0,
+                "a": 1.0
+            },
+            "baseMap": "<none>",
+            "normalMap": "<none>",
+            "metallicMap": "<none>",
+            "occlusionMap": "<none>",
+            "normalKeyword": false
+        }
+    ],
+    "normalSamples": [
+        {
+            "renderer": "MeshySnowKimonoBody",
+            "sampledVertexCount": 2055,
+            "outwardRatio": 0.5080292224884033
+        },
+        {
+            "renderer": "MeshySnowKimonoKatana",
+            "sampledVertexCount": 58,
+            "outwardRatio": 0.17241379618644715
+        },
+        {
+            "renderer": "MeshySnowKimonoKatanaEdge",
+            "sampledVertexCount": 314,
+            "outwardRatio": 0.6783439517021179
+        },
+        {
+            "renderer": "MeshySnowKimonoKatanaGrip",
+            "sampledVertexCount": 38,
+            "outwardRatio": 0.0
+        },
+        {
+            "renderer": "MeshySnowKimonoKatanaGuard",
+            "sampledVertexCount": 225,
+            "outwardRatio": 0.5555555820465088
+        },
+        {
+            "renderer": "MeshySnowKimonoObiBow.L",
+            "sampledVertexCount": 491,
+            "outwardRatio": 1.0
+        },
+        {
+            "renderer": "MeshySnowKimonoObiBow.R",
+            "sampledVertexCount": 491,
+            "outwardRatio": 1.0
+        },
+        {
+            "renderer": "MeshySnowKimonoObiKnot",
+            "sampledVertexCount": 373,
+            "outwardRatio": 1.0
+        },
+        {
+            "renderer": "MeshySnowKimonoObiTail.L",
+            "sampledVertexCount": 314,
+            "outwardRatio": 0.9235668778419495
+        },
+        {
+            "renderer": "MeshySnowKimonoObiTail.R",
+            "sampledVertexCount": 314,
+            "outwardRatio": 0.9267516136169434
+        },
+        {
+            "renderer": "MeshySnowKimonoSaya",
+            "sampledVertexCount": 74,
+            "outwardRatio": 0.0
+        },
+        {
+            "renderer": "MeshySnowKimonoSayaMouth",
+            "sampledVertexCount": 38,
+            "outwardRatio": 0.0
+        }
+    ],
+    "actionSamples": [
+        {
+            "action": "Walk",
+            "clipLengthSeconds": 1.033333420753479,
+            "motionMagnitude": 1.7632815837860108,
+            "rootDisplacement": 0.0
+        },
+        {
+            "action": "Run",
+            "clipLengthSeconds": 0.7666667103767395,
+            "motionMagnitude": 2.943220376968384,
+            "rootDisplacement": 0.0
+        },
+        {
+            "action": "Sword",
+            "clipLengthSeconds": 0.9000000357627869,
+            "motionMagnitude": 1.177846908569336,
+            "rootDisplacement": 0.0
+        },
+        {
+            "action": "Dodge",
+            "clipLengthSeconds": 0.7666667103767395,
+            "motionMagnitude": 2.1729278564453127,
+            "rootDisplacement": 0.0
+        }
+    ],
+    "previewPath": "",
+    "passed": true
+}
