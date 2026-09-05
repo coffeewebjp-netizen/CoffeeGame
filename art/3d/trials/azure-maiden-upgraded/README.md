@@ -14,10 +14,11 @@ explicit development trial and is not an ordinary or first-launch default.
 The controlled local backup contains byte-verified Meshy GLB exports for the
 matching character, RunFast, RegularJump, Katana Power Slash, Magic Power
 Release, Charged Spell Cast, and Charged Slash. The useful selected donors were
-RunFast, RegularJump, Katana Power Slash, and Charged Spell Cast. Each provider
-clip was sampled from the nontrivial `rigify_clip` action rather than its tiny
-base layer. Raw provider files and download URLs are intentionally not stored in
-the repository.
+RunFast, RegularJump, Katana Power Slash, and Charged Spell Cast. The two custom
+Motion Prime exports use their substantive `rigify_clip` action; RunFast and
+RegularJump use `Armature|RunFast|baselayer` and
+`Regular_Jump|baselayer`, respectively. Raw provider files and download URLs
+are intentionally not stored in the repository.
 
 The preparation experiments preserved the sixteen runtime action names,
 Blender 4.5 action-slot binding, quaternion sampling, one-body action reuse,
