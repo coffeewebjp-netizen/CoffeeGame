@@ -185,6 +185,40 @@ export command are documented in `../../art/hd2d/README.md`.
 
 ## FBX model fallback
 
+### Temporary SnowKimono default
+
+The first ordinary launch after this update temporarily selects the
+SnowKimono 3D heroine and records the previous character selection in local
+CoffeeGAME PlayerPrefs. Later launches honor an explicitly restored or
+selected character. Verification on this workspace recorded HD-2D as the
+previous selection and left SnowKimono selected for normal startup.
+
+Build and launch the normal Windows development player as usual:
+
+```text
+CoffeeGAME > Build > Windows development build
+Builds/Windows/CoffeeGAME.exe
+```
+
+The build menu runs full project setup, which reserializes the generated
+Hero/Slime AnimatorController assets. Preserve any uncommitted controller
+edits with a byte-for-byte local copy before running that setup; a Git status
+listing alone cannot restore those edits. For this replacement, the old and
+new players' serialized Resources files were verified to be identical.
+
+From the repository root, restore the recorded prior character persistently
+with `tools/launch-previous-character.cmd`. It starts the normal Windows build with
+`-restorePreviousCharacter`, which restores HD-2D on this machine and honors a
+previously recorded anime-girl or SnowKimono preference on machines where one
+was enabled. This operation changes only the runtime selector; it does not
+replace or delete any model assets. To adopt SnowKimono again after a
+persistent restore, use `tools/launch-snow-kimono-default.cmd` (or the editor
+menu) once; subsequent ordinary launches use that selection.
+
+The existing editor menu remains available: `CoffeeGAME > Trial > Use HD-2D
+heroine` explicitly writes the HD-2D preference, while the anime-girl and
+SnowKimono trial menus continue to write their respective preferences.
+
 Place exported models at these exact resource paths:
 
 - `Assets/CoffeeGame/Resources/Models/Hero/heroine-v4.fbx`

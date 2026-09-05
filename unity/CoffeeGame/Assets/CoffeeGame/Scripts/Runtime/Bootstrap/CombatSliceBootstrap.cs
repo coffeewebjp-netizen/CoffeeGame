@@ -25,6 +25,13 @@ namespace CoffeeGame.Bootstrap
         StaticSprite = 2
     }
 
+    public enum CharacterSelection
+    {
+        Hd2d = 0,
+        TrialAnimeGirl3D = 1,
+        SnowKimono3D = 2
+    }
+
     [DefaultExecutionOrder(-1000)]
     [DisallowMultipleComponent]
     public sealed class CombatSliceBootstrap : MonoBehaviour
@@ -40,6 +47,12 @@ namespace CoffeeGame.Bootstrap
         private const string SnowKimonoModelResource = "Models/Hero/snow-kimono";
         private const string SnowKimonoControllerResource = "Animations/Hero/SnowKimonoRuntime";
         public const string SnowKimonoPrefKey = "CoffeeGAME.SnowKimono3D";
+        public const string PreviousCharacterSelectionPrefKey = "CoffeeGAME.PreviousCharacterSelection.v1";
+        public const string CharacterSelectionDefaultAppliedPrefKey = "CoffeeGAME.CharacterSelectionDefaultApplied.v1";
+        public const string CharacterSelectionOverridePrefKey = "CoffeeGAME.CharacterSelectionOverride.v1";
+        private const string RestorePreviousCharacterArg = "-restorePreviousCharacter";
+        private const string SetSnowKimonoDefaultArg = "-useSnowKimonoDefault";
+        private const string CaptureSceneArg = "-captureScene";
         private const string SlimeModelResource = "Models/Slime/slime-v2";
         private const string SlimeControllerResource = "Animations/Slime/SlimeRuntime";
         private const string SlimeHd2dManifestResource = "Art/HD2D/slime-hd2d";
@@ -70,34 +83,128 @@ namespace CoffeeGame.Bootstrap
 
         public static bool ShouldUseTrialAnimeGirl()
         {
-            if (PlayerPrefs.GetInt(TrialAnimeGirlPrefKey, 0) == 1)
-            {
-                return true;
-            }
-
-            string[] args = Environment.GetCommandLineArgs();
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (string.Equals(args[i], "-trialAnimeGirl3D", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return GetCharacterSelection() == CharacterSelection.TrialAnimeGirl3D;
         }
 
         public static bool ShouldUseSnowKimono()
         {
-            if (PlayerPrefs.GetInt(SnowKimonoPrefKey, 0) == 1)
+            return GetCharacterSelection() == CharacterSelection.SnowKimono3D;
+        }
+
+        public static CharacterSelection GetCharacterSelection()
+        {
+            if (HasCommandLineFlag(RestorePreviousCharacterArg))
             {
-                return true;
+                CharacterSelection previous = GetRememberedCharacterSelection();
+                SetCharacterSelectionOverride(previous);
+                return previous;
             }
 
+            if (HasCommandLineFlag(SetSnowKimonoDefaultArg))
+            {
+                SetCharacterSelectionOverride(CharacterSelection.SnowKimono3D);
+                return CharacterSelection.SnowKimono3D;
+            }
+
+            if (HasCommandLineFlag("-snowKimono3D"))
+            {
+                return CharacterSelection.SnowKimono3D;
+            }
+
+            if (HasCommandLineFlag("-trialAnimeGirl3D"))
+            {
+                return CharacterSelection.TrialAnimeGirl3D;
+            }
+
+            if (PlayerPrefs.GetInt(CharacterSelectionDefaultAppliedPrefKey, 0) == 1)
+            {
+                if (PlayerPrefs.HasKey(CharacterSelectionOverridePrefKey))
+                {
+                    int stored = PlayerPrefs.GetInt(
+                        CharacterSelectionOverridePrefKey,
+                        (int)CharacterSelection.SnowKimono3D);
+                    if (Enum.IsDefined(typeof(CharacterSelection), stored))
+                    {
+                        return (CharacterSelection)stored;
+                    }
+                }
+
+                return CharacterSelection.SnowKimono3D;
+            }
+
+            // The first ordinary launch performs the temporary adoption once.
+            // Snapshot legacy flags before the new default is applied so an
+            // existing anime-girl or 3D preference is restorable as well.
+            RememberPreviousCharacterSelection(GetLegacyCharacterSelection());
+            SetCharacterSelectionOverride(CharacterSelection.SnowKimono3D);
+            return CharacterSelection.SnowKimono3D;
+        }
+
+        public static void SetCharacterSelectionOverride(CharacterSelection selection)
+        {
+            if (!Enum.IsDefined(typeof(CharacterSelection), selection))
+            {
+                throw new ArgumentOutOfRangeException(nameof(selection), selection, "Unknown CoffeeGAME character selection.");
+            }
+
+            PlayerPrefs.SetInt(CharacterSelectionOverridePrefKey, (int)selection);
+            PlayerPrefs.SetInt(CharacterSelectionDefaultAppliedPrefKey, 1);
+            PlayerPrefs.Save();
+            Debug.Log($"CoffeeGAME heroine selection override saved: {selection}.");
+        }
+
+        private static CharacterSelection GetLegacyCharacterSelection()
+        {
+            if (PlayerPrefs.GetInt(SnowKimonoPrefKey, 0) == 1)
+            {
+                return CharacterSelection.SnowKimono3D;
+            }
+
+            if (PlayerPrefs.GetInt(TrialAnimeGirlPrefKey, 0) == 1)
+            {
+                return CharacterSelection.TrialAnimeGirl3D;
+            }
+
+            return CharacterSelection.Hd2d;
+        }
+
+        private static CharacterSelection GetRememberedCharacterSelection()
+        {
+            if (PlayerPrefs.HasKey(PreviousCharacterSelectionPrefKey))
+            {
+                int stored = PlayerPrefs.GetInt(PreviousCharacterSelectionPrefKey, (int)CharacterSelection.Hd2d);
+                if (Enum.IsDefined(typeof(CharacterSelection), stored))
+                {
+                    return (CharacterSelection)stored;
+                }
+            }
+
+            // A build that has not yet recorded the temporary default still
+            // honors the old selector preferences during an explicit restore.
+            return GetLegacyCharacterSelection();
+        }
+
+        private static void RememberPreviousCharacterSelection(CharacterSelection previous)
+        {
+            if (PlayerPrefs.HasKey(PreviousCharacterSelectionPrefKey))
+            {
+                return;
+            }
+
+            // Before this temporary default, an unset selector resolved to the
+            // HD-2D heroine. Existing explicit editor preferences are captured
+            // separately so anime-girl trials are restored correctly too.
+            PlayerPrefs.SetInt(PreviousCharacterSelectionPrefKey, (int)previous);
+            PlayerPrefs.Save();
+            Debug.Log($"CoffeeGAME previous heroine selection recorded: {previous}.");
+        }
+
+        private static bool HasCommandLineFlag(string flag)
+        {
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length; i++)
             {
-                if (string.Equals(args[i], "-snowKimono3D", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(args[i], flag, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -116,10 +223,17 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (ShouldUseSnowKimono() && TryGetCommandLineValue("-captureSnowKimono", out string capturePath))
+            string captureKey = TryGetCommandLineValue(CaptureSceneArg, out string capturePath)
+                ? CaptureSceneArg
+                : "-captureSnowKimono";
+            if (captureKey == "-captureSnowKimono" && !TryGetCommandLineValue(captureKey, out capturePath))
+            {
+                capturePath = string.Empty;
+            }
+            if (!string.IsNullOrWhiteSpace(capturePath))
             {
                 Application.runInBackground = true;
-                StartCoroutine(CaptureSnowKimonoTrial(capturePath));
+                StartCoroutine(CaptureRuntimeScene(capturePath));
             }
 #endif
         }
@@ -523,8 +637,10 @@ namespace CoffeeGame.Bootstrap
             PlayerResources resources = player.AddComponent<PlayerResources>();
             resources.Initialize(tuning.MaxStamina, tuning.PlayerMaxMp, tuning.MagicMpRegenPerSecond);
 
-            bool snowKimono = ShouldUseSnowKimono();
-            bool trialAnimeGirl = !snowKimono && ShouldUseTrialAnimeGirl();
+            CharacterSelection selection = GetCharacterSelection();
+            bool snowKimono = selection == CharacterSelection.SnowKimono3D;
+            bool trialAnimeGirl = selection == CharacterSelection.TrialAnimeGirl3D;
+            Debug.Log($"CoffeeGAME heroine selection: {selection}.");
             ICharacterVisual visual = CreatePreferredVisual(
                 player.transform,
                 "Hero VisualSlot",
@@ -580,7 +696,7 @@ namespace CoffeeGame.Bootstrap
             return false;
         }
 
-        private IEnumerator CaptureSnowKimonoTrial(string capturePath)
+        private IEnumerator CaptureRuntimeScene(string capturePath)
         {
             string fullPath = Path.GetFullPath(capturePath);
             string directory = Path.GetDirectoryName(fullPath);
@@ -603,7 +719,7 @@ namespace CoffeeGame.Bootstrap
                 image.ReadPixels(new Rect(0f, 0f, target.width, target.height), 0, 0);
                 image.Apply();
                 File.WriteAllBytes(fullPath, image.EncodeToPNG());
-                Debug.Log("CoffeeGAME snow-kimono runtime scene captured: " + fullPath);
+                Debug.Log("CoffeeGAME runtime scene captured: " + fullPath);
             }
             finally
             {

@@ -8,6 +8,8 @@
 
 CoffeeGAMEは、ブラウザ試作からUnity製Windows／Androidアプリへ本流を移行済みです。現在は、3D空間の移動・物理・戦闘判定に、原画準拠の方向別HD-2D画像を表示する構成です。
 
+2026-09-05追記（`ORC-20260905-001-IN02`）：Ownerの指定により、通常Windows版の表示をSnowKimono 3Dモデルへ一時差し替え。初回切り替え前の選択を記録し、`tools/launch-previous-character.cmd` で復元、`tools/launch-snow-kimono-default.cmd` で再適用できる。いずれも次回起動へ保持される。HD-2D素材と既存3Dモデルは保持し、下記の長期設計方針はこの試用だけでは変更しない。
+
 ```text
 3D world / collision / combat rules
                  |

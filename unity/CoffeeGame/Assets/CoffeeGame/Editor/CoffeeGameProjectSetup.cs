@@ -78,7 +78,7 @@ namespace CoffeeGame.Editor
             SetupTrialAnimeGirl();
             PlayerPrefs.SetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 0);
             PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 1);
-            PlayerPrefs.Save();
+            CombatSliceBootstrap.SetCharacterSelectionOverride(CharacterSelection.TrialAnimeGirl3D);
             Debug.Log("CoffeeGAME trial anime-girl 3D is enabled for the next Play. HD-2D remains the default when this is off.");
         }
 
@@ -94,7 +94,7 @@ namespace CoffeeGame.Editor
         {
             PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 0);
             PlayerPrefs.SetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 0);
-            PlayerPrefs.Save();
+            CombatSliceBootstrap.SetCharacterSelectionOverride(CharacterSelection.Hd2d);
             Debug.Log("CoffeeGAME trial anime-girl 3D is off. Play uses the HD-2D heroine.");
         }
 
@@ -123,7 +123,7 @@ namespace CoffeeGame.Editor
             SetupSnowKimono();
             PlayerPrefs.SetInt(CombatSliceBootstrap.TrialAnimeGirlPrefKey, 0);
             PlayerPrefs.SetInt(CombatSliceBootstrap.SnowKimonoPrefKey, 1);
-            PlayerPrefs.Save();
+            CombatSliceBootstrap.SetCharacterSelectionOverride(CharacterSelection.SnowKimono3D);
             Debug.Log("CoffeeGAME snow-kimono 3D is enabled for the next Play. HD-2D remains the default when this is off.");
         }
 

@@ -16,12 +16,14 @@ Run Blender from the repository root:
 & 'C:\Program Files\Blender Foundation\Blender 4.5\blender.exe' -b --python tools\blender\generate_snow_kimono.py
 ```
 
-In Unity, use `CoffeeGAME > Trial > Setup snow-kimono 3D`, then `CoffeeGAME > Trial > Use snow-kimono 3D`. Launch the isolated development player with the checked-in selector wrapper so the normal HD-2D preference is not changed:
+The normal Windows development player at `unity/CoffeeGame/Builds/Windows/CoffeeGAME.exe` now uses SnowKimono after the temporary replacement update. Run `tools/launch-previous-character.cmd` from the repository root to restore the remembered character for this and subsequent launches, or `tools/launch-snow-kimono-default.cmd` to select SnowKimono again. Both original character assets and the separate trial build remain available.
+
+In Unity, use `CoffeeGAME > Trial > Use snow-kimono 3D` or `Use HD-2D heroine` to choose a character. The original isolated trial can still be launched with:
 
 ```powershell
 .\tools\launch-snow-kimono-trial.cmd
 ```
 
-The wrapper starts `unity/CoffeeGame/Builds/Windows-SnowKimono/CoffeeGAME-SnowKimono.exe` with `-snowKimono3D`. The separate Windows build is a local artifact and is not committed. Unity import, motion sampling, Windows build, and actual player scene capture passed. HD-2D remains the normal default, and the older anime-girl trial keeps its own selector.
+The wrapper starts `unity/CoffeeGame/Builds/Windows-SnowKimono/CoffeeGAME-SnowKimono.exe` with `-snowKimono3D` for that launch. The separate Windows build is a local artifact and is not committed. Unity import, motion sampling, Windows build, and actual player scene capture passed. The older anime-girl trial keeps its own selector.
 
 Known prototype limits: the face and hands are simplified, the sleeves and cloth deformation remain chunky, hair locks are procedural rather than hand groomed, there is no UV-painted fabric texture, and the side/back reconstruction has not been approved as final character art. The rigid katana follows `Hand.R`; the rigid saya follows `Pelvis`. Locomotion clips are in-place and gameplay still owns movement and hit detection.
