@@ -1,0 +1,772 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ORC-20260905-001",
+  "workPackage": "WP16",
+  "outputId": "OUT20",
+  "status": "prepared-awaiting-independent-visual-acceptance",
+  "source": {
+    "path": "C:\\work\\CoffeeGAME\\art\\3d\\trials\\azure-maiden-clean-apose\\downloads\\meshy-clean-rigged-body.glb",
+    "bytes": 24094364,
+    "sha256": "5595262c20b5a0bc7bf2f49db79d81c4b17f2c5582ab5afa1d9a2a0193d39fa3"
+  },
+  "sourceGeometryAndSkin": {
+    "meshes": [
+      {
+        "name": "AzureMaidenCleanBody",
+        "vertices": 109503,
+        "triangles": 97002,
+        "materials": 1,
+        "unweightedVertices": 0
+      }
+    ],
+    "meshCount": 1,
+    "vertices": 109503,
+    "triangles": 97002,
+    "bones": 24,
+    "boneNames": [
+      "Hips",
+      "LeftUpLeg",
+      "LeftLeg",
+      "LeftFoot",
+      "LeftToeBase",
+      "RightUpLeg",
+      "RightLeg",
+      "RightFoot",
+      "RightToeBase",
+      "Spine02",
+      "Spine01",
+      "Spine",
+      "LeftShoulder",
+      "LeftArm",
+      "LeftForeArm",
+      "LeftHand",
+      "RightShoulder",
+      "RightArm",
+      "RightForeArm",
+      "RightHand",
+      "neck",
+      "Head",
+      "head_end",
+      "headfront"
+    ],
+    "requiredBonesMissing": [],
+    "requiredWeightedGroupsMissing": [],
+    "weightedVertices": 109503,
+    "unweightedVertices": 0,
+    "maxInfluences": 4,
+    "weightSumMin": 1.0,
+    "weightSumMax": 1.0
+  },
+  "textureSource": {
+    "path": "C:\\work\\CoffeeGAME\\art\\3d\\trials\\azure-maiden-clean-apose\\downloads\\meshy-direct-texture-rigged-body.glb",
+    "bytes": 18373188,
+    "sha256": "6b269a75ff83826ffe5bba520843d442b2c6e0e3321a23a72389b19a5d15e676",
+    "compatibility": {
+      "positionCountMatch": true,
+      "indicesExact": true,
+      "texcoord0Exact": true,
+      "sourcePositionSha256": "24d20c5d5eaec5cb96fa623adcfb935090beb938a91b2a07e4c0c34f82c70a17",
+      "textureRigPositionSha256": "2eee1e9ac594d0c6ab80a4902638040af9c293d4f1d739836cb80d38a99a744a",
+      "geometryAndBindCopied": false
+    },
+    "atlas": {
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\azure-maiden-base.png",
+      "bytes": 11480319,
+      "sha256": "1f65d00031f1c1bd4f18249636bcea0066ca786b8d3d31512eb6df18938856aa"
+    },
+    "replacedNodes": [
+      {
+        "material": "Material_1",
+        "node": "Image Texture",
+        "oldImage": "texture_0"
+      },
+      {
+        "material": "Material_1",
+        "node": "Image Texture.001",
+        "oldImage": "texture_0"
+      }
+    ]
+  },
+  "sourceEmbeddedAction": {
+    "name": "Armature|running|baselayer",
+    "frameRange": [
+      1.0,
+      20.0
+    ],
+    "durationSeconds": 0.63333
+  },
+  "scale": {
+    "sourceHeight": 1.6200000003455965,
+    "scaleFactor": 0.9999999997866689,
+    "targetHeight": 1.62
+  },
+  "donors": {
+    "run": {
+      "path": "C:\\work\\CoffeeGAME\\art\\3d\\trials\\azure-maiden-clean-apose\\downloads\\meshy-clean-run-fast.glb",
+      "file": "meshy-clean-run-fast.glb",
+      "bytes": 24092240,
+      "sha256": "bb9197225d3e050e7d8bf1679d051b5226e567faef4931d587d3fd596c731688",
+      "action": "Armature|RunFast|baselayer",
+      "frameRange": [
+        1.0,
+        15.0
+      ],
+      "durationSeconds": 0.46667,
+      "bones": 24,
+      "boneNames": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ]
+    },
+    "jump": {
+      "path": "C:\\work\\CoffeeGAME\\art\\3d\\trials\\azure-maiden-clean-apose\\downloads\\meshy-clean-regular-jump.glb",
+      "file": "meshy-clean-regular-jump.glb",
+      "bytes": 24108104,
+      "sha256": "5c80f9d230c50ed3a9eb75fe831f4fe062046e91f0133da8d0e4fa7cc869d6de",
+      "action": "Armature|Regular_Jump|baselayer",
+      "frameRange": [
+        1.0,
+        58.0
+      ],
+      "durationSeconds": 1.9,
+      "bones": 24,
+      "boneNames": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ]
+    },
+    "sword": {
+      "path": "C:\\work\\CoffeeGAME\\art\\3d\\trials\\azure-maiden-clean-apose\\downloads\\meshy-clean-katana-power-slash.glb",
+      "file": "meshy-clean-katana-power-slash.glb",
+      "bytes": 24219416,
+      "sha256": "056bee489690223ab7fc2afc3d9d8cf0554ccee6f181a368b8c44bb9f212e5cf",
+      "action": "rigify_clip",
+      "frameRange": [
+        2.0,
+        91.0
+      ],
+      "durationSeconds": 2.96667,
+      "bones": 24,
+      "boneNames": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ]
+    },
+    "magic": {
+      "path": "C:\\work\\CoffeeGAME\\art\\3d\\trials\\azure-maiden-clean-apose\\downloads\\meshy-clean-charged-spell.glb",
+      "file": "meshy-clean-charged-spell.glb",
+      "bytes": 24116572,
+      "sha256": "a2b7e9a81fda99ee8f69f2832b0300a59f873cdfeddff9dfa27837c71007c163",
+      "action": "Armature|Charged_Spell_Cast|baselayer",
+      "frameRange": [
+        1.0,
+        81.0
+      ],
+      "durationSeconds": 2.66667,
+      "bones": 24,
+      "boneNames": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ]
+    }
+  },
+  "restCompatibility": {
+    "run": {
+      "sharedBones": 24,
+      "targetBones": 24,
+      "donorBones": 24,
+      "maxRestOrientationDegrees": 0.0,
+      "medianRestOrientationDegrees": 0.0,
+      "maxNormalizedHeadOffset": 0.0,
+      "medianNormalizedHeadOffset": 0.0,
+      "exactGlbRestMatch": true,
+      "strategy": "direct-compatible rest mapping",
+      "visualReviewRequired": false
+    },
+    "jump": {
+      "sharedBones": 24,
+      "targetBones": 24,
+      "donorBones": 24,
+      "maxRestOrientationDegrees": 0.0,
+      "medianRestOrientationDegrees": 0.0,
+      "maxNormalizedHeadOffset": 0.0,
+      "medianNormalizedHeadOffset": 0.0,
+      "exactGlbRestMatch": true,
+      "strategy": "direct-compatible rest mapping",
+      "visualReviewRequired": false
+    },
+    "sword": {
+      "sharedBones": 24,
+      "targetBones": 24,
+      "donorBones": 24,
+      "maxRestOrientationDegrees": 0.0,
+      "medianRestOrientationDegrees": 0.0,
+      "maxNormalizedHeadOffset": 0.0,
+      "medianNormalizedHeadOffset": 0.0,
+      "exactGlbRestMatch": true,
+      "strategy": "direct-compatible rest mapping",
+      "visualReviewRequired": false
+    },
+    "magic": {
+      "sharedBones": 24,
+      "targetBones": 24,
+      "donorBones": 24,
+      "maxRestOrientationDegrees": 0.0,
+      "medianRestOrientationDegrees": 0.0,
+      "maxNormalizedHeadOffset": 0.0,
+      "medianNormalizedHeadOffset": 0.0,
+      "exactGlbRestMatch": true,
+      "strategy": "direct-compatible rest mapping",
+      "visualReviewRequired": false
+    }
+  },
+  "matrixConventionFixture": {
+    "fixture": "donor rest at Z+35deg, target rest at X-40deg, donor local motion Y+90deg",
+    "chosenOrder": "targetRest @ inverse(donorRest) @ donorPose",
+    "chosenMaxMatrixError": 2.9802318834981634e-08,
+    "worldDeltaAlternativeMaxMatrixError": 3.536951,
+    "result": "chosen order reproduces targetRest @ localMotion"
+  },
+  "retargetMethod": "Each target pose matrix is targetRest @ inverse(donorRest) @ donorPose; the resulting target matrix_basis channels are baked after whole-skeleton root planting.",
+  "hierarchy": {
+    "hips": null,
+    "leftupleg": "hips",
+    "leftleg": "leftupleg",
+    "leftfoot": "leftleg",
+    "lefttoebase": "leftfoot",
+    "rightupleg": "hips",
+    "rightleg": "rightupleg",
+    "rightfoot": "rightleg",
+    "righttoebase": "rightfoot",
+    "spine02": "hips",
+    "spine01": "spine02",
+    "spine": "spine01",
+    "leftshoulder": "spine",
+    "leftarm": "leftshoulder",
+    "leftforearm": "leftarm",
+    "lefthand": "leftforearm",
+    "rightshoulder": "spine",
+    "rightarm": "rightshoulder",
+    "rightforearm": "rightarm",
+    "righthand": "rightforearm",
+    "neck": "spine",
+    "head": "neck",
+    "headend": "head",
+    "headfront": "head"
+  },
+  "actions": [
+    "AirSlash",
+    "Defeated",
+    "Dodge",
+    "Fall",
+    "Hurt",
+    "Idle",
+    "Jump",
+    "Land",
+    "MagicCharge",
+    "MagicRelease",
+    "Plunge",
+    "Run",
+    "SpinCharge",
+    "SpinRelease",
+    "Sword",
+    "Walk"
+  ],
+  "motionDelta": {
+    "Walk": 340.428913,
+    "Run": 790.932042,
+    "Jump": 240.422691,
+    "Sword": 664.209845,
+    "MagicCharge": 557.180865,
+    "MagicRelease": 107.404404,
+    "Dodge": 343.99482
+  },
+  "eventTiming": {
+    "combatEmission": "PlayAction frame 1",
+    "swordHitFrame": 1,
+    "swordGameplayCooldownSeconds": 0.34,
+    "swordVisualRecoverySeconds": 1.05,
+    "swordInterruptibleAfterSeconds": 0.34,
+    "magicReleaseEmissionFrame": 1
+  },
+  "rootMotion": "Hips X/Y planted for all actions; Jump/Fall/Land Z planted because the game motor owns Y",
+  "staticRightGrip": {
+    "method": "bind-space distal RightHand vertex curl",
+    "rightHandCandidates": 1326,
+    "movedVertices": 993,
+    "thumbVerticesMoved": 174,
+    "minimumRightHandWeight": 0.5,
+    "distalFingerBoundaryBoneLocalY": 4.119451,
+    "hardWristPreservationBoneLocalY": 2.8,
+    "distalReferenceBoneLocalY": 13.325555,
+    "maxBoneLocalDelta": 6.553185,
+    "wristVerticesMoved": 0,
+    "leftHandVerticesMoved": 0
+  },
+  "katana": {
+    "name": "AzureMaidenKatana",
+    "parentBone": "RightHand",
+    "vertices": 211,
+    "triangles": 402,
+    "materials": [
+      "KatanaPolishedEdge",
+      "KatanaSteelSpine",
+      "KatanaWrappedGripBlack",
+      "KatanaWrappedGripCrimson",
+      "KatanaShapedTsuba",
+      "KatanaBrassFittings"
+    ],
+    "dimensions": [
+      0.09,
+      0.976,
+      0.06
+    ],
+    "design": "curved tapered hex-bevel blade, wrapped octagonal grip, shaped tsuba"
+  },
+  "previews": {
+    "source-neutral-front.png": {
+      "action": "REST",
+      "frame": 1,
+      "sha256": "319b1bb4830fb5b65ffa9bcfd138443fff91915482cceb3f1aa41aa5ea7098da",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\source-neutral-front.png"
+    },
+    "source-neutral-side.png": {
+      "action": "REST",
+      "frame": 1,
+      "sha256": "9c5d83f6628a25df9951e56561ce02341402b345012496e8de64e6528e0549f3",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\source-neutral-side.png"
+    },
+    "source-running-front.png": {
+      "action": "Armature|running|baselayer",
+      "frame": 10,
+      "sha256": "036ca84a50f42668d8d110a723132cbe6ca3f659ec1e4c1762f264747e7a6b43",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\source-running-front.png"
+    },
+    "source-running-side.png": {
+      "action": "Armature|running|baselayer",
+      "frame": 10,
+      "sha256": "facc0ae003f03d61be17bb7fa830e9bc1eb96e04b157ede89c4440370459b112",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\source-running-side.png"
+    },
+    "neutral-front.png": {
+      "action": "Idle",
+      "frame": 1,
+      "sha256": "b5b54c39692c46cabfcb806f856c7358eee72efd2508c07315ba6ee1a4f6a6d6",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\neutral-front.png"
+    },
+    "neutral-side.png": {
+      "action": "Idle",
+      "frame": 1,
+      "sha256": "65a935ce8270e35534bac44c0b90c417388a083abc67d71f890e8bca81a5a5f7",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\neutral-side.png"
+    },
+    "run-cycle-a-front.png": {
+      "action": "Run",
+      "frame": 1,
+      "sha256": "ecf5ba4d86826c775bab2fe93ed9e5206d129d573101e508e5a8a776e6206ec6",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\run-cycle-a-front.png"
+    },
+    "run-cycle-a-side.png": {
+      "action": "Run",
+      "frame": 1,
+      "sha256": "4235ffc6caa7ebd83eff11601a9769bb1a46bc9ad2bd44c84bf3c49f6cb452cf",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\run-cycle-a-side.png"
+    },
+    "run-cycle-b-front.png": {
+      "action": "Run",
+      "frame": 8,
+      "sha256": "302ae22f1d866d5cb8f81dac3a74b0003f2e17035cdc3777448ad8f6f3350794",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\run-cycle-b-front.png"
+    },
+    "run-cycle-b-side.png": {
+      "action": "Run",
+      "frame": 8,
+      "sha256": "3f5ae8c49650ce015a8faccf312f8ec1c313c5d48798aeaa8f57485d21338780",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\run-cycle-b-side.png"
+    },
+    "run-cycle-c-front.png": {
+      "action": "Run",
+      "frame": 15,
+      "sha256": "683bb762773bdd7b8c3622775cf5c8b3cd61bfd79feab06467acbe616a812995",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\run-cycle-c-front.png"
+    },
+    "run-cycle-c-side.png": {
+      "action": "Run",
+      "frame": 15,
+      "sha256": "92f1d4ed8be556ad435322607446c8246ced1cbb722bfee7ae22f80354c1fbf7",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\run-cycle-c-side.png"
+    },
+    "jump-launch-front.png": {
+      "action": "Jump",
+      "frame": 1,
+      "sha256": "5a035a57be1272cc3568bd183a0b49e82f5fca5d46a419f40d3c7c1b3beb59f6",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\jump-launch-front.png"
+    },
+    "jump-launch-side.png": {
+      "action": "Jump",
+      "frame": 1,
+      "sha256": "61df2a0ddab55e4fc934f5e6db1536c752b3f9e3d00bf6a5ff3ea5585e0b2998",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\jump-launch-side.png"
+    },
+    "jump-rise-front.png": {
+      "action": "Jump",
+      "frame": 7,
+      "sha256": "55539010a67f710fd2e47b4a7d966b7312a38a759848f2ae30cfdd92dc25dc37",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\jump-rise-front.png"
+    },
+    "jump-rise-side.png": {
+      "action": "Jump",
+      "frame": 7,
+      "sha256": "795c154ff6ccb1851a4839502f00f9d3c89165c98972c22214bfd838c001e60d",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\jump-rise-side.png"
+    },
+    "jump-peak-front.png": {
+      "action": "Jump",
+      "frame": 13,
+      "sha256": "a69158a34f960f73c80d037bd00d4a5d5a6d473c9571d630721cf5bf6660868f",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\jump-peak-front.png"
+    },
+    "jump-peak-side.png": {
+      "action": "Jump",
+      "frame": 13,
+      "sha256": "b8812c33ddaf92da370ca551a98e561def0d29ef218df91320f03023252fe53e",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\jump-peak-side.png"
+    },
+    "sword-emission-front.png": {
+      "action": "Sword",
+      "frame": 1,
+      "sha256": "234c9dbe287f428ddf80f962620601a3c457d63628ee16e973cf06ddc75285b5",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-emission-front.png"
+    },
+    "sword-emission-side.png": {
+      "action": "Sword",
+      "frame": 1,
+      "sha256": "ece80a8e820557b37d81c64c464113afcac821aa181bec5b467880c299bd3fe1",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-emission-side.png"
+    },
+    "sword-followthrough-front.png": {
+      "action": "Sword",
+      "frame": 11,
+      "sha256": "dadfcbf8cac5a6fcae7d9b53f31746b65a4f08e819cba97875e4ffe9c0cf3861",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-followthrough-front.png"
+    },
+    "sword-followthrough-side.png": {
+      "action": "Sword",
+      "frame": 11,
+      "sha256": "6d0b620c92b8285bdc912ee6e965ae56e8c97ac3e3e08613424b70b157dd90fc",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-followthrough-side.png"
+    },
+    "sword-recovery-front.png": {
+      "action": "Sword",
+      "frame": 26,
+      "sha256": "4cb86b45420ca4f53aa57cfeb2dfe4ca7a5085d926d076851723f77ecc0dd203",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-recovery-front.png"
+    },
+    "sword-recovery-side.png": {
+      "action": "Sword",
+      "frame": 26,
+      "sha256": "f06dc944614f823d5c728024a3ad8797d4461d80a73a4236b8fd79d95421e22c",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-recovery-side.png"
+    },
+    "sword-neutral-front.png": {
+      "action": "Sword",
+      "frame": 32,
+      "sha256": "ed01d414c43e6e2c11a9e728a468133b7ca115fb5642a499cd572b6966c63dc2",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-neutral-front.png"
+    },
+    "sword-neutral-side.png": {
+      "action": "Sword",
+      "frame": 32,
+      "sha256": "ec0065455165918b464a4ff1e42546558d1d32206504fecad2787b9b44a64eac",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\sword-neutral-side.png"
+    },
+    "magic-release-emission-front.png": {
+      "action": "MagicRelease",
+      "frame": 1,
+      "sha256": "b3e026c950ee7830c86c827d6757f292af10618daff9d974484b8974e55ee60d",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-emission-front.png"
+    },
+    "magic-release-emission-side.png": {
+      "action": "MagicRelease",
+      "frame": 1,
+      "sha256": "e6aef8f92347c2881ce4bf9782ee7965b96abcd00f16f5a2130bdda792406718",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-emission-side.png"
+    },
+    "magic-release-peak-front.png": {
+      "action": "MagicRelease",
+      "frame": 8,
+      "sha256": "ebb7b10e3839e0249df2bae16810f4bfceaa7ea815df3eec629d582d966a031b",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-peak-front.png"
+    },
+    "magic-release-peak-side.png": {
+      "action": "MagicRelease",
+      "frame": 8,
+      "sha256": "c6debba0380322e4c6fa52e4ee8508b1fed972de98fa9c6d3d57ced35ea53f63",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-peak-side.png"
+    },
+    "magic-release-recovery-front.png": {
+      "action": "MagicRelease",
+      "frame": 18,
+      "sha256": "57f913bafcf309fab324782ae9d56660f91eed1643e1a09051ca192d20f86ae2",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-recovery-front.png"
+    },
+    "magic-release-recovery-side.png": {
+      "action": "MagicRelease",
+      "frame": 18,
+      "sha256": "77eff3f70e8a7931ce8dac6c318b4aac39001a3a77812d71d535798cc3e91aae",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-recovery-side.png"
+    },
+    "magic-release-neutral-front.png": {
+      "action": "MagicRelease",
+      "frame": 25,
+      "sha256": "2957e4c295ac2d7e752d4e50cdac374ec00a6a25061fc27c4f1169f604ddb8f7",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-neutral-front.png"
+    },
+    "magic-release-neutral-side.png": {
+      "action": "MagicRelease",
+      "frame": 25,
+      "sha256": "610d2cf287a3ce07245dac662c33fd0fdeaf4d4020b012c5f20b1525cbc4515d",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\magic-release-neutral-side.png"
+    },
+    "grip-sword-emission-front.png": {
+      "action": "Sword",
+      "frame": 1,
+      "sha256": "5b4ea1eabe76ad4f87a9c092804c91b1d6baaacb0d50cae6ad2285f9832879a1",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\grip-sword-emission-front.png"
+    },
+    "grip-sword-emission-side.png": {
+      "action": "Sword",
+      "frame": 1,
+      "sha256": "b7adb21b6141c8c56364ff5debfe3ef7022551336072cf767566735578ad0b0d",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\grip-sword-emission-side.png"
+    },
+    "grip-sword-emission-palm.png": {
+      "action": "Sword",
+      "frame": 1,
+      "sha256": "98dea216f21aa5c1774aa703f7d6d175392e8261047a5a55bbb7a656766cb060",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\grip-sword-emission-palm.png"
+    },
+    "grip-sword-followthrough-front.png": {
+      "action": "Sword",
+      "frame": 11,
+      "sha256": "e74375ec2710f844f00c56a132765016fe211a9fedaf0e248b60db84833e1345",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\grip-sword-followthrough-front.png"
+    },
+    "grip-sword-followthrough-side.png": {
+      "action": "Sword",
+      "frame": 11,
+      "sha256": "cd6b6805a1a0202385d6fdc0f13c5e1cdaddc8df5dfb99ab6c4a288e57e47440",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\grip-sword-followthrough-side.png"
+    },
+    "grip-sword-followthrough-palm.png": {
+      "action": "Sword",
+      "frame": 11,
+      "sha256": "d9127e1788131600c920eb3fe6018f2cbe7701f3a09d0ad9a41038d5dbc17c3b",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\previews\\grip-sword-followthrough-palm.png"
+    }
+  },
+  "textures": [
+    {
+      "name": "AzureMaidenDirectRetexture",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\azure-maiden-base.png",
+      "width": 4096,
+      "height": 4096,
+      "sha256": "1f65d00031f1c1bd4f18249636bcea0066ca786b8d3d31512eb6df18938856aa"
+    },
+    {
+      "name": "texture_0",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\texture_0.png",
+      "width": 4096,
+      "height": 4096,
+      "sha256": "9e5e92c1ae0035d7acfcc62dc1b0b64658f8d2132e9c210d74b2497dc9638d98"
+    },
+    {
+      "name": "texture_0.001",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\texture_0.png",
+      "width": 4096,
+      "height": 4096,
+      "sha256": "9e5e92c1ae0035d7acfcc62dc1b0b64658f8d2132e9c210d74b2497dc9638d98"
+    },
+    {
+      "name": "texture_0.002",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\texture_0.png",
+      "width": 4096,
+      "height": 4096,
+      "sha256": "9e5e92c1ae0035d7acfcc62dc1b0b64658f8d2132e9c210d74b2497dc9638d98"
+    },
+    {
+      "name": "texture_0.003",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\texture_0.png",
+      "width": 4096,
+      "height": 4096,
+      "sha256": "9e5e92c1ae0035d7acfcc62dc1b0b64658f8d2132e9c210d74b2497dc9638d98"
+    },
+    {
+      "name": "texture_0.004",
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\textures\\texture_0.png",
+      "width": 4096,
+      "height": 4096,
+      "sha256": "9e5e92c1ae0035d7acfcc62dc1b0b64658f8d2132e9c210d74b2497dc9638d98"
+    }
+  ],
+  "files": {
+    "blend": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\azure-maiden-clean-runtime.blend",
+    "blendSha256": "a5d73041428cd5215a01747a3c681054fc3fc7c8af395d240eb6bc96b4dae829",
+    "fbx": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\azure-maiden-clean-runtime.fbx",
+    "fbxSha256": "704fd64b9715ea50f41cbd65a26ddb743925829b398673cf2dd208f96e76e5f9",
+    "glb": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\azure-maiden-clean-runtime.glb",
+    "glbSha256": "5019438e9715832ff1e9c1366717563aae5b19ad55487641ffb67176e628a128"
+  },
+  "fbxReimport": {
+    "actions": {
+      "Idle": "AzureMaidenCleanRig|AzureMaidenCleanRig|Idle",
+      "Walk": "AzureMaidenCleanRig|AzureMaidenCleanRig|Walk",
+      "Run": "AzureMaidenCleanRig|AzureMaidenCleanRig|Run",
+      "Jump": "AzureMaidenCleanRig|AzureMaidenCleanRig|Jump",
+      "Fall": "AzureMaidenCleanRig|AzureMaidenCleanRig|Fall",
+      "Land": "AzureMaidenCleanRig|AzureMaidenCleanRig|Land",
+      "Sword": "AzureMaidenCleanRig|AzureMaidenCleanRig|Sword",
+      "AirSlash": "AzureMaidenCleanRig|AzureMaidenCleanRig|AirSlash",
+      "Plunge": "AzureMaidenCleanRig|AzureMaidenCleanRig|Plunge",
+      "SpinCharge": "AzureMaidenCleanRig|AzureMaidenCleanRig|SpinCharge",
+      "SpinRelease": "AzureMaidenCleanRig|AzureMaidenCleanRig|SpinRelease",
+      "MagicCharge": "AzureMaidenCleanRig|AzureMaidenCleanRig|MagicCharge",
+      "MagicRelease": "AzureMaidenCleanRig|AzureMaidenCleanRig|MagicRelease",
+      "Hurt": "AzureMaidenCleanRig|AzureMaidenCleanRig|Hurt",
+      "Defeated": "AzureMaidenCleanRig|AzureMaidenCleanRig|Defeated",
+      "Dodge": "AzureMaidenCleanRig|AzureMaidenCleanRig|Dodge"
+    },
+    "actionCount": 16,
+    "extraActions": [],
+    "bones": 24,
+    "motionDelta": {
+      "Run": 790.931992,
+      "Jump": 240.422753,
+      "Sword": 613.707294,
+      "MagicCharge": 557.180661,
+      "MagicRelease": 107.404649,
+      "Dodge": 343.994472
+    },
+    "rootXYMaxExcursion": {
+      "Run": 1e-07,
+      "Jump": 0.0,
+      "Sword": 1e-07,
+      "MagicCharge": 1e-07,
+      "MagicRelease": 1e-07,
+      "Dodge": 1e-07
+    },
+    "rootZMaxExcursion": {
+      "Run": 0.0210878,
+      "Jump": 0.0,
+      "Sword": 0.255976,
+      "MagicCharge": 0.187702,
+      "MagicRelease": 0.0694309,
+      "Dodge": 0.256541,
+      "Fall": 0.0,
+      "Land": 0.0
+    },
+    "katana": {
+      "present": true,
+      "parent": "AzureMaidenCleanRig",
+      "parentBone": "RightHand",
+      "dimensions": [
+        0.09,
+        0.976,
+        0.06
+      ]
+    }
+  },
+  "notes": [
+    "No old fused body geometry or weights are copied into the new source.",
+    "Charged-slash/custom spin motion is intentionally excluded; SpinCharge/SpinRelease reuse accepted magic/sword poses.",
+    "All evidence renders explicitly set and render the recorded action frame."
+  ]
+}

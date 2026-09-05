@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ORC-20260905-001",
+  "workPackage": "WP16",
+  "outputId": "OUT20-v4-socket-fix",
+  "status": "accepted-after-fbx-and-glb-reimport-validation",
+  "sourceBlend": {
+    "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v3-accepted\\azure-maiden-clean-runtime.blend",
+    "sha256": "a5d73041428cd5215a01747a3c681054fc3fc7c8af395d240eb6bc96b4dae829"
+  },
+  "repair": "separate rigid katana mesh, armature object parent, 100% RightHand vertex weights",
+  "bodyGeometryRigActionsChanged": false,
+  "katana": {
+    "vertices": 211,
+    "triangles": 402,
+    "parentType": "OBJECT",
+    "parent": "AzureMaidenCleanRig",
+    "vertexGroup": "RightHand",
+    "minimumWeight": 1.0,
+    "maximumWeight": 1.0,
+    "materials": [
+      "KatanaPolishedEdge",
+      "KatanaSteelSpine",
+      "KatanaWrappedGripBlack",
+      "KatanaWrappedGripCrimson",
+      "KatanaShapedTsuba",
+      "KatanaBrassFittings"
+    ]
+  },
+  "sourceSocketSamples": [
+    {
+      "action": "Idle",
+      "frame": 1,
+      "gripToHandMeters": 0.016348,
+      "handWorld": [
+        -0.365845,
+        0.008882,
+        0.936125
+      ],
+      "gripWorld": [
+        -0.370711,
+        -0.003086,
+        0.946141
+      ]
+    },
+    {
+      "action": "Run",
+      "frame": 4,
+      "gripToHandMeters": 0.016348,
+      "handWorld": [
+        -0.245002,
+        -0.065344,
+        0.82213
+      ],
+      "gripWorld": [
+        -0.239559,
+        -0.078501,
+        0.814099
+      ]
+    },
+    {
+      "action": "Run",
+      "frame": 12,
+      "gripToHandMeters": 0.016347,
+      "handWorld": [
+        -0.076761,
+        -0.673337,
+        0.848871
+      ],
+      "gripWorld": [
+        -0.07596,
+        -0.66695,
+        0.863897
+      ]
+    },
+    {
+      "action": "Sword",
+      "frame": 1,
+      "gripToHandMeters": 0.016348,
+      "handWorld": [
+        0.105693,
+        0.23107,
+        0.750848
+      ],
+      "gripWorld": [
+        0.113042,
+        0.228165,
+        0.765159
+      ]
+    },
+    {
+      "action": "Sword",
+      "frame": 12,
+      "gripToHandMeters": 0.016348,
+      "handWorld": [
+        0.293503,
+        0.035667,
+        0.946054
+      ],
+      "gripWorld": [
+        0.283677,
+        0.031424,
+        0.958411
+      ]
+    },
+    {
+      "action": "Sword",
+      "frame": 28,
+      "gripToHandMeters": 0.016348,
+      "handWorld": [
+        -0.169177,
+        -0.00654,
+        0.994436
+      ],
+      "gripWorld": [
+        -0.183249,
+        -0.012997,
+        0.999685
+      ]
+    }
+  ],
+  "atlas": {
+    "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v4-socket-fix\\textures\\azure-maiden-base.png",
+    "sha256": "1f65d00031f1c1bd4f18249636bcea0066ca786b8d3d31512eb6df18938856aa"
+  },
+  "files": {
+    "blend": {
+      "path": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v4-socket-fix\\azure-maiden-clean-runtime.blend",
+      "sha256": "82f8b167c275c48cc356cf3864b00ea74a5426c1a1d7afaaa137e8d3bc7636bb"
+    },
+    "fbx": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v4-socket-fix\\azure-maiden-clean-runtime.fbx",
+    "fbxSha256": "afc1ecad5c0dc7ada315c4cd90382fd2b8985ada4fb030038fcdfc65e5077dba",
+    "glb": "C:\\work\\task-backups\\ORC-20260905-001-WP16\\result-exact-rest-v4-socket-fix\\azure-maiden-clean-runtime.glb",
+    "glbSha256": "f7ba25c13a9f355f93f4c2a407043984f0b4a90e5060a4f1d40d2da794743894"
+  },
+  "reimportValidation": {
+    "fbx": {
+      "actionCount": 16,
+      "actionNamesAndRangesMatchV3Exactly": true,
+      "bones": 24,
+      "bodyVertices": 109503,
+      "bodyTriangles": 97002,
+      "bodyGeometryHashMatchesV3": true,
+      "katanaVertices": 211,
+      "katanaTriangles": 402,
+      "katanaRightHandWeightedVertices": 211,
+      "katanaWeightMin": 1.0,
+      "katanaWeightMax": 1.0,
+      "socketDistanceMetersMin": 0.016348,
+      "socketDistanceMetersMax": 0.016348
+    },
+    "glb": {
+      "actionCount": 16,
+      "bones": 24,
+      "katanaRightHandWeightsAllOne": true,
+      "socketDistanceMetersMin": 0.016347,
+      "socketDistanceMetersMax": 0.016349
+    },
+    "v3DefectReference": {
+      "blendSocketDistanceMeters": 0.021213,
+      "fbxSocketDistanceMeters": 23.901951,
+      "glbSocketDistanceMeters": 23.6314
+    }
+  }
+}

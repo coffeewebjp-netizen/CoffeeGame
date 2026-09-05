@@ -1,0 +1,86 @@
+{
+  "taskId": "ORC-20260905-001",
+  "workPackage": "WP13",
+  "outputId": "OUT19",
+  "status": "diagnostic-verified-normal-player-adoption-pending",
+  "scope": "Actual development-player renderer and Animator; motor/combat disabled for presentation evidence. Not an input-driven combat playtest or performance benchmark.",
+  "build": {
+    "unityVersion": "6000.5.7f1",
+    "method": "BuildAzureCleanV3DiagnosticNoSetup",
+    "aggregateBytes": 572917297,
+    "runtimeDllSha256": "5ad960f12e1496bc588b5bcd207b376d7bdb047a9d655ef24adbd30de9fc8de2"
+  },
+  "modelFbxSha256": "afc1ecad5c0dc7ada315c4cd90382fd2b8985ada4fb030038fcdfc65e5077dba",
+  "atlasSha256": "1f65d00031f1c1bd4f18249636bcea0066ca786b8d3d31512eb6df18938856aa",
+  "samples": 172,
+  "framingSize": {
+    "x": 1.1316879987716675,
+    "y": 1.6732181310653687,
+    "z": 0.46667030453681946
+  },
+  "motionReportSha256": "2535bc4a7826393ed6d6b0fc843817e82c9f025c645115fde9304bad8efe441f",
+  "video": {
+    "path": "previews/runtime-final-warmed/motion-review.mp4",
+    "sha256": "b705e5cacffd4b1d1ce0c3507826792d4c8528afe9e283a58f6ae7fdbf4cebca",
+    "timing": "measured actualSeconds, variable-frame-rate encoding; no generated/interpolated animation"
+  },
+  "sequences": {
+    "run": {
+      "frames": 25,
+      "firstActualSeconds": 0.001008749008178711,
+      "lastActualSeconds": 0.7898917198181152,
+      "maxLateSeconds": 0.005891680717468262
+    },
+    "jump-ascent": {
+      "frames": 17,
+      "firstActualSeconds": 0.00028228759765625,
+      "lastActualSeconds": 0.4321117401123047,
+      "maxLateSeconds": 0.014575615525245667
+    },
+    "jump-fall": {
+      "frames": 21,
+      "firstActualSeconds": 0.0002522468566894531,
+      "lastActualSeconds": 0.5890979766845703,
+      "maxLateSeconds": 0.006736546754837036
+    },
+    "jump-land": {
+      "frames": 11,
+      "firstActualSeconds": 0.0002117156982421875,
+      "lastActualSeconds": 0.21600055694580078,
+      "maxLateSeconds": 0.017664268612861633
+    },
+    "sword": {
+      "frames": 38,
+      "firstActualSeconds": 0.00035190582275390625,
+      "lastActualSeconds": 1.10015869140625,
+      "maxLateSeconds": 0.01359286904335022
+    },
+    "sword-to-run": {
+      "frames": 3,
+      "firstActualSeconds": 0.3602914810180664,
+      "lastActualSeconds": 0.7502536773681641,
+      "maxLateSeconds": 0.0003490447998046875
+    },
+    "magic-charge": {
+      "frames": 26,
+      "firstActualSeconds": 0.00023651123046875,
+      "lastActualSeconds": 0.7177362442016602,
+      "maxLateSeconds": 0.025554776191711426
+    },
+    "magic-release": {
+      "frames": 31,
+      "firstActualSeconds": 0.00022125244140625,
+      "lastActualSeconds": 0.8849372863769531,
+      "maxLateSeconds": 0.013510942459106445
+    }
+  },
+  "swordRecoveryThroughPoint8Seconds": true,
+  "movementInterruptAtPoint36Seconds": true,
+  "rootVisualReview": "Run, Jump, Sword emission/recovery and Magic emission frames inspected. Weapon remains in hand; main atlas contamination repaired. Coarse static fingers and some faceted cloth/hair remain.",
+  "normalPlayerUnchanged": true,
+  "characterPreferences": {
+    "previous": 0,
+    "override": 3,
+    "defaultApplied": 1
+  }
+}

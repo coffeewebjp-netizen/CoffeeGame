@@ -978,7 +978,8 @@ namespace CoffeeGame.Presentation
                         Color displayColor = ResolveReferenceColor(imported.name, importedColor);
                         bool meshyBody = modelStyle == CharacterModelStyle.MeshySnowKimono &&
                             IsMeshySnowKimonoBodyMaterial(imported.name);
-                        bool azureBody = modelStyle == CharacterModelStyle.AzureMaidenUpgraded;
+                        bool azureBody = modelStyle == CharacterModelStyle.AzureMaidenUpgraded &&
+                            IsAzureMaidenBodyMaterial(imported.name);
                         Material authoredTemplate = meshyBody
                             ? Resources.Load<Material>(MeshySnowKimonoMaterialResource)
                             : azureBody ? Resources.Load<Material>(AzureMaidenMaterialResource) : null;
@@ -1004,7 +1005,7 @@ namespace CoffeeGame.Presentation
                         {
                             ApplyMeshySnowKimonoTextures(imported.name, replacement);
                         }
-                        else if (modelStyle == CharacterModelStyle.AzureMaidenUpgraded)
+                        else if (azureBody)
                         {
                             ApplyAzureMaidenTextures(replacement);
                         }
@@ -1221,6 +1222,15 @@ namespace CoffeeGame.Presentation
             return normalized.Contains("material0");
         }
 
+        private static bool IsAzureMaidenBodyMaterial(string sourceName)
+        {
+            // Meshy assigns one atlas to the character. The separately authored
+            // katana keeps its steel, grip and guard materials through import.
+            string normalized = (sourceName ?? string.Empty).Replace("_", string.Empty).ToLowerInvariant();
+            return normalized == "material0" || normalized == "material1" ||
+                normalized == "azuremaidenbody";
+        }
+
         private static void ApplyAzureMaidenTextures(Material destination)
         {
             Texture2D baseMap = Resources.Load<Texture2D>(AzureMaidenBaseResource);
@@ -1241,6 +1251,11 @@ namespace CoffeeGame.Presentation
             if (destination.HasProperty("_Metallic")) destination.SetFloat("_Metallic", 0f);
             if (destination.HasProperty("_Smoothness")) destination.SetFloat("_Smoothness", 0.16f);
             if (destination.HasProperty("_Cull")) destination.SetFloat("_Cull", 0f);
+            // Keep the reference palette readable on thin, double-sided Meshy
+            // cloth/hair. Receiving its own shadow map produced dense triangular
+            // acne; the renderer still casts its character shadow onto the floor.
+            if (destination.HasProperty("_ReceiveShadows")) destination.SetFloat("_ReceiveShadows", 0f);
+            destination.EnableKeyword("_RECEIVE_SHADOWS_OFF");
         }
 
         private static bool CopyTexture(

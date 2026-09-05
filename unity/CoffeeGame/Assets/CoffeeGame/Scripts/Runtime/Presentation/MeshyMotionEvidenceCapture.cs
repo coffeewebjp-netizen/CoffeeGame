@@ -32,9 +32,12 @@ namespace CoffeeGame.Presentation
         {
             public string taskId = "ORC-20260905-001";
             public string workPackage = "WP13";
-            public string input = "IN08,IN09,IN10,IN11";
-            public string output = "OUT16";
+            public string input = "IN08,IN09,IN10,IN11,IN12";
+            public string output = "OUT20";
             public string renderer = "actual development player / ModelCharacterVisual";
+            public bool denseVideoFrames;
+            public Vector3 framingCenter;
+            public Vector3 framingSize;
             public List<Sample> samples = new List<Sample>();
         }
 
@@ -63,6 +66,8 @@ namespace CoffeeGame.Presentation
             capture.sceneCamera = camera;
             capture.visual = modelVisual;
             capture.outputDirectory = Path.GetFullPath(outputPath);
+            capture.report.denseVideoFrames = Array.Exists(Environment.GetCommandLineArgs(),
+                argument => string.Equals(argument, "-captureMeshyMotionVideo", StringComparison.OrdinalIgnoreCase));
             capture.StartCoroutine(capture.Run());
         }
 
@@ -76,7 +81,18 @@ namespace CoffeeGame.Presentation
             float previousTimeScale = Time.timeScale;
             Time.timeScale = 1f;
             yield return new WaitForSecondsRealtime(1f);
+            FixedCameraRig cameraRig = sceneCamera.GetComponent<FixedCameraRig>();
+            bool cameraRigWasEnabled = cameraRig != null && cameraRig.enabled;
+            if (cameraRig != null) cameraRig.enabled = false;
+            visual.ResetState(Vector3.back);
+            visual.Animator.Update(0f);
             FrameCharacterForEvidence();
+            // Pay the first offscreen render/shader warmup before timed Run
+            // samples; otherwise the first capture can miss half a run cycle.
+            Texture2D warmup = CaptureFrameBuffered();
+            Destroy(warmup);
+            yield return null;
+            yield return new WaitForEndOfFrame();
 
             yield return CaptureLocomotion("run", CharacterAction.Run, 0.8f);
             yield return CaptureAction("jump-ascent", CharacterAction.Jump, float.PositiveInfinity, 0.44f, true);
@@ -97,6 +113,7 @@ namespace CoffeeGame.Presentation
             Debug.Log("CoffeeGAME Meshy motion evidence captured: " + reportPath);
             sceneCamera.transform.SetPositionAndRotation(originalCameraPosition, originalCameraRotation);
             sceneCamera.orthographicSize = originalOrthographicSize;
+            if (cameraRig != null) cameraRig.enabled = cameraRigWasEnabled;
             Time.timeScale = previousTimeScale;
             yield return null;
             Application.Quit(0);
@@ -120,11 +137,14 @@ namespace CoffeeGame.Presentation
 
                 if (renderer is SkinnedMeshRenderer skinned)
                 {
-                    var baked = new Mesh();
-                    skinned.BakeMesh(baked);
-                    foreach (Vector3 vertex in baked.vertices)
+                    // Fit the body using named joints in world space. Auxiliary
+                    // end bones and imported prop bounds can include outliers.
+                    foreach (Transform bone in skinned.bones)
                     {
-                        Vector3 world = skinned.transform.TransformPoint(vertex);
+                        if (bone == null || (bone.name != "Head" && bone.name != "Hips" &&
+                            bone.name != "LeftFoot" && bone.name != "RightFoot" &&
+                            bone.name != "LeftHand" && bone.name != "RightHand")) continue;
+                        Vector3 world = bone.position;
                         if (!hasBounds)
                         {
                             bounds = new Bounds(world, Vector3.zero);
@@ -135,19 +155,6 @@ namespace CoffeeGame.Presentation
                             bounds.Encapsulate(world);
                         }
                     }
-                    Destroy(baked);
-                }
-                else
-                {
-                    if (!hasBounds)
-                    {
-                        bounds = renderer.bounds;
-                        hasBounds = true;
-                    }
-                    else
-                    {
-                        bounds.Encapsulate(renderer.bounds);
-                    }
                 }
             }
 
@@ -156,7 +163,12 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
+            // Leave room above the head bone and around the garment silhouette.
+            bounds.Expand(0.4f);
+            report.framingCenter = bounds.center;
+            report.framingSize = bounds.size;
             float height = Mathf.Max(bounds.size.y, 0.5f);
+            if (height > 5f) throw new InvalidOperationException("Character framing exceeds the expected humanoid scale.");
             if (sceneCamera.orthographic)
             {
                 Vector3 toBounds = bounds.center - sceneCamera.transform.position;
@@ -221,6 +233,21 @@ namespace CoffeeGame.Presentation
 
         private IEnumerator CaptureTimeline(string sequence, CharacterAction action, float[] sampleSeconds)
         {
+            if (report.denseVideoFrames && sampleSeconds.Length > 0)
+            {
+                // Keep the requested diagnostic checkpoints and add frames for
+                // review video. The report records actual time for every frame;
+                // encoding remains deferred until the sequence has finished.
+                var times = new List<float>(sampleSeconds);
+                float end = sampleSeconds[sampleSeconds.Length - 1];
+                for (int frame = 0; frame / 30f < end; frame++)
+                {
+                    float time = frame / 30f;
+                    if (!times.Exists(existing => Mathf.Abs(existing - time) < 0.001f)) times.Add(time);
+                }
+                times.Sort();
+                sampleSeconds = times.ToArray();
+            }
             float started = Time.realtimeSinceStartup;
             var buffered = new List<BufferedFrame>(sampleSeconds.Length);
             for (int index = 0; index < sampleSeconds.Length; index++)

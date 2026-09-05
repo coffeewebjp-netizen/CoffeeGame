@@ -1,0 +1,185 @@
+{
+    "taskId": "ORC-20260905-001",
+    "workPackage": "WP13",
+    "inputs": "IN08,IN09,IN10,IN11,IN12",
+    "output": "OUT20",
+    "unityVersion": "6000.5.7f1",
+    "importedClipCount": 16,
+    "controllerClipCount": 16,
+    "sourceTakes": [
+        {
+            "name": "AzureMaidenCleanRig|AirSlash",
+            "takeName": "AzureMaidenCleanRig|AirSlash",
+            "firstFrame": 0.0,
+            "lastFrame": 31.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Defeated",
+            "takeName": "AzureMaidenCleanRig|Defeated",
+            "firstFrame": 0.0,
+            "lastFrame": 29.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Dodge",
+            "takeName": "AzureMaidenCleanRig|Dodge",
+            "firstFrame": 0.0,
+            "lastFrame": 23.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Fall",
+            "takeName": "AzureMaidenCleanRig|Fall",
+            "firstFrame": 0.0,
+            "lastFrame": 17.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Hurt",
+            "takeName": "AzureMaidenCleanRig|Hurt",
+            "firstFrame": 0.0,
+            "lastFrame": 9.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Idle",
+            "takeName": "AzureMaidenCleanRig|Idle",
+            "firstFrame": 0.0,
+            "lastFrame": 29.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Jump",
+            "takeName": "AzureMaidenCleanRig|Jump",
+            "firstFrame": 0.0,
+            "lastFrame": 12.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Land",
+            "takeName": "AzureMaidenCleanRig|Land",
+            "firstFrame": 0.0,
+            "lastFrame": 7.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|MagicCharge",
+            "takeName": "AzureMaidenCleanRig|MagicCharge",
+            "firstFrame": 0.0,
+            "lastFrame": 19.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|MagicRelease",
+            "takeName": "AzureMaidenCleanRig|MagicRelease",
+            "firstFrame": 0.0,
+            "lastFrame": 24.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Plunge",
+            "takeName": "AzureMaidenCleanRig|Plunge",
+            "firstFrame": 0.0,
+            "lastFrame": 31.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Run",
+            "takeName": "AzureMaidenCleanRig|Run",
+            "firstFrame": 0.0,
+            "lastFrame": 14.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|SpinCharge",
+            "takeName": "AzureMaidenCleanRig|SpinCharge",
+            "firstFrame": 0.0,
+            "lastFrame": 19.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|SpinRelease",
+            "takeName": "AzureMaidenCleanRig|SpinRelease",
+            "firstFrame": 0.0,
+            "lastFrame": 31.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Sword",
+            "takeName": "AzureMaidenCleanRig|Sword",
+            "firstFrame": 0.0,
+            "lastFrame": 31.0
+        },
+        {
+            "name": "AzureMaidenCleanRig|Walk",
+            "takeName": "AzureMaidenCleanRig|Walk",
+            "firstFrame": 0.0,
+            "lastFrame": 14.0
+        }
+    ],
+    "missingActions": [],
+    "meshCount": 1,
+    "vertexCount": 109790,
+    "missingNormalMeshCount": 0,
+    "missingMaterialSlotCount": 0,
+    "runtimeMaterialCount": 7,
+    "urpMaterialCount": 7,
+    "atlasMaterialCount": 1,
+    "emissionVariantCount": 1,
+    "doubleSidedMaterialCount": 1,
+    "bodyMaterialCount": 1,
+    "bodyAtlasBindingCount": 1,
+    "weaponMaterialCount": 6,
+    "weaponBodyAtlasBindingCount": 0,
+    "weaponAttachedToRightHand": true,
+    "weaponHasSteelMaterial": true,
+    "weaponLengthMeters": 0.9953547716140747,
+    "weaponHandDistanceMeters": 0.38684290647506716,
+    "weaponWorldPosition": {
+        "x": -8.940696716308594e-8,
+        "y": -4.422775479184793e-9,
+        "z": 1.043081283569336e-7
+    },
+    "weaponLocalPosition": {
+        "x": 8.940696716308594e-8,
+        "y": -4.422775479184793e-9,
+        "z": -1.043081283569336e-7
+    },
+    "handWorldPosition": {
+        "x": -0.36584484577178957,
+        "y": 0.9361255764961243,
+        "z": 0.008882388472557068
+    },
+    "actionSamples": [
+        {
+            "action": "Run",
+            "clipLengthSeconds": 0.46666669845581057,
+            "motionMagnitude": 3.419085741043091,
+            "weaponHandDistanceMeters": 0.3892327547073364,
+            "rootHorizontalDisplacement": 2.3283064365386964e-9
+        },
+        {
+            "action": "Jump",
+            "clipLengthSeconds": 0.40000003576278689,
+            "motionMagnitude": 0.6485348343849182,
+            "weaponHandDistanceMeters": 0.3853222727775574,
+            "rootHorizontalDisplacement": 0.0
+        },
+        {
+            "action": "Sword",
+            "clipLengthSeconds": 1.033333420753479,
+            "motionMagnitude": 1.8340128660202027,
+            "weaponHandDistanceMeters": 0.38839274644851687,
+            "rootHorizontalDisplacement": 1.2884689226666524e-7
+        },
+        {
+            "action": "MagicCharge",
+            "clipLengthSeconds": 0.6333333849906921,
+            "motionMagnitude": 1.6213074922561646,
+            "weaponHandDistanceMeters": 0.38734570145606997,
+            "rootHorizontalDisplacement": 8.381903171539307e-9
+        },
+        {
+            "action": "MagicRelease",
+            "clipLengthSeconds": 0.8000000715255737,
+            "motionMagnitude": 0.3445223867893219,
+            "weaponHandDistanceMeters": 0.38836222887039187,
+            "rootHorizontalDisplacement": 1.1924771570193116e-7
+        },
+        {
+            "action": "Dodge",
+            "clipLengthSeconds": 0.7666667103767395,
+            "motionMagnitude": 1.1191350221633912,
+            "weaponHandDistanceMeters": 0.38728922605514529,
+            "rootHorizontalDisplacement": 1.2884689226666524e-7
+        }
+    ],
+    "passed": true
+}

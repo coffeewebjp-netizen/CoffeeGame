@@ -6,7 +6,9 @@ CoffeeLearningでの学習を、少女剣士の成長と結び付けるアクシ
 
 ゲームの土台はUnity 6 + URPで、移動・衝突・ジャンプ・戦闘判定は3D空間に置きます。表示は原画へ忠実なHD-2Dを優先し、Blender製3Dモデルは将来の本格3D化に備えたフォールバックとして残します。
 
-2026-09-05現在のWindows版は、青髪・黒着物の Meshy Snow Kimono 3D（選択値3）を通常起動で使います。元のHD-2D（記録値0）は `tools/launch-previous-character.cmd`、黒着物Meshy版は `tools/launch-meshy-snow-kimono-default.cmd`、中間のプロシージャル版は `tools/launch-snow-kimono-default.cmd` で切り替えられます。水色ボブ・赤羽織・白キャミソール・桃色スカートの Azure Maiden 改良は、融合された旧メッシュの布変形が品質基準を満たさないため試験中です。選択値4は明示的な開発用フラグでのみ有効にでき、通常起動や初回起動の既定値にはしません。
+2026-09-06現在、通常Windows版・Steam起動は青髪・黒着物の Meshy Snow Kimono 3D（選択値3）です。元のHD-2D（記録値0）は `tools/launch-previous-character.cmd`、黒着物Meshy版は `tools/launch-meshy-snow-kimono-default.cmd` で切り替えられます。
+
+水色ボブ・赤羽織・白キャミソール・桃色スカートの改良版は、クリーンなMeshy本体、4K再テクスチャ、Blenderで修正した握りと刀、16動作を備えた別のWindows確認用ビルドです。`tools/launch-azure-maiden-clean.cmd`（既存の `launch-azure-maiden-trial.cmd` も同じ起動先）から今回だけ選択値4で起動し、保存された選択値を変えません。通常版への反映は別途承認待ちです。制作・検証・復元記録は [clean A-pose資料](art/3d/trials/azure-maiden-clean-apose/README.md) にあります。
 
 表示の優先順は次のとおりです。
 

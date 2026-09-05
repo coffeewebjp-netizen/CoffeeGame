@@ -40,15 +40,23 @@ namespace CoffeeGame.Editor
         // they are, without running setup or regenerating shared controllers.
         public static void BuildAzureMotionDiagnosticNoSetup()
         {
+            BuildDiagnosticNoSetup("Windows-AzureMotionDiagnostic", "CoffeeGAME-AzureMotionDiagnostic.exe");
+        }
+
+        public static void BuildAzureCleanV3DiagnosticNoSetup()
+        {
+            BuildDiagnosticNoSetup("Windows-AzureCleanV3", "CoffeeGAME-AzureCleanV3.exe");
+        }
+
+        private static void BuildDiagnosticNoSetup(string directory, string executable)
+        {
             EnsureCombatSceneExists();
             if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
             {
                 throw new InvalidOperationException("Could not switch to the Windows x64 build target.");
             }
 
-            string output = GetOutputPath(
-                "Windows-AzureMotionDiagnostic",
-                "CoffeeGAME-AzureMotionDiagnostic.exe");
+            string output = GetOutputPath(directory, executable);
             Build(output, BuildTarget.StandaloneWindows64, BuildOptions.Development);
         }
 
