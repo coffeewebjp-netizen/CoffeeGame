@@ -39,6 +39,7 @@ namespace CoffeeGame.Presentation
             public string renderer = "actual development player / ModelCharacterVisual";
             public bool denseVideoFrames;
             public bool combatEffects;
+            public bool sheathedIdle;
             public Vector3 framingCenter;
             public Vector3 framingSize;
             public List<Sample> samples = new List<Sample>();
@@ -73,6 +74,14 @@ namespace CoffeeGame.Presentation
                 argument => string.Equals(argument, "-captureMeshyMotionVideo", StringComparison.OrdinalIgnoreCase));
             capture.report.combatEffects = Array.Exists(Environment.GetCommandLineArgs(),
                 argument => string.Equals(argument, "-captureCombatEffects", StringComparison.OrdinalIgnoreCase));
+            capture.report.sheathedIdle = Array.Exists(Environment.GetCommandLineArgs(),
+                argument => string.Equals(argument, "-captureSheathedIdle", StringComparison.OrdinalIgnoreCase));
+            if (capture.report.sheathedIdle)
+            {
+                capture.report.workPackage = "WP20";
+                capture.report.input = "IN16";
+                capture.report.output = "OUT24";
+            }
             capture.StartCoroutine(capture.Run());
         }
 
@@ -99,6 +108,8 @@ namespace CoffeeGame.Presentation
             yield return null;
             yield return new WaitForEndOfFrame();
 
+            if (report.sheathedIdle)
+                yield return CaptureLocomotion("idle-breathing", CharacterAction.Idle, 4.4f);
             yield return CaptureLocomotion("run", CharacterAction.Run, 0.8f);
             yield return CaptureAction("jump-ascent", CharacterAction.Jump, float.PositiveInfinity, 0.44f, true);
             yield return CaptureAction("jump-fall", CharacterAction.Fall, float.PositiveInfinity, 0.6f, false);
@@ -107,12 +118,19 @@ namespace CoffeeGame.Presentation
                 "sword",
                 CharacterAction.Sword,
                 0.34f,
-                new[] { 0f, 0.04f, 0.08f, 0.12f, 0.20f, 0.34f, 0.50f, 0.80f, 1.10f },
+                report.sheathedIdle
+                    ? new[] { 0f, 0.04f, 0.08f, 0.12f, 0.20f, 0.34f, 0.50f, 0.80f, 1.10f, 1.85f }
+                    : new[] { 0f, 0.04f, 0.08f, 0.12f, 0.20f, 0.34f, 0.50f, 0.80f, 1.10f },
                 true);
             yield return CaptureSwordToRunTransition();
             yield return CaptureAction("magic-charge", CharacterAction.MagicCharge, 0.65f, 0.72f, true);
             yield return CaptureAction("magic-release", CharacterAction.MagicRelease, 0.36f, 0.9f, false);
             yield return CaptureAction("dodge", CharacterAction.Dodge, 0.81f, 0.82f, true);
+            if (report.sheathedIdle)
+            {
+                visual.PlayAction(CharacterAction.Idle, 0.16f);
+                yield return CaptureTimeline("idle-return", CharacterAction.Idle, 1.3f);
+            }
 
             string reportPath = Path.Combine(outputDirectory, "motion-progress.json");
             File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));

@@ -1,0 +1,91 @@
+{
+  "taskId": "ORC-20260905-001",
+  "inputId": "IN16",
+  "workPackage": "WP20",
+  "output": "OUT24",
+  "changes": [
+    "Sheathed waist katana with hand resting on hilt",
+    "Four-second quiet breathing Idle",
+    "346-triangle Hips-skinned black scabbard"
+  ],
+  "asset": {
+    "blendSha256": "1cefd045534f86896573c19ebd4317d083b18567df204cee99c3983944ba80a5",
+    "fbxSha256": "7c6f0eaad9af099682e5ac7daf35139767a13af6612301a95bf87cbcb5fa03df",
+    "glbSha256": "0009f54c2f3fcde9ad29ae730a21a20246db39425331fa7a6bcdf63b76801852",
+    "changedActions": [
+      "Idle"
+    ],
+    "preservedActions": 15,
+    "bodyVerticesUnchanged": true,
+    "atlasUnchanged": true,
+    "controllerUnchanged": true,
+    "idleLastFrame": 120,
+    "clipIdsUnchanged": true,
+    "sayaTriangles": 346,
+    "creditsSpent": 0
+  },
+  "checks": {
+    "unity": true,
+    "clips": 16,
+    "controllerClips": 16,
+    "idle": {
+      "seconds": 4.0,
+      "loop": true,
+      "sayaAttachedToHips": true,
+      "singleWeapon": true,
+      "bladeVertexCount": 156,
+      "bladeOutsideEnvelopeSamples": 0,
+      "maxHandDriftMeters": 0.001431172015145421,
+      "headBreathTravelMeters": 0.007639139425009489,
+      "maxHipsDriftMeters": 0.0,
+      "loopSeamDegrees": 0.0,
+      "loopSeamMeters": 1.0047097021015361e-05,
+      "passed": true
+    },
+    "protectedFiles": 434,
+    "profileUnchanged": true,
+    "otherSourceModifications": []
+  },
+  "capture": {
+    "renderer": "Actual Windows player / ModelCharacterVisual presentation harness",
+    "frames": 398,
+    "videoSeconds": 12.239190657933552,
+    "videoSha256": "8f8721baa008fa80970cfb3df2641a0e8a18778b2a8c0f4b93efbeeabb77fd60",
+    "motorAndCombatDisabled": true,
+    "swordImpactSimulated": true,
+    "reviewedSequences": [
+      "idle-breathing",
+      "sword",
+      "idle-return"
+    ],
+    "initialSayaFaceDefectCorrected": true
+  },
+  "delivery": {
+    "normal": "unity/CoffeeGame/Builds/Windows/CoffeeGAME.exe",
+    "buildReportBytes": 572963589,
+    "verifiedInstalledFiles": 297,
+    "installedFilesystemBytes": 573171902,
+    "backupFiles": 348,
+    "backupBytes": 588747709,
+    "runtimeDllSha256": "c3941b1b1cdd83c1c8a4b85ecd063216b6f88d6d1cbf2c1a9b4c927d729e8a17",
+    "steamPid": 34744,
+    "steamLaunchJst": "2026-09-06T04:08:11+09:00",
+    "arguments": [],
+    "selectedModel": "AzureMaidenUpgraded3D",
+    "shortcutChanges": [
+      "LastPlayTime"
+    ],
+    "nativeIdleObserved": true,
+    "nativeMouseSwordInputObserved": true,
+    "leftPausedForOwner": true,
+    "rollback": "tools/restore-pre-idle-v6-player.cmd",
+    "rollbackNonMutatingVerification": true
+  },
+  "limits": [
+    "Finger geometry remains a static coarse grip; no individual finger bones",
+    "Sheathing uses the existing brief action crossfade, not a long dedicated sheathing sequence",
+    "Cloth and hair retain previous faceting",
+    "Full combat regression and Owner art acceptance not claimed",
+    "Known graphics-ring-buffer warning in offscreen capture"
+  ]
+}

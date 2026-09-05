@@ -15,6 +15,16 @@ namespace CoffeeGame.Editor
 
         public static void Validate()
         {
+            Validate(false);
+        }
+
+        public static void ValidateSheathedIdle()
+        {
+            Validate(true);
+        }
+
+        private static void Validate(bool requireSheathedIdle)
+        {
             // Validation never runs setup or saves/rebuilds controller assets.
             // Unity's normal import handles the explicitly supplied trial FBX.
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
@@ -39,13 +49,13 @@ namespace CoffeeGame.Editor
             GameObject holder = new GameObject("Azure Maiden Unity Validation");
             GameObject instance = UnityEngine.Object.Instantiate(prefab, holder.transform, false);
             SkinnedMeshRenderer[] renderers = instance.GetComponentsInChildren<SkinnedMeshRenderer>(true)
-                .Where(renderer => renderer.name != "AzureMaidenKatana").ToArray();
+                .Where(renderer => renderer.name != "AzureMaidenKatana" && renderer.name != "AzureMaidenSaya").ToArray();
             var report = new ValidationReport
             {
                 taskId = "ORC-20260905-001",
-                workPackage = "WP13",
-                inputs = "IN08,IN09,IN10,IN11,IN12",
-                output = "OUT20",
+                workPackage = requireSheathedIdle ? "WP20" : "WP13",
+                inputs = requireSheathedIdle ? "IN16" : "IN08,IN09,IN10,IN11,IN12",
+                output = requireSheathedIdle ? "OUT24" : "OUT20",
                 unityVersion = Application.unityVersion,
                 importedClipCount = clips.Count,
                 controllerClipCount = controller.animationClips.Where(clip => clip != null).Distinct().Count(),
@@ -68,6 +78,9 @@ namespace CoffeeGame.Editor
                     report.actionSamples.Add(Sample(instance, clip, action));
                 }
             }
+
+            if (requireSheathedIdle && clips.TryGetValue("Idle", out AnimationClip idle))
+                report.sheathedIdle = SampleSheathedIdle(instance, idle);
 
             Camera camera = new GameObject("Azure Maiden Validation Camera").AddComponent<Camera>();
             ModelCharacterVisual visual = holder.AddComponent<ModelCharacterVisual>();
@@ -117,7 +130,8 @@ namespace CoffeeGame.Editor
                 report.weaponHandDistanceMeters < 0.85f &&
                 report.actionSamples.Count == sampled.Length &&
                 report.actionSamples.All(sample => sample.motionMagnitude > 0.015f && sample.rootHorizontalDisplacement < 0.002f &&
-                    sample.weaponHandDistanceMeters < 0.85f);
+                    sample.weaponHandDistanceMeters < 0.85f) &&
+                (!requireSheathedIdle || (report.sheathedIdle != null && report.sheathedIdle.passed));
 
             string reportPath = ReportPath();
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
@@ -163,19 +177,78 @@ namespace CoffeeGame.Editor
 
         private static bool IsRigidRightHandSkin(Renderer renderer)
         {
+            return IsRigidSkin(renderer, "RightHand");
+        }
+
+        private static bool IsRigidSkin(Renderer renderer, string boneName)
+        {
             if (!(renderer is SkinnedMeshRenderer skin) || skin.sharedMesh == null) return false;
             BoneWeight[] weights = skin.sharedMesh.boneWeights;
             return weights.Length == skin.sharedMesh.vertexCount && weights.Length > 0 &&
                 weights.All(weight => Mathf.Approximately(weight.weight0, 1f) &&
                     weight.weight1 == 0f && weight.weight2 == 0f && weight.weight3 == 0f &&
-                    weight.boneIndex0 < skin.bones.Length && skin.bones[weight.boneIndex0].name == "RightHand");
+                    weight.boneIndex0 < skin.bones.Length && skin.bones[weight.boneIndex0].name == boneName);
+        }
+
+        private static SheathedIdleSample SampleSheathedIdle(GameObject instance, AnimationClip clip)
+        {
+            Renderer[] props = instance.GetComponentsInChildren<Renderer>(true);
+            var sword = props.FirstOrDefault(item => item.name == "AzureMaidenKatana") as SkinnedMeshRenderer;
+            Renderer saya = props.FirstOrDefault(item => item.name == "AzureMaidenSaya");
+            var sample = new SheathedIdleSample { seconds = clip.length, loop = clip.isLooping,
+                sayaAttachedToHips = IsRigidSkin(saya, "Hips"),
+                singleWeapon = props.Count(item => item.name == "AzureMaidenKatana") == 1 &&
+                    props.Count(item => item.name == "AzureMaidenSaya") == 1 };
+            if (!sample.sayaAttachedToHips || !IsRigidRightHandSkin(sword)) return sample;
+            Transform hand = Find(instance.transform, "RightHand");
+            Transform head = Find(instance.transform, "Head");
+            Transform hips = Find(instance.transform, "Hips");
+            Transform[] joints = instance.GetComponentsInChildren<Transform>(true);
+            clip.SampleAnimation(instance, 0f);
+            Vector3 handStart = hand.position, headStart = head.position, hipsStart = hips.position;
+            Quaternion[] rotations = joints.Select(joint => joint.localRotation).ToArray();
+            Vector3[] positions = joints.Select(joint => joint.localPosition).ToArray();
+            Vector3[] vertices = sword.sharedMesh.vertices;
+            BoneWeight[] weights = sword.sharedMesh.boneWeights;
+            Matrix4x4[] binds = sword.sharedMesh.bindposes;
+            var bladeVertices = new HashSet<int>();
+            for (int submesh = 0; submesh < sword.sharedMesh.subMeshCount; submesh++)
+                if (sword.sharedMaterials[submesh].name.Contains("Steel") || sword.sharedMaterials[submesh].name.Contains("PolishedEdge"))
+                    foreach (int index in sword.sharedMesh.GetTriangles(submesh)) bladeVertices.Add(index);
+            sample.bladeVertexCount = bladeVertices.Count;
+            for (int frame = 0; frame <= 120; frame++)
+            {
+                clip.SampleAnimation(instance, frame == 120 ? clip.length - 0.0001f : frame * clip.length / 120f);
+                sample.maxHandDriftMeters = Mathf.Max(sample.maxHandDriftMeters, Vector3.Distance(handStart, hand.position));
+                sample.headBreathTravelMeters = Mathf.Max(sample.headBreathTravelMeters, Vector3.Distance(headStart, head.position));
+                sample.maxHipsDriftMeters = Mathf.Max(sample.maxHipsDriftMeters, Vector3.Distance(hipsStart, hips.position));
+                Bounds envelope = EvaluatedWeaponBounds(saya);
+                envelope.Expand(0.02f); // Ten-millimetre collar tolerance around the rigid scabbard.
+                foreach (int index in bladeVertices)
+                {
+                    int bone = weights[index].boneIndex0;
+                    Vector3 world = (sword.bones[bone].localToWorldMatrix * binds[bone]).MultiplyPoint3x4(vertices[index]);
+                    if (!envelope.Contains(world)) sample.bladeOutsideEnvelopeSamples++;
+                }
+            }
+            for (int index = 0; index < joints.Length; index++)
+            {
+                sample.loopSeamDegrees = Mathf.Max(sample.loopSeamDegrees, Quaternion.Angle(rotations[index], joints[index].localRotation));
+                sample.loopSeamMeters = Mathf.Max(sample.loopSeamMeters, Vector3.Distance(positions[index], joints[index].localPosition));
+            }
+            sample.passed = sample.singleWeapon && sample.loop && Mathf.Abs(sample.seconds - 4f) < 0.01f &&
+                sample.bladeVertexCount > 20 && sample.bladeOutsideEnvelopeSamples == 0 &&
+                sample.maxHandDriftMeters < 0.003f && sample.maxHipsDriftMeters < 0.001f &&
+                sample.headBreathTravelMeters > 0.001f && sample.headBreathTravelMeters < 0.025f &&
+                sample.loopSeamDegrees < 0.1f && sample.loopSeamMeters < 0.001f;
+            return sample;
         }
 
         // Evaluate the small rigid prop directly, avoiding a renderer bounds
         // envelope accumulated across animation clips or FBX scale compensation.
         private static Bounds EvaluatedWeaponBounds(Renderer renderer)
         {
-            if (!(renderer is SkinnedMeshRenderer skin) || !IsRigidRightHandSkin(renderer))
+            if (!(renderer is SkinnedMeshRenderer skin) || !(IsRigidRightHandSkin(renderer) || IsRigidSkin(renderer, "Hips")))
                 return renderer != null ? renderer.bounds : default;
             Mesh mesh = skin.sharedMesh;
             Vector3[] vertices = mesh.vertices;
@@ -245,6 +318,24 @@ namespace CoffeeGame.Editor
             public Vector3 weaponLocalPosition;
             public Vector3 handWorldPosition;
             public List<ActionSample> actionSamples;
+            public SheathedIdleSample sheathedIdle;
+            public bool passed;
+        }
+
+        [Serializable]
+        private sealed class SheathedIdleSample
+        {
+            public float seconds;
+            public bool loop;
+            public bool sayaAttachedToHips;
+            public bool singleWeapon;
+            public int bladeVertexCount;
+            public int bladeOutsideEnvelopeSamples;
+            public float maxHandDriftMeters;
+            public float headBreathTravelMeters;
+            public float maxHipsDriftMeters;
+            public float loopSeamDegrees;
+            public float loopSeamMeters;
             public bool passed;
         }
 

@@ -54,6 +54,12 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-AzureActionV5", "CoffeeGAME-AzureActionV5.exe");
         }
 
+        public static void BuildAzureIdleV6NoSetup()
+        {
+            AzureMaidenUpgradedValidation.ValidateSheathedIdle();
+            BuildDiagnosticNoSetup("Windows-AzureIdleV6", "CoffeeGAME-AzureIdleV6.exe");
+        }
+
         private static void BuildDiagnosticNoSetup(string directory, string executable)
         {
             EnsureCombatSceneExists();

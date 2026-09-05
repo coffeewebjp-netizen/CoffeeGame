@@ -1,5 +1,52 @@
 # Original red-haori heroine: clean A-pose source
 
+IN16 / WP20 (2026-09-06): idle V6 adds a fitted black waist scabbard and a
+four-second quiet breathing Idle. The right hand rests on the hilt at the left
+waist, the left arm relaxes, and the chest/shoulders breathe without moving the
+root. Arm IK keeps the hand close to the hilt throughout the cycle. The katana
+remains a single rigid RightHand-skinned prop; the new 346-triangle saya is
+rigidly skinned to Hips. During actions the sword follows the hand while its
+scabbard stays at the waist. Existing action crossfades return it to Idle;
+this is a short presentation blend, not a new prolonged sheathing action.
+
+Latest editable source: `export/idle-v6c/azure-maiden-clean-runtime.blend`,
+alongside FBX/GLB exports. Reproduce with
+`tools/blender/create_azure_sheathed_idle.py --source-blend <V5c-blend> --out-dir <new-directory>`.
+V5c and the earlier V4 source are preserved. V6a/b are intermediate candidates;
+Unity rendering caught inward saya outer-face normals in V6b, fixed in V6c.
+Only Idle changes among the sixteen actions. Original body vertices, atlas,
+V5 Dodge and VFX, gameplay code and controller bytes are preserved. The FBX
+import changes only Idle's last frame from 29 to 120, retaining all clip IDs.
+
+`BuildAzureIdleV6NoSetup` validates the current assets and builds the separate
+`Builds/Windows-AzureIdleV6` without setup/controller regeneration. Pass
+`-azureValidationReport <new-json>`. The focused validation samples 121 idle
+poses: four-second looping clip, one weapon/saya, Hips attachment, blade inside
+the scabbard's world bounds with collar tolerance, hand drift under 3 mm, fixed
+Hips and seamless joint endpoints. This envelope check is supplemented by
+actual player rendering because it alone cannot detect inward faces.
+
+Optional `-captureSheathedIdle` extends the existing dense player capture with
+a full breathing loop, sword recovery and return from Dodge. Final recording:
+`previews/idle-v6-final/motion-review.mp4`. Capture uses actual rendering but
+disables motor/combat and simulates an impact; it is not a full playtest.
+The existing coarse static fingers and cloth faceting remain limitations.
+
+V6 rollback entry point: `tools/restore-pre-idle-v6-player.cmd`, restoring V5
+while preserving current selection/progress. The older V5 and pre-Azure
+rollback helpers apply after restoring V5, in that order. Each helper verifies
+the expected installed version before any replacement and retains it locally.
+
+Normal-player adoption completed at 04:07 JST, with 348 previous files backed
+up and 297 new files verified. Steam Play launched PID 34744 at 04:08:11 JST
+with no arguments. Root selected keyboard/mouse, started combat, observed the
+sheathed idle and triggered a mouse sword attack with the blade drawn. The
+game is left paused. Full input-driven combat regression is not claimed.
+All 434 protected source files, controller and profile hashes match the
+pre-task snapshot; the only changed Steam shortcut field is LastPlayTime.
+Recovery's non-mutating verification passes. Evidence: `manifests/idle-v6.json`
+and 398 measured player-capture frames / 12.24-second review video.
+
 IN15 / WP19 (2026-09-06): action V5 restores the saved Meshy
 `360_Power_Spin_Jump` donor as Dodge, retargeting its world rotation deltas onto
 the accepted V4 rig and retaining the target bone lengths. Donor frames 24–74
@@ -8,7 +55,7 @@ The body's geometry, texture, controller/clip identities and the other fifteen
 Blender actions are unchanged. Hips translation is fixed; the motor still owns
 the airborne sideways travel and invulnerability. Ordinary Jump is unchanged.
 
-Latest editable source is `export/action-v5c/azure-maiden-clean-runtime.blend`;
+V5 editable source is `export/action-v5c/azure-maiden-clean-runtime.blend`;
 the original `source/azure-maiden-clean-runtime.blend` remains the V4 backup.
 Reproduce using `tools/blender/restore_azure_meshy_dodge.py` with
 `--source-blend`, the saved merged-animation `--donor-fbx`, and a new `--out-dir`.
@@ -29,7 +76,7 @@ meshes/materials in the new effects are destroyed with their owning effect.
 tuning's sword range; its sword impact is simulated and its motor/combat remain
 disabled, so that recording is not an input-driven combat test.
 
-The normal `Builds/Windows/CoffeeGAME.exe` now contains action V5. Full pre-action
+The WP19 normal-player delivery contained action V5. Full pre-action
 backup: `.task-local-backup/ORC-20260905-001-WP19-normal-player` (348 files).
 Run `tools/restore-pre-action-v5-player.cmd` with the game closed to restore the
 previous red-haori player; current selection and save progress remain intact.
