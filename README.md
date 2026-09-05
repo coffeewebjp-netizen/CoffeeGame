@@ -6,9 +6,9 @@ CoffeeLearningでの学習を、少女剣士の成長と結び付けるアクシ
 
 ゲームの土台はUnity 6 + URPで、移動・衝突・ジャンプ・戦闘判定は3D空間に置きます。表示は原画へ忠実なHD-2Dを優先し、Blender製3Dモデルは将来の本格3D化に備えたフォールバックとして残します。
 
-2026-09-06現在、通常Windows版・Steam起動は青髪・黒着物の Meshy Snow Kimono 3D（選択値3）です。元のHD-2D（記録値0）は `tools/launch-previous-character.cmd`、黒着物Meshy版は `tools/launch-meshy-snow-kimono-default.cmd` で切り替えられます。
+2026-09-06、Owner承認により通常Windows版・Steam起動へ赤羽織の改良3Dモデル（保存選択値4）を仮反映しました。Steamの起動先は従来の `Builds/Windows/CoffeeGAME.exe` のままです。ジャンプの違和感は未調整で、Ownerによる総チェック前の段階です。元のHD-2D（記録値0）は `tools/launch-previous-character.cmd`、黒着物Meshy版は `tools/launch-meshy-snow-kimono-default.cmd` で切り替えられます。
 
-水色ボブ・赤羽織・白キャミソール・桃色スカートの改良版は、クリーンなMeshy本体、4K再テクスチャ、Blenderで修正した握りと刀、16動作を備えた別のWindows確認用ビルドです。`tools/launch-azure-maiden-clean.cmd`（既存の `launch-azure-maiden-trial.cmd` も同じ起動先）から今回だけ選択値4で起動し、保存された選択値を変えません。通常版への反映は別途承認待ちです。制作・検証・復元記録は [clean A-pose資料](art/3d/trials/azure-maiden-clean-apose/README.md) にあります。
+水色ボブ・赤羽織・白キャミソール・桃色スカートの改良版は、クリーンなMeshy本体、4K再テクスチャ、Blenderで修正した握りと刀、16動作を備えています。独立した確認用ビルドも `tools/launch-azure-maiden-clean.cmd`（既存の `launch-azure-maiden-trial.cmd` も同じ起動先）に残しています。更新前の通常版全348ファイルと表示設定3項目をローカル保存済みで、ゲーム終了後に `tools/restore-pre-azure-normal-player.cmd` を実行するとゲーム本体と表示設定を更新前へ戻せます。プレイの進行データは巻き戻しません。制作・検証・復元記録は [clean A-pose資料](art/3d/trials/azure-maiden-clean-apose/README.md) にあります。
 
 表示の優先順は次のとおりです。
 

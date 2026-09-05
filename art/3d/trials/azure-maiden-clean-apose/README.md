@@ -1,7 +1,7 @@
 # Original red-haori heroine: clean A-pose source
 
-ORC-20260905-001 / WP13 / ROUTE17, inputs IN08-IN12. This is a local source
-iteration; the ordinary player remains on the previous Meshy model (3).
+ORC-20260905-001 / WP13 / ROUTE17, inputs IN08-IN12. IN13 / WP17 / ROUTE19
+approves provisional adoption in the ordinary player for Owner testing.
 The final derivative uses V3 art plus the V4 FBX socket correction.
 
 Design: light-blue bob, amber eyes, rose-red haori, white scoop-neck camisole,
@@ -89,8 +89,36 @@ all sequences, including three additional movement-interrupt checkpoints).
 Sword remains in its recovery at 0.8 s and a movement request at 0.36 s enters
 Run. Initial offscreen rendering is warmed before timing starts.
 
-Normal-player EXE and DLL hashes, saved character selection 3, all three
-ProjectSettings and the restored shared controllers remain unchanged.
-Normal/Steam adoption requires the separate Owner decision; use
-`tools/launch-azure-maiden-clean.cmd` to try this build now without changing
-the saved selection.
+On 2026-09-06, IN13 explicitly approved replacing the normal player after the
+previous approval-review gate. WP17 installed a verified copy of this build
+at `Builds/Windows/CoffeeGAME.exe`, renaming the EXE and its matching Data
+directory. Steam's target and launch options are unchanged. The existing
+`-useAzureMaidenUpgradedDefault` option saved selection 4; a second launch
+without a selector rendered the red-haori model. This is startup evidence,
+not a comprehensive input-driven playtest. The Owner noted a jump concern;
+no new jump/motion edit or final visual acceptance is implied by adoption.
+
+All 348 prior files (588,225,841 bytes), empty directories and the three
+display preferences are hash-verified in the ignored local directory
+`.task-local-backup/ORC-20260905-001-WP17-normal-player`. Other top-level logs
+and Owner folders were retained in place. The copied runtime tree contains
+297 files / 573,125,610 bytes; this filesystem sum is distinct from Unity's
+572,917,297-byte BuildReport aggregate above. Every installed file matches
+its prepared source. All 77 protected source files remain byte-identical.
+`manifests/normal-player-adoption.json` records sanitized deployment evidence;
+the earlier `runtime-final.json` remains the historical pre-adoption record.
+
+To restore the pre-update player, close CoffeeGAME and run
+`tools/restore-pre-azure-normal-player.cmd`. The helper first verifies the
+complete backup and installed hashes, retains the upgrade in a separate
+folder, restores only runtime entries and the three backed-up display
+preferences, and leaves save progress and unrelated settings alone. Run the
+PowerShell helper without `-Restore` for non-mutating verification. This
+verification passed; an actual rollback was not performed after adoption.
+The backup stays local and is required by this helper.
+
+The ordinary startup capture logged a Unity graphics-ring-buffer warning
+but completed with the expected model and no application exception. Capture
+evidence does not establish in-play performance. The independent
+`tools/launch-azure-maiden-clean.cmd` trial remains available and does not
+persist selection changes.

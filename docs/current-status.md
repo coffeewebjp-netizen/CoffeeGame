@@ -10,7 +10,9 @@ CoffeeGAMEは、ブラウザ試作からUnity製Windows／Androidアプリへ本
 
 2026-09-06追記（`ORC-20260905-001-IN08`〜`IN12`）：元の赤羽織・短い桃色スカートのデザインと比率へ戻し、クリーンなA-pose本体を再生成した。最終メッシュへ直接4Kテクスチャを生成し、同じrest poseのMeshyモーションを16状態へ組み込んだ。Blenderでは右手の握りと曲がり・刃先・鍔を持つ刀を修正した。FBXのbone parentで刀が約24mずれる不具合を実機で発見し、別メッシュのまま全頂点をRightHandへ固定するウェイトへ変更して再取り込み検証を通した。手の指は静的な握りで、個別の指ボーンはない。
 
-確認用Windows版は `tools/launch-azure-maiden-clean.cmd` から起動する。通常版・Steamは黒着物Meshy（値3）、復元先はHD-2D（値0）のまま保持し、Steam側の更新は承認待ち。移動・ジャンプ軌道・命中・弾生成・セーブの契約は変更していない。Unity検証はセットアップや保存を呼ばず、既存コントローラーとclip IDを維持する。制作資料と検証結果は [clean A-pose](../art/3d/trials/azure-maiden-clean-apose/README.md) を参照。
+同日IN13でOwnerが総チェック向けの通常版反映を承認した。検証済み確認用ビルドを通常の `Builds/Windows/CoffeeGAME.exe` へ反映し、既存オプションで保存選択値4に切り替えた。モデル選択引数なしの再起動でも赤羽織モデルを実画面とログで確認し、Steamのショートカットは変更していない。ジャンプの違和感は未調整で、最終的な外観・操作感の承認とは区別する。
+
+更新前の全348ファイル（588,225,841 bytes）と表示設定3項目は `.task-local-backup/ORC-20260905-001-WP17-normal-player` にハッシュ検証付きで保存した。ゲーム終了後に `tools/restore-pre-azure-normal-player.cmd` で更新前の本体と表示設定へ戻せる。進行データや他の設定は復元対象にしない。更新後297ファイルのハッシュ、通常起動、復元スクリプトの非変更検証、77個の保護対象ファイルを確認した。移動・ジャンプ軌道・命中・弾生成・セーブの契約は今回変更していない。制作資料と検証結果は [clean A-pose](../art/3d/trials/azure-maiden-clean-apose/README.md) を参照。
 
 ```text
 3D world / collision / combat rules
