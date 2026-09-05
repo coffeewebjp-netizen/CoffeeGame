@@ -35,6 +35,37 @@ namespace CoffeeGame.Domain.Tests
         }
 
         [Test]
+        public void RivalEncounter_UsesCatUntilSheIsRecruitedThenUnlocksSplitInk()
+        {
+            Assert.That(
+                RivalCharacterIds.EncounterCandidates(_ => false),
+                Is.EqualTo(new[] { RivalCharacterIds.WeaknessChallenger }));
+            Assert.That(
+                RivalCharacterIds.EncounterCandidates(
+                    id => id == RivalCharacterIds.WeaknessChallenger),
+                Is.EqualTo(new[] { RivalCharacterIds.SplitInk }));
+            Assert.That(
+                RivalCharacterIds.EncounterCandidates(_ => true),
+                Is.EqualTo(new[] { RivalCharacterIds.SplitInk }));
+        }
+
+        [Test]
+        public void RivalCompanions_ShowSplitInkOnlyAfterCatIsRecruited()
+        {
+            Assert.That(
+                RivalCharacterIds.VisibleCompanionIds(_ => false),
+                Is.EqualTo(new[] { RivalCharacterIds.WeaknessChallenger }));
+            Assert.That(
+                RivalCharacterIds.VisibleCompanionIds(
+                    id => id == RivalCharacterIds.WeaknessChallenger),
+                Is.EqualTo(new[]
+                {
+                    RivalCharacterIds.WeaknessChallenger,
+                    RivalCharacterIds.SplitInk
+                }));
+        }
+
+        [Test]
         public void NewPlayer_StartsAtLevelOneWithThreeXpRequirement()
         {
             var progression = new PlayerProgression();

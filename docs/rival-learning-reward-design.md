@@ -62,5 +62,7 @@ The completed encounter should show the actual delta and total, for example:
 ```
 
 On threshold crossing it additionally shows `仲間になった`. The inventory menu
-shows Gold and spendable talent points; the companions menu shows the silver
-rival's current affinity and recruited state.
+shows Gold and spendable talent points. Encounter order is sequential: the
+silver cat rival appears first, and the split-ink rival appears only after the
+cat is recruited. The companions menu lists the silver rival always, then later
+rivals once the previous one has been recruited.

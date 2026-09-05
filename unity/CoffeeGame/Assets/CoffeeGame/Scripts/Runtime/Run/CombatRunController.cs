@@ -509,7 +509,9 @@ namespace CoffeeGame.Run
                 yield break;
             }
 
-            CurrentRivalId = rivalSelector.Select(RivalCharacterIds.All, lastSeenRivalId);
+            CurrentRivalId = rivalSelector.Select(
+                RivalCharacterIds.EncounterCandidates(Progression.IsRivalRecruited),
+                lastSeenRivalId);
             Mode = CombatRunMode.RivalEncounter;
             playerMotor.CanMove = false;
             playerCombat.CancelPendingActions();

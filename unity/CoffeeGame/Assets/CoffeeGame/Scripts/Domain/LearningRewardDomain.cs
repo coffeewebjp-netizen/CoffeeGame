@@ -26,6 +26,52 @@ namespace CoffeeGame.Domain
                     return "ライバル";
             }
         }
+
+        /// <summary>
+        /// Encounter order is sequential: the first unrecruited rival appears.
+        /// After every rival is recruited, the last rival remains the learning encounter.
+        /// </summary>
+        public static string[] EncounterCandidates(Func<string, bool> isRecruited)
+        {
+            if (isRecruited == null)
+            {
+                throw new ArgumentNullException(nameof(isRecruited));
+            }
+
+            for (int index = 0; index < All.Length; index++)
+            {
+                string rivalId = All[index];
+                if (!isRecruited(rivalId))
+                {
+                    return new[] { rivalId };
+                }
+            }
+
+            return new[] { All[All.Length - 1] };
+        }
+
+        /// <summary>
+        /// The first rival is always listed. Later rivals appear in the companions
+        /// roster only after the previous rival has been recruited.
+        /// </summary>
+        public static string[] VisibleCompanionIds(Func<string, bool> isRecruited)
+        {
+            if (isRecruited == null)
+            {
+                throw new ArgumentNullException(nameof(isRecruited));
+            }
+
+            var visible = new List<string>(All.Length) { All[0] };
+            for (int index = 1; index < All.Length; index++)
+            {
+                if (isRecruited(All[index - 1]))
+                {
+                    visible.Add(All[index]);
+                }
+            }
+
+            return visible.ToArray();
+        }
     }
 
     public enum AuthoritativeLearningResultStatus

@@ -338,9 +338,10 @@ namespace CoffeeGame.UI
                 case CharacterMenuTab.Companions:
                 {
                     var companions = new StringBuilder();
-                    for (int index = 0; index < RivalCharacterIds.All.Length; index++)
+                    string[] companionIds = RivalCharacterIds.VisibleCompanionIds(run.Progression.IsRivalRecruited);
+                    for (int index = 0; index < companionIds.Length; index++)
                     {
-                        string rivalId = RivalCharacterIds.All[index];
+                        string rivalId = companionIds[index];
                         int affinity = run.Progression.GetRivalAffinity(rivalId);
                         bool recruited = run.Progression.IsRivalRecruited(rivalId);
                         if (index > 0)
