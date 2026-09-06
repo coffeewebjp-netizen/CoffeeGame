@@ -217,7 +217,10 @@ namespace CoffeeGame.Presentation
 
             float degrees = progress * 360f *
                 (currentKind == AcrobaticMotionKind.Backflip ? -1f : 1f);
-            hips.rotation = Quaternion.AngleAxis(degrees * motionBlend, right) * hips.rotation;
+            // Blend the completed orientation along the shortest arc; scaling a nearly
+            // 360-degree angle would unwind the entire flip during its recovery.
+            hips.rotation = Quaternion.Slerp(Quaternion.identity,
+                Quaternion.AngleAxis(degrees, right), motionBlend) * hips.rotation;
             RecordAppliedRotation(hips);
 
             if (currentKind == AcrobaticMotionKind.GroundRoll)
