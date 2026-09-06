@@ -110,16 +110,10 @@ namespace CoffeeGame.Enemies
                             foreach (var actor in new System.Collections.Generic.List<PartyActor>(PartyTargeting.Actors))
                             {
                                 if (Phase != CombatPhase.Strike) break; // A parry cancels the whole swing immediately.
-                                if (actor != null && actor.Targetable && Threatens(actor.transform.position))
-                                    HitTarget(actor.Health);
+                                if (actor != null && actor.Targetable) ResolveImpact(actor.Health);
                             }
                         }
-                        else if (Threatens(target.position))
-                        {
-                            if (targetHealth.ApplyDamage(new DamageInfo(damage, gameObject,
-                                target.position, attackDirection * 0.8f, strikeId)) && target.GetComponent<PlayerDefense>()?.IsGuarding != true)
-                                target.GetComponent<PlayerMotor3D>()?.AddKnockback(attackDirection * 1.4f);
-                        }
+                        else ResolveImpact(targetHealth);
                     }
                     if (Phase == CombatPhase.Strike && elapsed >= StrikeSeconds) ChangePhase(CombatPhase.Recovery);
                     break;
@@ -144,8 +138,12 @@ namespace CoffeeGame.Enemies
                 (offset.sqrMagnitude < 0.001f || Vector3.Dot(offset.normalized, attackDirection) >= 0.64f);
         }
 
-        private void HitTarget(Health victim)
+        private void ResolveImpact(Health victim)
         {
+            var defense = victim.GetComponent<PlayerDefense>();
+            if (defense != null && defense.TryGetDodgeOrigin(out Vector3 origin) && Threatens(origin))
+                defense.ObserveDodgedHit(new DamageInfo(damage, gameObject, origin, Vector3.zero, strikeId));
+            if (!Threatens(victim.transform.position)) return;
             if (victim.ApplyDamage(new DamageInfo(damage, gameObject, victim.transform.position, attackDirection * 0.8f, strikeId)) && victim.GetComponent<PlayerDefense>()?.IsGuarding != true)
                 victim.GetComponent<PlayerMotor3D>()?.AddKnockback(attackDirection * 1.4f);
         }

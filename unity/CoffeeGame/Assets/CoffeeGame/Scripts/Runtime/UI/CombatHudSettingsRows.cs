@@ -24,6 +24,11 @@ namespace CoffeeGame.UI
         public const int SwitchCharacter = 19;
         public const int Guard = 20;
         public const int LockOn = 21;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public const int DebugAffinityFirst = 22;
+        public const int Count = 30;
+#else
         public const int Count = 22;
+#endif
     }
 }

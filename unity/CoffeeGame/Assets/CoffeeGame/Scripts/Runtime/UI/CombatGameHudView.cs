@@ -218,6 +218,9 @@ namespace CoffeeGame.UI
 
         public void Refresh(CombatRunController run, bool pauseMenuOpen)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            debugProgression = run?.Progression;
+#endif
             if (run == null || canvas == null)
             {
                 return;

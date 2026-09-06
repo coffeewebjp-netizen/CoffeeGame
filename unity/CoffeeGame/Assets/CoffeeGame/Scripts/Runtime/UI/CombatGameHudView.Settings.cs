@@ -15,6 +15,10 @@ namespace CoffeeGame.UI
 {
     public sealed partial class CombatGameHudView : MonoBehaviour
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private PlayerProgression debugProgression;
+        public event Action<int> DebugAffinityRequested;
+#endif
 
         private void BuildControlsContent()
         {
@@ -69,6 +73,15 @@ namespace CoffeeGame.UI
             AddControlButton(menuScrollContent, GameInputSemantic.SwitchCharacter, "操作切替");
             AddControlButton(menuScrollContent, GameInputSemantic.Guard, "防御");
             AddControlButton(menuScrollContent, GameInputSemantic.LockOn, "ターゲット固定");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            AddSectionHeading(menuScrollContent, "デバッグ：ライバル親密度", 27, Accent, 42f);
+            AddSectionHeading(menuScrollContent, "100%で加入。数値を下げても加入済みの仲間は残ります。", 20, MutedInk, 42f);
+            for (int index = 0; index < 8; index++)
+            {
+                int captured = index;
+                AddCommandButton(menuScrollContent, "Debug Affinity " + index, () => DebugAffinityRequested?.Invoke(captured));
+            }
+#endif
         }
 
 
@@ -165,6 +178,17 @@ namespace CoffeeGame.UI
             controlButtons[CombatHudSettingsRows.Performance].interactable = !rebinding;
             controlButtons[CombatHudSettingsRows.FrameStats].interactable = !rebinding;
             RefreshCoffeeLearningControls(rebinding);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string[] changes = { "−10%", "＋10%", "0%にする", "100%にする" };
+            for (int index = 0; index < 8; index++)
+            {
+                string id = index < 4 ? RivalCharacterIds.WeaknessChallenger : RivalCharacterIds.SplitInk;
+                string name = index < 4 ? "猫少女" : "竜の少女";
+                Button button = controlButtons[CombatHudSettingsRows.DebugAffinityFirst + index];
+                button.GetComponentInChildren<Text>().text = $"{name}  {debugProgression?.GetRivalAffinity(id) ?? 0}%　　{changes[index % 4]}";
+                button.interactable = !rebinding && debugProgression != null;
+            }
+#endif
             SetSelectedControlRow(selectedControlRow);
 
             Transform cancelTransform = controlsStatusText.transform.parent.Find("Cancel Rebind");

@@ -79,6 +79,14 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-TargetLockV12", "CoffeeGAME-TargetLockV12.exe");
         }
 
+        public static void BuildCombatPolishV13NoSetup()
+        {
+            PartyAudioSetup.Validate();
+            if (Resources.Load<AudioClip>("Audio/Voices/Heroine/special_01") == null)
+                throw new InvalidOperationException("Missing Owner heroine finisher voice.");
+            BuildDiagnosticNoSetup("Windows-CombatPolishV13", "CoffeeGAME-CombatPolishV13.exe");
+        }
+
         public static void BuildForestV7NoSetup()
         {
             BuildDiagnosticNoSetup("Windows-ForestV7", "CoffeeGAME-ForestV7.exe");

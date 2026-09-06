@@ -24,6 +24,7 @@ namespace CoffeeGame.Combat
         private float nextParryAt;
         private float dodgeUntil = float.NegativeInfinity;
         private bool dodgeRewarded;
+        private Vector3 dodgeOrigin;
         private long lastParriedAttack;
         private long lastDodgedAttack;
 
@@ -75,12 +76,17 @@ namespace CoffeeGame.Combat
         public void BeginDodge()
         {
             CancelGuard();
+            dodgeOrigin = transform.position;
             dodgeUntil = CombatClock.Time(gameObject) + tuning.JustDodgeSeconds;
             dodgeRewarded = false;
         }
 
         public void ObserveDodgedHit(DamageInfo damage)
         {
+            if (!isActiveAndEnabled || health == null || !health.IsAlive || CombatClock.IsPaused ||
+                (motor != null && !motor.CanMove)) return;
+            var stop = TimeStopController.Instance;
+            if (stop != null && stop.IsActive && stop.IsFrozen(gameObject)) return;
             if (dodgeRewarded || damage.AttackId == lastDodgedAttack || CombatClock.Time(gameObject) > dodgeUntil ||
                 damage.Source == null || damage.Source.GetComponent<IEnemyAttack>() == null) return;
             dodgeRewarded = true; lastDodgedAttack = damage.AttackId;
@@ -88,6 +94,15 @@ namespace CoffeeGame.Combat
             feedback?.Emit(DefenseFeedbackEvent.PerfectDodge, transform.position, motor != null ? motor.Facing : Vector3.forward);
             PerfectDodge?.Invoke();
             if (combat != null && combat.IsManual) PerfectDefenseMoment.Instance?.TryBegin();
+        }
+
+        // Enemy impact checks the starting position too: escaping its volume is
+        // a successful dodge, even when no ApplyDamage call reaches this actor.
+        public bool TryGetDodgeOrigin(out Vector3 origin)
+        {
+            origin = dodgeOrigin;
+            return motor != null && motor.IsDodging && !dodgeRewarded &&
+                CombatClock.Time(gameObject) <= dodgeUntil;
         }
 
         public bool TryGuard(DamageInfo damage, int normalDamage, out DamageInfo guarded)
@@ -134,6 +149,6 @@ namespace CoffeeGame.Combat
             pose?.SetGuarding(false); pose?.SetPlunging(false);
             pose?.SetPlungeRecovery(0f);
         }
-        private void OnDisable() { CancelGuard(); feedback?.CancelAll(); }
+        private void OnDisable() { dodgeUntil = float.NegativeInfinity; CancelGuard(); feedback?.CancelAll(); }
     }
 }

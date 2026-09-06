@@ -2,6 +2,8 @@
 
 ORC-20260906-006. This revision continues the accepted sword heroine model, plunge crouch, walking roll/running spin and paired enemies from Acrobatics V11.
 
+V13 supersedes the running-facing, perfect-dodge detection and pending finisher notes below. The Owner's current request assigns the finisher to the existing charged iai; a staged redesign is not a prerequisite. See [Combat Polish V13](combat-polish-v13.md).
+
 ## Controls and behavior
 
 - Guard + jump: both side sectors extend to the exact rear 45-degree diagonal (inclusive); farther backward selects the backflip. Both rear quadrants have continuous coverage. The lateral sector also tolerates forward diagonals through 45 degrees; directly forward remains guarded without a jump. Direction is relative to the actor's facing. This does not award dodge immunity or perfect-dodge stamina.

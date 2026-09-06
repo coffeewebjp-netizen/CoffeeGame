@@ -264,6 +264,8 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (TryGetCommandLineValue("-captureCombatPolish", out string combatPolishPath))
+                CombatPolishEvidenceCapture.Begin(gameObject, runController, combatPolishPath);
             if (TryGetCommandLineValue("-captureTargetLock", out string targetLockCapturePath))
             {
                 TargetLockEvidenceCapture.Begin(gameObject, runController, targetLockCapturePath);
@@ -404,7 +406,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -428,6 +430,12 @@ namespace CoffeeGame.Bootstrap
         private void EnsurePlayerProfileLoaded()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (HasCommandLineFlag("-captureCombatPolish"))
+            {
+                sessionProgression = new PlayerProgression();
+                Debug.Log("CoffeeGAME combat polish evidence uses memory-only progression; profile/cloud writes disabled.");
+                return;
+            }
             if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 sessionProgression = new PlayerProgression(1, 0, 0, 0,
@@ -480,7 +488,7 @@ namespace CoffeeGame.Bootstrap
         {
             runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
+            if (HasCommandLineFlag("-captureCombatPolish") || HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;

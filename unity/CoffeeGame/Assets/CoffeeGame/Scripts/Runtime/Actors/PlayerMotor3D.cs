@@ -31,6 +31,7 @@ namespace CoffeeGame.Actors
         private float acrobaticDuration;
         private Vector3 acrobaticDirection;
         private AcrobaticMotionPresentation acrobaticVisual;
+        private float lockFacingUntil;
 
         public event Action Jumped;
         public event Action Dodged;
@@ -62,10 +63,19 @@ namespace CoffeeGame.Actors
         public Health LockedTarget { get; set; }
         public bool HasLockedTarget => LockedTarget != null && LockedTarget.isActiveAndEnabled && LockedTarget.IsAlive;
 
+        private bool FacesRunningDirection => IsRunning && !IsGuarding && MovementScale >= .9f &&
+            CombatClock.Time(gameObject) >= lockFacingUntil;
+
+        public void FaceLockedTargetForAction(float seconds)
+        {
+            lockFacingUntil = CombatClock.Time(gameObject) + Mathf.Max(.01f, seconds);
+            FaceLockedTarget();
+        }
+
         private void FaceLockedTarget()
         {
             // Keep each acrobatic/plunge pose stable until its landing, then reacquire facing.
-            if (!HasLockedTarget || IsDodging || IsGuardJumping || IsPlunging || landingLockRemaining > 0f) return;
+            if (!HasLockedTarget || FacesRunningDirection || IsDodging || IsGuardJumping || IsPlunging || landingLockRemaining > 0f) return;
             Vector3 direction = Vector3.ProjectOnPlane(LockedTarget.transform.position - transform.position, Vector3.up);
             if (direction.sqrMagnitude < .001f) return;
             Facing = direction.normalized;
@@ -124,6 +134,7 @@ namespace CoffeeGame.Actors
             MovementScale = 1f;
             SpeedMultiplier = 1f;
             LockedTarget = null;
+            lockFacingUntil = 0f;
             // Start toward the fixed camera so the character's face and ready
             // pose are readable. The first movement input immediately replaces it.
             Facing = Vector3.back;
@@ -277,7 +288,7 @@ namespace CoffeeGame.Actors
 
             plungeInputWasHeld = plungeInputHeld;
 
-            if (!HasLockedTarget && !IsDodging && !IsGuardJumping && !IsGuarding && landingLockRemaining <= 0f && desiredDirection.sqrMagnitude > 0.01f)
+            if ((!HasLockedTarget || FacesRunningDirection) && !IsDodging && !IsGuardJumping && !IsGuarding && landingLockRemaining <= 0f && desiredDirection.sqrMagnitude > 0.01f)
             {
                 Facing = desiredDirection.normalized;
                 visual?.SetFacing(Facing);

@@ -142,6 +142,7 @@ namespace CoffeeGame.Enemies
                 {
                     if (staggerRemaining > 0f) break;
                     if (actor == null || !actor.Targetable) continue;
+                    ObserveDodgeAtImpact(actor.Health, strikeId);
                     Vector3 offset = actor.transform.position - transform.position;
                     if (Mathf.Abs(offset.y) > AttackHeightTolerance || Vector3.ProjectOnPlane(offset, Vector3.up).magnitude > tuning.SlimeAttackRange * 1.18f) continue;
                     if (actor.Health.ApplyDamage(new DamageInfo(tuning.SlimeDamage, gameObject, actor.transform.position, direction * 0.65f, strikeId)) && actor.GetComponent<PlayerDefense>()?.IsGuarding != true)
@@ -150,6 +151,7 @@ namespace CoffeeGame.Enemies
                 return;
             }
 
+            ObserveDodgeAtImpact(targetHealth, strikeId);
             float heightDifference = Mathf.Abs(target.position.y - transform.position.y);
             if (distanceAtRelease <= tuning.SlimeAttackRange * 1.18f && heightDifference <= AttackHeightTolerance)
             {
@@ -160,6 +162,16 @@ namespace CoffeeGame.Enemies
                     targetMotor?.AddKnockback(direction * 1.3f);
                 }
             }
+        }
+
+        private void ObserveDodgeAtImpact(Health victim, long strikeId)
+        {
+            var defense = victim.GetComponent<PlayerDefense>();
+            if (defense == null || !defense.TryGetDodgeOrigin(out Vector3 origin)) return;
+            Vector3 offset = origin - transform.position;
+            if (Mathf.Abs(offset.y) <= AttackHeightTolerance &&
+                Vector3.ProjectOnPlane(offset, Vector3.up).magnitude <= tuning.SlimeAttackRange * 1.18f)
+                defense.ObserveDodgedHit(new DamageInfo(tuning.SlimeDamage, gameObject, origin, Vector3.zero, strikeId));
         }
 
         private void ClampToArena()

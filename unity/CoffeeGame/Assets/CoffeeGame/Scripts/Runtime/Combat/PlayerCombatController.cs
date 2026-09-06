@@ -205,6 +205,7 @@ namespace CoffeeGame.Combat
             }
 
             bool airborne = !motor.IsGrounded;
+            motor.FaceLockedTargetForAction(tuning.SwordCooldown);
             int damage = CalculateDamage(airborne ? tuning.AirSlashDamage : tuning.SwordDamage);
             float range = airborne ? tuning.AirSlashRange : tuning.SwordRange;
             attackCooldown = tuning.SwordCooldown;
@@ -252,6 +253,7 @@ namespace CoffeeGame.Combat
             chargeRemaining = activeChargeDuration;
             ChargeNormalized = 0f;
             motor.MovementScale = 0.15f;
+            motor.FaceLockedTargetForAction(activeChargeDuration);
             visual?.PlayAction(CharacterAction.SpinCharge, activeChargeDuration);
             audioDirector?.Play(CombatSound.SpinCharge, 0.55f, gameObject);
         }
@@ -268,6 +270,7 @@ namespace CoffeeGame.Combat
             chargeRemaining = activeChargeDuration;
             ChargeNormalized = 0f;
             motor.MovementScale = 0.22f;
+            motor.FaceLockedTargetForAction(activeChargeDuration);
             visual?.PlayAction(CharacterAction.MagicCharge, activeChargeDuration);
             audioDirector?.Play(CombatSound.MagicCharge, 0.6f, gameObject);
             activeMagicChargeEffect = CombatVfxFactory.SpawnMagicCharge(transform, activeChargeDuration);
@@ -467,6 +470,7 @@ namespace CoffeeGame.Combat
 
         private void ReleaseCatVolley()
         {
+            motor.FaceLockedTargetForAction(.32f);
             volleyStage = volleyStage % 3 + 1;
             int count = volleyStage == 3 ? 3 : 1;
             visual?.PlayAction(CharacterAction.MagicRelease, 0.32f);

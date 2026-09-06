@@ -4,6 +4,30 @@ namespace CoffeeGame.Domain.Tests
 {
     public sealed class PlayerProgressionTests
     {
+        [Test] public void DebugAffinityRecruitsWithoutRewardsAndLoweringPreservesParty()
+        {
+            var progress = new PlayerProgression(4, 0, 12, 3, new[] { "existing-claim" });
+            int notifications = 0;
+            progress.Changed += () => notifications++;
+            progress.SetDebugRivalAffinity(RivalCharacterIds.WeaknessChallenger, 99);
+            Assert.That(progress.Party.Find(PartyMemberIds.CatMage), Is.Null);
+            progress.SetDebugRivalAffinity(RivalCharacterIds.WeaknessChallenger, 100);
+            var cat = progress.Party.Find(PartyMemberIds.CatMage);
+            Assert.That(cat, Is.Not.Null);
+            Assert.That(RivalCharacterIds.EncounterCandidates(progress.IsRivalRecruited), Is.EqualTo(new[] { RivalCharacterIds.SplitInk }));
+            progress.SetDebugRivalAffinity(RivalCharacterIds.WeaknessChallenger, -10);
+            Assert.That(progress.GetRivalAffinity(RivalCharacterIds.WeaknessChallenger), Is.Zero);
+            Assert.That(progress.Party.Find(PartyMemberIds.CatMage), Is.SameAs(cat));
+            Assert.That(cat.Level, Is.EqualTo(4));
+            Assert.That(progress.Gold, Is.EqualTo(12));
+            Assert.That(progress.ClaimedRewardCount, Is.EqualTo(1));
+            Assert.That(progress.TalentPoints, Is.Zero);
+            progress.SetDebugRivalAffinity(RivalCharacterIds.SplitInk, 200);
+            Assert.That(progress.GetRivalAffinity(RivalCharacterIds.SplitInk), Is.EqualTo(100));
+            Assert.That(notifications, Is.EqualTo(4));
+            Assert.Throws<System.ArgumentException>(() => progress.SetDebugRivalAffinity("unknown", 100));
+        }
+
         [Test]
         public void ReplaceFrom_CopiesLevelGoldAndStatusIntoTheLiveObject()
         {

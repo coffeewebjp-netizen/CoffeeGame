@@ -13,6 +13,7 @@ namespace CoffeeGame.Audio
         public string ResourcePath { get; private set; }
         public bool HasClip => clip != null;
         public bool IsSpeaking => source != null && (source.isPlaying || paused);
+        public int PlaybackCount { get; private set; }
 
         public void Initialize(bool cat)
         {
@@ -29,6 +30,7 @@ namespace CoffeeGame.Audio
             if (clip == null || source == null) return;
             GetComponent<HeroineCombatVoice>()?.Stop();
             source.Stop(); source.clip = clip; source.Play(); paused = false;
+            PlaybackCount++;
         }
 
         public void Stop()

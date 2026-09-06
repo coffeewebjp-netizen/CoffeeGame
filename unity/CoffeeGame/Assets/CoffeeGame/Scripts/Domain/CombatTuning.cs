@@ -33,7 +33,7 @@ namespace CoffeeGame.Domain
         [SerializeField, Min(0.1f)] private float guardBackflipHeight = 0.72f;
         [SerializeField, Min(0f)] private float guardBackflipSpeed = 3.5f;
         [SerializeField, Min(0f)] private float plungeRecoverySeconds = 1f;
-        [SerializeField, Range(0.05f, 1f)] private float dodgeInvulnerabilityFraction = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] private float dodgeInvulnerabilityFraction = 0.75f;
         [SerializeField, Min(1f)] private float perfectDodgeRangeMultiplier = 1.65f;
 
         [Header("Sword")]
@@ -41,7 +41,7 @@ namespace CoffeeGame.Domain
         [SerializeField, Min(0.01f)] private float justGuardSeconds = 0.18f;
         [SerializeField, Min(0.01f)] private float guardRearmSeconds = 0.35f;
         [SerializeField, Min(0.01f)] private float parryStaggerSeconds = 1.5f;
-        [SerializeField, Min(0.01f)] private float justDodgeSeconds = 0.18f;
+        [SerializeField, Min(0.01f)] private float justDodgeSeconds = 0.30f;
         [SerializeField, Min(0)] private int swordDamage = 3;
         [SerializeField, Min(0f)] private float swordRange = 0.78f;
         [SerializeField, Min(0f)] private float swordCooldown = 0.34f;
@@ -239,7 +239,7 @@ namespace CoffeeGame.Domain
             gravity = 1180f / PixelsPerMeter;
             airControl = 0.72f;
             dodgeSpeed = 4.2f;
-            dodgeInvulnerabilityFraction = 0.5f;
+            dodgeInvulnerabilityFraction = 0.75f;
             perfectDodgeRangeMultiplier = 1.65f;
             swordDamage = 3;
             swordRange = 78f / PixelsPerMeter;

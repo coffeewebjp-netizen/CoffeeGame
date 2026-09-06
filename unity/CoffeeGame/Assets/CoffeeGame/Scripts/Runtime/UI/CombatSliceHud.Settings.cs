@@ -67,6 +67,13 @@ namespace CoffeeGame.UI
 
         private void ActivateModernControlRow()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (selectedSettingsRow >= CombatHudSettingsRows.DebugAffinityFirst)
+            {
+                HandleDebugAffinity(selectedSettingsRow - CombatHudSettingsRows.DebugAffinityFirst);
+                return;
+            }
+#endif
             switch (selectedSettingsRow)
             {
                 case CombatHudSettingsRows.LockOn:
@@ -396,6 +403,9 @@ namespace CoffeeGame.UI
 
         private bool IsSettingsRowSelectable(int row)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (row >= CombatHudSettingsRows.DebugAffinityFirst) return modernView != null && row < CombatHudSettingsRows.Count;
+#endif
             if (row == CombatHudSettingsRows.CoffeeLearningPrimary)
             {
                 return coffeeLearningConnection != null
@@ -427,6 +437,20 @@ namespace CoffeeGame.UI
                    row == CombatHudSettingsRows.FrameStats;
         }
 
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void HandleDebugAffinity(int index)
+        {
+            if (index < 0 || index >= 8 || run == null || input.IsRebinding) return;
+            string id = index < 4 ? RivalCharacterIds.WeaknessChallenger : RivalCharacterIds.SplitInk;
+            int current = run.Progression.GetRivalAffinity(id);
+            int operation = index % 4;
+            int value = operation == 0 ? current - 10 : operation == 1 ? current + 10 : operation == 2 ? 0 : 100;
+            run.Progression.SetDebugRivalAffinity(id, value);
+            // Changed uses the same live party refresh and profile save as normal recruitment.
+            SetSystemNotice($"{(index < 4 ? "猫少女" : "竜の少女")}の親密度を{run.Progression.GetRivalAffinity(id)}%に変更しました。");
+        }
+#endif
 
         private void BeginInputModeSelectionFromSettings()
         {

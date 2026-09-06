@@ -235,6 +235,25 @@ namespace CoffeeGame.Domain
             return recruitedRivalIds.Contains(RequireRivalId(rivalId));
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public void SetDebugRivalAffinity(string rivalId, int value)
+        {
+            if (Array.IndexOf(RivalCharacterIds.All, rivalId) < 0)
+                throw new ArgumentException("Unknown debug rival.", nameof(rivalId));
+            int affinity = Math.Max(0, Math.Min(LearningRewardPolicyV1.RecruitmentThreshold, value));
+            rivalAffinityById[rivalId] = affinity;
+            if (affinity >= LearningRewardPolicyV1.RecruitmentThreshold)
+            {
+                recruitedRivalIds.Add(rivalId);
+                if (rivalId == RivalCharacterIds.WeaknessChallenger)
+                    Party.EnsureCatMemberFrom(Party.Find(PartyMemberIds.Hero));
+            }
+            // Lowering the debug value never deletes an existing party member,
+            // her equipment, recovery state or learning reward claims.
+            Changed?.Invoke();
+        }
+#endif
+
         public static int GetExperienceRequiredForNextLevel(int level)
         {
             if (level < 1)

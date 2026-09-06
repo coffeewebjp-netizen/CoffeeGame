@@ -29,6 +29,30 @@ namespace CoffeeGame.Combat.Tests
         { Object.DestroyImmediate(actor);Object.DestroyImmediate(floor);Object.DestroyImmediate(tuning);Time.timeScale=1f; }
         private void Step(int frames) { for(int i=0;i<frames;i++) motor.Tick(.01f); }
 
+        [Test] public void LockedRunningFacesTravelButActionStopAndGuardReacquireEnemy()
+        {
+            var enemy = new GameObject("running lock target");
+            try
+            {
+                var health = enemy.AddComponent<Health>(); health.Initialize(10);
+                enemy.transform.position = new Vector3(0, 0, 8); motor.LockedTarget = health;
+                motor.Commands = new ActorCommandFrame { Move = Vector2.right, WorldSpace = true };
+                Step(80);
+                Assert.That(motor.IsRunning, Is.True);
+                Assert.That(motor.Facing.x, Is.GreaterThan(.99f));
+                Assert.That(motor.HasLockedTarget, Is.True);
+                motor.FaceLockedTargetForAction(.34f); Step(1);
+                Vector3 aim = Vector3.ProjectOnPlane(enemy.transform.position - actor.transform.position, Vector3.up).normalized;
+                Assert.That(Vector3.Dot(motor.Facing, aim), Is.GreaterThan(.999f));
+                motor.Commands = default; Step(1);
+                Assert.That(motor.IsRunning, Is.False);
+                Assert.That(motor.Facing.z, Is.GreaterThan(.9f));
+                motor.IsGuarding = true; Step(1);
+                Assert.That(motor.Facing.z, Is.GreaterThan(.9f));
+            }
+            finally { Object.DestroyImmediate(enemy); }
+        }
+
         [TestCase(0f)] [TestCase(35f)] [TestCase(130f)]
         public void EveryRearHalfAngleHasExactlyOneGuardJumpSector(float yaw)
         {

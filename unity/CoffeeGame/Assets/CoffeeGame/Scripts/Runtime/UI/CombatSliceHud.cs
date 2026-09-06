@@ -153,6 +153,9 @@ namespace CoffeeGame.UI
             modernView.PerformancePresetRequested += HandlePerformancePreset;
             modernView.FrameStatsToggleRequested += HandleFrameStatsToggle;
             modernView.SaveRequested += HandleManualSave;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            modernView.DebugAffinityRequested += HandleDebugAffinity;
+#endif
             modernView.ExportProfileRequested += HandleExportProfile;
             modernView.ImportProfileRequested += HandleImportProfile;
             modernView.CloudDriveRequested += HandleCloudDrive;
@@ -989,6 +992,9 @@ namespace CoffeeGame.UI
                 modernView.PerformancePresetRequested -= HandlePerformancePreset;
                 modernView.FrameStatsToggleRequested -= HandleFrameStatsToggle;
                 modernView.SaveRequested -= HandleManualSave;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                modernView.DebugAffinityRequested -= HandleDebugAffinity;
+#endif
                 modernView.ResetBindingsRequested -= HandleResetBindings;
                 modernView.CancelRebindRequested -= input.CancelInteractiveRebind;
                 modernView.CoffeeLearningPrimaryRequested -= HandleCoffeeLearningPrimary;
