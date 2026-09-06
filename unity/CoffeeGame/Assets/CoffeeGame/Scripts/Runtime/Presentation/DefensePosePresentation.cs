@@ -26,7 +26,7 @@ namespace CoffeeGame.Presentation
             public bool WasApplied;
         }
 
-        private readonly BonePose[] poses = new BonePose[8];
+        private readonly BonePose[] poses = new BonePose[13];
         private Transform visualRoot;
         private Transform facingRoot;
         private GameObject clockOwner;
@@ -37,6 +37,13 @@ namespace CoffeeGame.Presentation
         private Transform rightUpperArm;
         private Transform rightLowerArm;
         private Transform rightHand;
+        private Transform hips;
+        private Transform leftUpperLeg;
+        private Transform leftLowerLeg;
+        private Transform leftFoot;
+        private Transform rightUpperLeg;
+        private Transform rightLowerLeg;
+        private Transform rightFoot;
         private Vector3 swordAxisInRightHand;
         private float swordLength;
         private bool hasSwordAxis;
@@ -47,6 +54,10 @@ namespace CoffeeGame.Presentation
         private bool plunging;
         private float guardBlend;
         private float plungeBlend;
+        private float plungeRecovery;
+        private Vector3 hipsAuthoredPosition;
+        private Vector3 hipsAppliedPosition;
+        private bool hipsPositionWasApplied;
         private GameObject barrierRoot;
         private LineRenderer[] barrierLines;
         private Material barrierMaterial;
@@ -57,6 +68,7 @@ namespace CoffeeGame.Presentation
 
         public bool IsGuarding => guarding;
         public bool IsPlunging => plunging;
+        public float PlungeRecovery => plungeRecovery;
         public bool HasHumanoidRig => animator != null && animator.isHuman;
         public bool HasPoseRig => animator != null && rightUpperArm != null && rightLowerArm != null && rightHand != null;
         public bool HasSwordAxis => hasSwordAxis;
@@ -91,6 +103,13 @@ namespace CoffeeGame.Presentation
             rightUpperArm = null;
             rightLowerArm = null;
             rightHand = null;
+            hips = null;
+            leftUpperLeg = null;
+            leftLowerLeg = null;
+            leftFoot = null;
+            rightUpperLeg = null;
+            rightLowerLeg = null;
+            rightFoot = null;
             swordAxisInRightHand = Vector3.zero;
             hasSwordAxis = false;
             swordLength = 0f;
@@ -125,6 +144,13 @@ namespace CoffeeGame.Presentation
             rightLowerArm = AddPose(5, HumanBodyBones.RightLowerArm, new Vector3(0f, 9f, -3f), new Vector3(2f, 3f, -2f));
             rightHand = AddPose(6, HumanBodyBones.RightHand, new Vector3(4f, 5f, -8f), Vector3.zero);
             AddPose(7, HumanBodyBones.Head, new Vector3(-2f, 5f, 0f), new Vector3(-10f, 0f, 0f));
+            hips = AddPose(8, HumanBodyBones.Hips, Vector3.zero, new Vector3(8f, 0f, 0f));
+            leftUpperLeg = AddPose(9, HumanBodyBones.LeftUpperLeg, Vector3.zero, new Vector3(38f, 0f, -4f));
+            leftLowerLeg = AddPose(10, HumanBodyBones.LeftLowerLeg, Vector3.zero, new Vector3(-72f, 0f, 0f));
+            rightUpperLeg = AddPose(11, HumanBodyBones.RightUpperLeg, Vector3.zero, new Vector3(38f, 0f, 4f));
+            rightLowerLeg = AddPose(12, HumanBodyBones.RightLowerLeg, Vector3.zero, new Vector3(-72f, 0f, 0f));
+            leftFoot = ResolveBone(HumanBodyBones.LeftFoot);
+            rightFoot = ResolveBone(HumanBodyBones.RightFoot);
             leftHand = ResolveBone(HumanBodyBones.LeftHand);
             CacheSwordAxis();
         }
@@ -135,6 +161,7 @@ namespace CoffeeGame.Presentation
             if (value)
             {
                 plunging = false;
+                plungeRecovery = 0f;
             }
         }
 
@@ -142,6 +169,22 @@ namespace CoffeeGame.Presentation
         {
             plunging = style == DefensePoseStyle.HeroineBlade && value;
             if (plunging)
+            {
+                guarding = false;
+                plungeRecovery = 0f;
+            }
+        }
+
+        /// <summary>
+        /// Drives the planted-sword landing recovery explicitly from the motor clock.
+        /// One is the first grounded frame and zero is the fully recovered pose.
+        /// </summary>
+        public void SetPlungeRecovery(float normalizedRemaining)
+        {
+            plungeRecovery = style == DefensePoseStyle.HeroineBlade
+                ? Mathf.Clamp01(normalizedRemaining)
+                : 0f;
+            if (plungeRecovery > 0f)
             {
                 guarding = false;
             }
@@ -174,7 +217,8 @@ namespace CoffeeGame.Presentation
 
         private void ApplyPose()
         {
-            bool wantsPose = guardBlend > 0.001f || plungeBlend > 0.001f;
+            float effectivePlungeBlend = EffectivePlungeBlend;
+            bool wantsPose = guardBlend > 0.001f || effectivePlungeBlend > 0.001f;
             for (int i = 0; i < poses.Length; i++)
             {
                 BonePose pose = poses[i];
@@ -204,12 +248,14 @@ namespace CoffeeGame.Presentation
                 Quaternion plungeOffset = Quaternion.SlerpUnclamped(
                     Quaternion.identity,
                     Quaternion.Euler(pose.PlungeEuler),
-                    plungeBlend);
+                    effectivePlungeBlend);
                 pose.AuthoredRotation = authored;
                 pose.AppliedRotation = authored * guardOffset * plungeOffset;
                 pose.Bone.localRotation = pose.AppliedRotation;
                 pose.WasApplied = true;
             }
+
+            ApplyLandingCrouch();
         }
 
         private void ApplyDirectionalPose()
@@ -249,14 +295,64 @@ namespace CoffeeGame.Presentation
                 }
             }
 
-            if (plungeBlend > 0.001f && style == DefensePoseStyle.HeroineBlade)
+            float effectivePlungeBlend = EffectivePlungeBlend;
+            if (effectivePlungeBlend > 0.001f && style == DefensePoseStyle.HeroineBlade)
             {
                 AlignBone(rightUpperArm, rightLowerArm,
-                    -up * 0.84f + forward * 0.28f - right * 0.12f, plungeBlend);
+                    -up * 0.84f + forward * 0.28f - right * 0.12f, effectivePlungeBlend);
                 AlignBone(rightLowerArm, rightHand,
-                    -up * 0.92f + forward * 0.2f, plungeBlend);
-                AlignSwordAxis(Vector3.down, plunging ? 1f : plungeBlend);
+                    -up * 0.92f + forward * 0.2f, effectivePlungeBlend);
+                AlignSwordAxis(Vector3.down, plunging ? 1f : effectivePlungeBlend);
+
+                float crouch = RecoveryPoseWeight;
+                if (crouch > 0.001f)
+                {
+                    AlignBone(leftUpperLeg, leftLowerLeg,
+                        forward * 0.62f - up * 0.78f + right * 0.1f, crouch);
+                    AlignBone(leftLowerLeg, leftFoot,
+                        -forward * 0.5f - up * 0.86f, crouch);
+                    AlignBone(rightUpperLeg, rightLowerLeg,
+                        forward * 0.62f - up * 0.78f - right * 0.1f, crouch);
+                    AlignBone(rightLowerLeg, rightFoot,
+                        -forward * 0.5f - up * 0.86f, crouch);
+                }
             }
+        }
+
+        private float RecoveryPoseWeight => Mathf.SmoothStep(0f, 1f, plungeRecovery);
+        private float EffectivePlungeBlend => Mathf.Max(plungeBlend, RecoveryPoseWeight);
+
+        private void ApplyLandingCrouch()
+        {
+            if (hips == null)
+            {
+                return;
+            }
+
+            Vector3 current = hips.localPosition;
+            Vector3 authored = hipsPositionWasApplied &&
+                (current - hipsAppliedPosition).sqrMagnitude < 0.0000001f
+                    ? hipsAuthoredPosition
+                    : current;
+            float weight = RecoveryPoseWeight;
+            if (weight <= 0.001f)
+            {
+                if (hipsPositionWasApplied)
+                {
+                    hips.localPosition = authored;
+                }
+                hipsPositionWasApplied = false;
+                return;
+            }
+
+            Vector3 worldOffset = Vector3.down * (0.34f * weight);
+            Vector3 localOffset = hips.parent != null
+                ? hips.parent.InverseTransformVector(worldOffset)
+                : worldOffset;
+            hipsAuthoredPosition = authored;
+            hipsAppliedPosition = authored + localOffset;
+            hips.localPosition = hipsAppliedPosition;
+            hipsPositionWasApplied = true;
         }
 
         private void AlignBone(Transform bone, Transform child, Vector3 desiredDirection, float weight)
@@ -456,6 +552,13 @@ namespace CoffeeGame.Presentation
                 case HumanBodyBones.Spine: return FindNamedTransform(animator.transform, "spine");
                 case HumanBodyBones.Chest: return FindNamedTransform(animator.transform, "spine01", "chest", "spine02");
                 case HumanBodyBones.Head: return FindNamedTransform(animator.transform, "head");
+                case HumanBodyBones.Hips: return FindNamedTransform(animator.transform, "hips", "pelvis");
+                case HumanBodyBones.LeftUpperLeg: return FindNamedTransform(animator.transform, "leftupleg", "leftthigh", "upperlegl");
+                case HumanBodyBones.LeftLowerLeg: return FindNamedTransform(animator.transform, "leftleg", "leftlowerleg", "calfl");
+                case HumanBodyBones.LeftFoot: return FindNamedTransform(animator.transform, "leftfoot", "footl");
+                case HumanBodyBones.RightUpperLeg: return FindNamedTransform(animator.transform, "rightupleg", "rightthigh", "upperlegr");
+                case HumanBodyBones.RightLowerLeg: return FindNamedTransform(animator.transform, "rightleg", "rightlowerleg", "calfr");
+                case HumanBodyBones.RightFoot: return FindNamedTransform(animator.transform, "rightfoot", "footr");
                 case HumanBodyBones.LeftUpperArm: return FindNamedTransform(animator.transform, "leftarm", "upperarml");
                 case HumanBodyBones.LeftLowerArm: return FindNamedTransform(animator.transform, "leftforearm", "forearml", "leftlowerarm");
                 case HumanBodyBones.LeftHand: return FindNamedTransform(animator.transform, "lefthand", "handl");
@@ -597,7 +700,8 @@ namespace CoffeeGame.Presentation
 
             for (int i = 0; i < plungeLines.Length; i++)
             {
-                bool visible = plungeBlend > 0.01f && rightHand != null;
+                float effectivePlungeBlend = EffectivePlungeBlend;
+                bool visible = effectivePlungeBlend > 0.01f && rightHand != null;
                 plungeLines[i].gameObject.SetActive(visible);
                 if (!visible)
                 {
@@ -610,7 +714,7 @@ namespace CoffeeGame.Presentation
                 plungeLines[i].SetPosition(0, tip + Vector3.up * (0.95f + i * 0.12f));
                 plungeLines[i].SetPosition(1, tip + Vector3.up * 0.34f);
                 plungeLines[i].SetPosition(2, tip);
-                SetAlpha(plungeLines[i], plungeBlend * (0.65f - i * 0.1f));
+                SetAlpha(plungeLines[i], effectivePlungeBlend * (0.65f - i * 0.1f));
             }
         }
 
@@ -661,6 +765,11 @@ namespace CoffeeGame.Presentation
                     pose.Bone.localRotation = pose.AuthoredRotation;
                     pose.WasApplied = false;
                 }
+            }
+            if (hips != null && hipsPositionWasApplied)
+            {
+                hips.localPosition = hipsAuthoredPosition;
+                hipsPositionWasApplied = false;
             }
         }
 

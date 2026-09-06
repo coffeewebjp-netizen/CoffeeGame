@@ -157,6 +157,141 @@ namespace CoffeeGame.Presentation.Tests
             finally { Object.DestroyImmediate(actor); Object.DestroyImmediate(mesh); }
         }
 
+        [Test]
+        public void PlungeRecoveryLowersGenericHipsAndRestoresTheAuthoredPosition()
+        {
+            var actor = new GameObject("plunge-recovery-owner");
+            var visual = Child(actor.transform, "visual", Vector3.zero);
+            visual.gameObject.AddComponent<Animator>();
+            Transform hips = Child(visual, "Hips", new Vector3(0f, 1f, 0f));
+            Transform spine = Child(hips, "Spine", new Vector3(0f, .24f, 0f));
+            Child(spine, "Spine01", new Vector3(0f, .2f, 0f));
+            Child(spine, "Head", new Vector3(0f, .45f, 0f));
+            AddArmChain(spine, "Left", -1f);
+            AddArmChain(spine, "Right", 1f);
+            AddLegChain(hips, "Left", -1f);
+            AddLegChain(hips, "Right", 1f);
+            var pose = actor.AddComponent<DefensePosePresentation>();
+            Vector3 authoredHips = hips.position;
+            try
+            {
+                pose.Initialize(visual, DefensePoseStyle.HeroineBlade, actor);
+                pose.SetPlungeRecovery(1f);
+                InvokePrivate(pose, "ApplyPose");
+
+                Assert.That(authoredHips.y - hips.position.y, Is.EqualTo(.34f).Within(.001f));
+                Assert.That(pose.PlungeRecovery, Is.EqualTo(1f));
+
+                pose.SetPlungeRecovery(0f);
+                InvokePrivate(pose, "ApplyPose");
+                Assert.That(Vector3.Distance(hips.position, authoredHips), Is.LessThan(.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(actor);
+            }
+        }
+
+        [Test]
+        public void ProceduralGroundRollTucksAndRotatesTheGenericBodyAroundATransverseAxis()
+        {
+            var actor = new GameObject("roll-presentation-owner");
+            var visual = Child(actor.transform, "visual", Vector3.zero);
+            visual.gameObject.AddComponent<Animator>();
+            Transform hips = Child(visual, "Hips", new Vector3(0f, 1f, 0f));
+            Transform spine = Child(hips, "Spine", new Vector3(0f, .25f, 0f));
+            Transform chest = Child(spine, "Spine01", new Vector3(0f, .22f, 0f));
+            Child(chest, "Head", new Vector3(0f, .34f, 0f));
+            AddArmChain(chest, "Left", -1f);
+            AddArmChain(chest, "Right", 1f);
+            AddLegChain(hips, "Left", -1f);
+            AddLegChain(hips, "Right", 1f);
+            var motion = actor.AddComponent<AcrobaticMotionPresentation>();
+            Quaternion authoredRotation = hips.localRotation;
+            Vector3 authoredPosition = hips.localPosition;
+            try
+            {
+                motion.Initialize(visual, actor);
+                Assert.That(motion.HasPoseRig, Is.True);
+                motion.SetMotion(AcrobaticMotionKind.GroundRoll, .5f, Vector3.forward);
+                SetPrivateField(motion, "motionBlend", 1f);
+                InvokePrivate(motion, "ApplyMotion");
+
+                Assert.That(Vector3.Dot(hips.up, Vector3.up), Is.LessThan(-.98f),
+                    "the body must be upside down halfway through a full forward roll");
+                Assert.That(motion.CurrentKind, Is.EqualTo(AcrobaticMotionKind.GroundRoll));
+                Assert.That(motion.Progress, Is.EqualTo(.5f));
+
+                InvokePrivate(motion, "RestorePose");
+                Assert.That(Quaternion.Angle(hips.localRotation, authoredRotation), Is.LessThan(.01f));
+                Assert.That(Vector3.Distance(hips.localPosition, authoredPosition), Is.LessThan(.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(actor);
+            }
+        }
+
+        [Test]
+        public void ProceduralBackflipUsesTheOppositeQuarterTurnAndSupportsNamespacedBones()
+        {
+            var actor = new GameObject("backflip-presentation-owner");
+            var visual = Child(actor.transform, "visual", Vector3.zero);
+            visual.gameObject.AddComponent<Animator>();
+            Transform hips = Child(visual, "mixamorig:Hips", new Vector3(0f, 1f, 0f));
+            Transform spine = Child(hips, "mixamorig:Spine", new Vector3(0f, .25f, 0f));
+            Transform chest = Child(spine, "mixamorig:Spine01", new Vector3(0f, .22f, 0f));
+            Child(chest, "mixamorig:Head", new Vector3(0f, .34f, 0f));
+            AddArmChain(chest, "Left", -1f, "mixamorig:");
+            AddArmChain(chest, "Right", 1f, "mixamorig:");
+            AddLegChain(hips, "Left", -1f, "mixamorig:");
+            AddLegChain(hips, "Right", 1f, "mixamorig:");
+            var motion = actor.AddComponent<AcrobaticMotionPresentation>();
+            try
+            {
+                motion.Initialize(visual, actor);
+                Assert.That(motion.HasPoseRig, Is.True);
+                motion.SetMotion(AcrobaticMotionKind.Backflip, .25f, Vector3.back);
+                SetPrivateField(motion, "motionBlend", 1f);
+                InvokePrivate(motion, "ApplyMotion");
+
+                Assert.That(Vector3.Dot(hips.up, Vector3.forward), Is.LessThan(-.98f),
+                    "backward travel must produce a backward transverse quarter turn");
+            }
+            finally
+            {
+                Object.DestroyImmediate(actor);
+            }
+        }
+
+        private static void AddArmChain(Transform parent, string side, float sign, string prefix = "")
+        {
+            Transform arm = Child(parent, prefix + side + "Arm", new Vector3(.2f * sign, .12f, 0f));
+            Transform forearm = Child(arm, prefix + side + "ForeArm", new Vector3(.24f * sign, 0f, 0f));
+            Child(forearm, prefix + side + "Hand", new Vector3(.18f * sign, 0f, 0f));
+        }
+
+        private static void AddLegChain(Transform hips, string side, float sign, string prefix = "")
+        {
+            Transform thigh = Child(hips, prefix + side + "UpLeg", new Vector3(.14f * sign, -.08f, 0f));
+            Transform leg = Child(thigh, prefix + side + "Leg", new Vector3(0f, -.38f, 0f));
+            Child(leg, prefix + side + "Foot", new Vector3(0f, -.38f, .06f));
+        }
+
+        private static void InvokePrivate(object target, string methodName)
+        {
+            const System.Reflection.BindingFlags flags =
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            target.GetType().GetMethod(methodName, flags).Invoke(target, null);
+        }
+
+        private static void SetPrivateField(object target, string fieldName, object value)
+        {
+            const System.Reflection.BindingFlags flags =
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            target.GetType().GetField(fieldName, flags).SetValue(target, value);
+        }
+
         private static Transform Child(Transform parent, string name, Vector3 localPosition)
         {
             var child = new GameObject(name);
