@@ -77,7 +77,7 @@ namespace CoffeeGame.UI
             }
             partyNotice.text = run.Party.TimeStopped
                 ? $"時を止める　{Combat.TimeStopController.Instance.Remaining:0.0} 秒\n停止中の命中は解除時に反映"
-                : "T / RB：操作切替　休息中はHP・MPが回復\n" + run.Party.Notice;
+                : (input != null && input.UsesTouchOverlay ? "切替：操作キャラ変更　休息中はHP・MPが回復\n" : "T / RB：操作切替　休息中はHP・MPが回復\n") + run.Party.Notice;
             if (activeCatPortrait != null) activeCatPortrait.gameObject.SetActive(run.Party.Active != null && run.Party.Active.IsCat);
         }
 

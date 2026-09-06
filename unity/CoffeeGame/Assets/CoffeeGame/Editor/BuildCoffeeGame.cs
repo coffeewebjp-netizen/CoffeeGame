@@ -79,6 +79,42 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-TargetLockV12", "CoffeeGAME-TargetLockV12.exe");
         }
 
+        public static void BuildMobileControlsV15NoSetup()
+        {
+            BuildDiagnosticNoSetup("Windows-MobileV15", "CoffeeGAME-MobileV15.exe");
+        }
+
+        // Build the accepted scene/assets without regenerating any character.
+        // Temporary development settings are restored even after a build failure.
+        public static void BuildAndroidMobileV15NoSetup()
+        {
+            ApplyLocalAndroidToolchain();
+            EnsureCombatSceneExists();
+            var target = UnityEditor.Build.NamedBuildTarget.Android;
+            var backend = PlayerSettings.GetScriptingBackend(target);
+            var architectures = PlayerSettings.Android.targetArchitectures;
+            bool bundle = EditorUserBuildSettings.buildAppBundle;
+            bool customKeystore = PlayerSettings.Android.useCustomKeystore;
+            try
+            {
+                if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android))
+                    throw new InvalidOperationException("Could not switch to Android.");
+                PlayerSettings.SetScriptingBackend(target, ScriptingImplementation.IL2CPP);
+                PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+                PlayerSettings.Android.useCustomKeystore = false;
+                EditorUserBuildSettings.buildAppBundle = false;
+                Build(GetOutputPath("Android-MobileV15", "CoffeeGAME-MobileV15-development.apk"), BuildTarget.Android, BuildOptions.Development);
+            }
+            finally
+            {
+                PlayerSettings.SetScriptingBackend(target, backend);
+                PlayerSettings.Android.targetArchitectures = architectures;
+                PlayerSettings.Android.useCustomKeystore = customKeystore;
+                EditorUserBuildSettings.buildAppBundle = bundle;
+                AssetDatabase.SaveAssets();
+            }
+        }
+
         public static void BuildCatMotionV14NoSetup()
         {
             PartyAudioSetup.Validate();

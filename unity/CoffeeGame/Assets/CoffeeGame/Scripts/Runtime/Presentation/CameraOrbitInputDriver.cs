@@ -30,6 +30,12 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
+            if (input.UsesTouchOverlay)
+            {
+                Vector2 orbit = TouchOverlayMath.ResolveCameraOrbit(new Vector2(input.CameraYaw, input.CameraPitch));
+                rig.AddOrbitDegrees(orbit.x, orbit.y);
+                return;
+            }
             Vector2 pointerDelta = input.CameraPointerDelta;
             float yawDegrees = input.CameraYaw * yawDegreesPerSecond * Time.unscaledDeltaTime +
                                pointerDelta.x * mouseDegreesPerPixel;

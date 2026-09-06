@@ -1,400 +1,182 @@
+using System.Collections.Generic;
+using CoffeeGame.Combat;
 using CoffeeGame.Input;
+using CoffeeGame.Run;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
+using UnityEngine.UI;
 
 namespace CoffeeGame.UI
 {
-    /// <summary>
-    /// Landscape twin-zone overlay: left half is a swipe-and-hold move stick
-    /// that appears at the finger, right half looks the camera, and combat
-    /// buttons sit in the lower-right thumb cluster.
-    /// </summary>
     [DefaultExecutionOrder(-300)]
     [DisallowMultipleComponent]
     public sealed class OnScreenTouchControls : MonoBehaviour
     {
-        private const float CameraPixelsPerYaw = 42f;
-        private const float CameraPixelsPerPitch = 56f;
-
         private GameInputReader input;
+        private CombatRunController run;
         private bool visible;
-        private int moveFingerId = -1;
-        private int cameraFingerId = -1;
-        private Vector2 moveOrigin;
-        private Vector2 currentMovePosition;
-        private Vector2 lastCameraPosition;
-        private bool jumpHeld;
-        private bool swordHeld;
-        private bool specialHeld;
-        private bool magicHeld;
-        private bool dodgeHeld;
-        private bool guardHeld;
-        private GUIStyle labelStyle;
+        private bool focusLost, paused;
+        private bool Suspended => focusLost || paused;
+        private Canvas touchCanvas;
+        private Sprite circleSprite;
+        private Font font;
+        private bool ownsFont;
+        private readonly Dictionary<GameInputSemantic, Image> buttonImages = new Dictionary<GameInputSemantic, Image>();
+        private readonly Dictionary<GameInputSemantic, Text> buttonLabels = new Dictionary<GameInputSemantic, Text>();
+        private Image stickImage, knobImage;
+        private Text hint;
         private Texture2D circleTexture;
+        private readonly TouchGestureRouter gestures = new TouchGestureRouter();
+        private readonly HashSet<int> activeTouchIds = new HashSet<int>();
+        private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
+        private TouchControlLayout layout;
+        private Vector2 screenSize;
+        private Rect rawSafeArea;
+        public TouchControlLayout Layout => layout;
+        public bool IsVisible => visible && input != null && input.UsesTouchOverlay;
 
-        public void Initialize(GameInputReader inputReader)
+        public void Initialize(GameInputReader reader, CombatRunController controller = null)
+        { input = reader; run = controller; ApplyLandscapeOrientation(); RefreshLayout(); }
+        public void SetVisible(bool value) { if (visible && !value) ResetTouches(); visible = value; if (touchCanvas != null) touchCanvas.enabled = IsVisible && !Suspended; }
+        private void RefreshLayout()
         {
-            input = inputReader;
-            ApplyLandscapeOrientation();
+            var size = new Vector2(Screen.width, Screen.height); Rect safe = Screen.safeArea;
+            if (layout != null && size == screenSize && rawSafeArea == safe) return;
+            ResetTouches(); screenSize = size; rawSafeArea = safe; layout = new TouchControlLayout(size.x, size.y, safe);
         }
-
-        public void SetVisible(bool isVisible)
-        {
-            visible = isVisible;
-            if (!isVisible)
-            {
-                ResetTouches();
-            }
-        }
-
-        private void OnEnable()
-        {
-            ApplyLandscapeOrientation();
-        }
-
         private void Update()
         {
-            if (input == null || !input.UsesTouchOverlay)
+            RefreshLayout();
+            if (!IsVisible || Suspended || input.Context != GameInputContext.Battle || Touchscreen.current == null)
+            { ResetTouches(); return; }
+            gestures.BeginFrame();
+            // Ended slots retain old IDs. Only currently pressed IDs define
+            // ownership, so an old slot cannot cancel a recycled active ID.
+            activeTouchIds.Clear();
+            foreach (var touch in Touchscreen.current.touches) if (touch.press.isPressed) activeTouchIds.Add(touch.touchId.ReadValue());
+            gestures.ReleaseMissingTouches(activeTouchIds);
+            foreach (var touch in Touchscreen.current.touches)
             {
-                ResetTouches();
-                return;
+                if (!touch.press.isPressed) continue;
+                Vector2 point = touch.position.ReadValue(); bool began = touch.press.wasPressedThisFrame;
+                gestures.Process(touch.touchId.ReadValue(), point, began, layout, began && IsOverMenuControl(point));
             }
-
-            ApplyLandscapeOrientation();
-            Touchscreen touchscreen = Touchscreen.current;
-            if (touchscreen == null)
-            {
-                ResetTouches();
-                return;
-            }
-
-            Vector2 move = Vector2.zero;
-            Vector2 camera = Vector2.zero;
-            bool sawMove = false;
-            bool jump = false;
-            bool sword = false;
-            bool special = false;
-            bool magic = false;
-            bool dodge = false;
-            bool guard = false;
-
-            foreach (TouchControl touch in touchscreen.touches)
-            {
-                if (!touch.press.isPressed && !touch.press.wasPressedThisFrame)
-                {
-                    continue;
-                }
-
-                Vector2 position = touch.position.ReadValue();
-                int fingerId = touch.touchId.ReadValue();
-                bool onJump = IsInside(position, JumpRect);
-                bool onSword = IsInside(position, SwordRect);
-                bool onSpecial = IsInside(position, SpecialRect);
-                bool onMagic = IsInside(position, MagicRect);
-                bool onDodge = IsInside(position, DodgeRect);
-                bool onGuard = IsInside(position, GuardRect);
-                bool onAction = onJump || onSword || onSpecial || onMagic || onDodge || onGuard;
-
-                if (onJump)
-                {
-                    jump = true;
-                    continue;
-                }
-
-                if (onDodge)
-                {
-                    dodge = true;
-                    continue;
-                }
-
-                if (onGuard)
-                {
-                    guard = true;
-                    continue;
-                }
-
-                if (onSword)
-                {
-                    sword = true;
-                    continue;
-                }
-
-                if (onSpecial)
-                {
-                    special = true;
-                    continue;
-                }
-
-                if (onMagic)
-                {
-                    magic = true;
-                    continue;
-                }
-
-                if (moveFingerId == fingerId || (moveFingerId < 0 && !onAction && IsLeftHalf(position)))
-                {
-                    if (moveFingerId < 0)
-                    {
-                        moveFingerId = fingerId;
-                        moveOrigin = position;
-                    }
-
-                    currentMovePosition = position;
-                    move = TouchOverlayMath.ResolveHoldMove(moveOrigin, position);
-                    sawMove = true;
-                    continue;
-                }
-
-                if (cameraFingerId == fingerId || (cameraFingerId < 0 && !onAction && IsRightHalf(position)))
-                {
-                    if (cameraFingerId != fingerId)
-                    {
-                        cameraFingerId = fingerId;
-                        lastCameraPosition = position;
-                    }
-                    else
-                    {
-                        Vector2 delta = position - lastCameraPosition;
-                        camera = new Vector2(delta.x / CameraPixelsPerYaw, -delta.y / CameraPixelsPerPitch);
-                        lastCameraPosition = position;
-                    }
-                }
-            }
-
-            if (!sawMove)
-            {
-                moveFingerId = -1;
-            }
-
-            if (cameraFingerId >= 0 && !IsFingerHeld(touchscreen, cameraFingerId))
-            {
-                cameraFingerId = -1;
-            }
-
-            input.SetTouchMove(move);
-            input.SetTouchCamera(camera);
-            QueueIfNewlyPressed(jump, ref jumpHeld, GameInputSemantic.Jump);
-            QueueIfNewlyPressed(sword, ref swordHeld, GameInputSemantic.Sword);
-            QueueIfNewlyPressed(special, ref specialHeld, GameInputSemantic.Special);
-            QueueIfNewlyPressed(magic, ref magicHeld, GameInputSemantic.Magic);
-            QueueIfNewlyPressed(dodge, ref dodgeHeld, GameInputSemantic.Dodge);
-            QueueIfNewlyPressed(guard, ref guardHeld, GameInputSemantic.Guard);
-            input.SetTouchGuardHeld(guard);
+            gestures.EndFrame();
+            input.SetTouchMove(gestures.Move); input.SetTouchCamera(gestures.Camera);
+            input.SetTouchGuardHeld(gestures.IsHeld(GameInputSemantic.Guard));
+            foreach (var action in gestures.Presses) input.QueueTouchPress(action);
         }
-
-        private void OnGUI()
+        private bool IsOverMenuControl(Vector2 point)
         {
-            if (!visible || input == null || !input.UsesTouchOverlay)
-            {
-                return;
-            }
-
-            EnsureStyles();
-            DrawActionButton(JumpRect, "跳");
-            DrawActionButton(SwordRect, "刀");
-            DrawActionButton(SpecialRect, "居合");
-            DrawActionButton(MagicRect, "氷");
-            DrawActionButton(DodgeRect, "避");
-            DrawActionButton(GuardRect, "防");
-
-            if (moveFingerId >= 0)
-            {
-                DrawDynamicStick(moveOrigin, currentMovePosition);
-            }
-        }
-
-        private void DrawDynamicStick(Vector2 originBottomLeft, Vector2 currentBottomLeft)
-        {
-            Vector2 originGui = ToGui(originBottomLeft);
-            Vector2 currentGui = ToGui(currentBottomLeft);
-            float ring = TouchOverlayMath.MoveFullRadius * 2f;
-            DrawCircle(new Rect(originGui.x - ring * 0.5f, originGui.y - ring * 0.5f, ring, ring), new Color(1f, 1f, 1f, 0.14f));
-            float knob = 56f;
-            DrawCircle(new Rect(currentGui.x - knob * 0.5f, currentGui.y - knob * 0.5f, knob, knob), new Color(1f, 1f, 1f, 0.32f));
-        }
-
-        private void ResetTouches()
-        {
-            moveFingerId = -1;
-            cameraFingerId = -1;
-            jumpHeld = false;
-            swordHeld = false;
-            specialHeld = false;
-            magicHeld = false;
-            dodgeHeld = false;
-            guardHeld = false;
-            if (input != null)
-            {
-                input.SetTouchMove(Vector2.zero);
-                input.SetTouchCamera(Vector2.zero);
-                input.SetTouchGuardHeld(false);
-                input.ClearQueuedTouchPresses();
-            }
-        }
-
-        private static void ApplyLandscapeOrientation()
-        {
-            Screen.autorotateToPortrait = false;
-            Screen.autorotateToPortraitUpsideDown = false;
-            Screen.autorotateToLandscapeLeft = true;
-            Screen.autorotateToLandscapeRight = true;
-            if (Screen.orientation != ScreenOrientation.LandscapeLeft
-                && Screen.orientation != ScreenOrientation.LandscapeRight)
-            {
-                Screen.orientation = ScreenOrientation.LandscapeLeft;
-            }
-        }
-
-        private void QueueIfNewlyPressed(bool held, ref bool wasHeld, GameInputSemantic semantic)
-        {
-            if (held && !wasHeld)
-            {
-                input.QueueTouchPress(semantic);
-            }
-
-            wasHeld = held;
-        }
-
-        private static bool IsFingerHeld(Touchscreen touchscreen, int fingerId)
-        {
-            foreach (TouchControl touch in touchscreen.touches)
-            {
-                if (touch.touchId.ReadValue() == fingerId && touch.press.isPressed)
-                {
-                    return true;
-                }
-            }
-
+            if (EventSystem.current == null) return false;
+            uiHits.Clear(); EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = point }, uiHits);
+            foreach (var hit in uiHits) if (hit.gameObject.GetComponentInParent<Selectable>() != null) return true;
             return false;
         }
-
-        private static bool IsLeftHalf(Vector2 screenPosition) => screenPosition.x < Screen.width * 0.5f;
-
-        private static bool IsRightHalf(Vector2 screenPosition) => screenPosition.x >= Screen.width * 0.5f;
-
-        private static Rect JumpRect => new Rect(
-            Screen.width - Scaled(28f) - ButtonSize * 2f - Scaled(18f),
-            Screen.height - Scaled(36f) - ButtonSize,
-            ButtonSize,
-            ButtonSize);
-
-        private static Rect SwordRect => new Rect(
-            Screen.width - Scaled(28f) - ButtonSize,
-            Screen.height - Scaled(36f) - ButtonSize,
-            ButtonSize * 1.08f,
-            ButtonSize * 1.08f);
-
-        private static Rect SpecialRect => new Rect(
-            Screen.width - Scaled(28f) - ButtonSize * 2f - Scaled(18f),
-            Screen.height - Scaled(36f) - ButtonSize * 2f - Scaled(16f),
-            ButtonSize * 0.92f,
-            ButtonSize * 0.92f);
-
-        private static Rect MagicRect => new Rect(
-            Screen.width - Scaled(28f) - ButtonSize,
-            Screen.height - Scaled(36f) - ButtonSize * 2f - Scaled(16f),
-            ButtonSize * 0.92f,
-            ButtonSize * 0.92f);
-
-        private static Rect DodgeRect => new Rect(
-            Screen.width - Scaled(28f) - ButtonSize * 3f - Scaled(36f),
-            Screen.height - Scaled(36f) - ButtonSize,
-            ButtonSize * 0.92f,
-            ButtonSize * 0.92f);
-
-        private static Rect GuardRect => new Rect(
-            Screen.width - Scaled(28f) - ButtonSize * 4f - Scaled(54f),
-            Screen.height - Scaled(36f) - ButtonSize,
-            ButtonSize * 0.92f,
-            ButtonSize * 0.92f);
-
-        private static float ButtonSize => Scaled(104f);
-
-        private static float Scaled(float value)
+        private void LateUpdate()
         {
-            return value * Mathf.Clamp(Screen.dpi <= 1f ? 1f : Screen.dpi / 160f, 1f, 3.2f);
+            if (touchCanvas != null) touchCanvas.enabled = IsVisible && !Suspended;
+            if (!IsVisible || layout == null || Suspended) return;
+            EnsureVisuals(); touchCanvas.enabled = true;
+            bool cat = run?.Party?.Active != null && run.Party.Active.IsCat;
+            bool locked = run != null && run.GetComponent<TargetLockController>() != null && run.GetComponent<TargetLockController>().IsLocked;
+            foreach (var button in layout.Buttons)
+            {
+                Rect rect = button.Bounds;
+                bool held = gestures.IsHeld(button.Action) || button.Action == GameInputSemantic.LockOn && locked;
+                Color color = held ? new Color(.25f, .77f, 1, .78f) : new Color(.08f, .12f, .19f, .68f);
+                SetRect(buttonImages[button.Action].rectTransform, rect);
+                buttonImages[button.Action].color = color;
+                var label = buttonLabels[button.Action]; label.text = Label(button.Action, cat, locked);
+                label.fontSize = Mathf.Max(12, Mathf.RoundToInt(20 * layout.Scale));
+            }
+            Vector2 origin = gestures.HasMoveFinger ? gestures.MoveOrigin : layout.StickCenter;
+            float radius = layout.StickRadius;
+            SetRect(stickImage.rectTransform, new Rect(origin.x - radius, origin.y - radius, radius * 2, radius * 2));
+            Vector2 knob = gestures.HasMoveFinger ? gestures.MovePosition : origin;
+            float diameter = radius * .65f;
+            SetRect(knobImage.rectTransform, new Rect(knob.x - diameter / 2, knob.y - diameter / 2, diameter, diameter));
+            SetRect(hint.rectTransform, new Rect(layout.SafeArea.xMin + 20 * layout.Scale, layout.SafeArea.yMin + 10 * layout.Scale, 300 * layout.Scale, 27 * layout.Scale));
+            hint.fontSize = Mathf.Max(11, Mathf.RoundToInt(16 * layout.Scale));
         }
-
-        private static bool IsInside(Vector2 screenPosition, Rect rect)
+        public static string Label(GameInputSemantic action, bool cat, bool locked = false)
         {
-            return rect.Contains(ToGui(screenPosition));
+            switch (action)
+            {
+                case GameInputSemantic.Jump: return "跳ぶ";
+                case GameInputSemantic.Sword: return cat ? "連弾" : "斬る";
+                case GameInputSemantic.Dodge: return "回避";
+                case GameInputSemantic.Guard: return "防御";
+                case GameInputSemantic.Magic: return cat ? "大魔法" : "魔法";
+                case GameInputSemantic.Special: return cat ? "時止め" : "必殺";
+                case GameInputSemantic.LockOn: return locked ? "解除" : "固定";
+                case GameInputSemantic.SwitchCharacter: return "切替";
+                default: return action.ToString();
+            }
         }
-
-        private static Vector2 ToGui(Vector2 screenPosition)
+        private static void SetRect(RectTransform transform, Rect rect)
+        { transform.anchorMin = transform.anchorMax = transform.pivot = Vector2.zero; transform.anchoredPosition = rect.position; transform.sizeDelta = rect.size; }
+        private void ResetTouches()
         {
-            return new Vector2(screenPosition.x, Screen.height - screenPosition.y);
+            gestures.Reset();
+            if (input == null) return;
+            input.SetTouchMove(Vector2.zero); input.SetTouchCamera(Vector2.zero); input.SetTouchGuardHeld(false); input.ClearQueuedTouchPresses();
         }
-
-        private void DrawActionButton(Rect rect, string label)
+        private static void ApplyLandscapeOrientation()
         {
-            DrawCircle(rect, new Color(0.99f, 0.66f, 0.24f, 0.34f));
-            GUI.Label(rect, label, labelStyle);
+            if (!Application.isMobilePlatform) return;
+            Screen.autorotateToPortrait = Screen.autorotateToPortraitUpsideDown = false;
+            Screen.autorotateToLandscapeLeft = Screen.autorotateToLandscapeRight = true;
+            Screen.orientation = ScreenOrientation.AutoRotation;
         }
-
-        private void DrawCircle(Rect rect, Color color)
+        private void OnApplicationFocus(bool focus) { focusLost = !focus; if (!focus) ResetTouches(); }
+        private void OnApplicationPause(bool value) { paused = value; if (value) ResetTouches(); }
+        private void OnDisable() { ResetTouches(); if (touchCanvas != null) touchCanvas.enabled = false; }
+        private void EnsureVisuals()
         {
-            Color previous = GUI.color;
-            GUI.color = color;
-            GUI.DrawTexture(rect, CircleTexture);
-            GUI.color = previous;
+            if (touchCanvas != null) return;
+            font = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", "Arial" }, 28);
+            ownsFont = font != null;
+            if (font == null) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var root = new GameObject("Touch Controls", typeof(RectTransform), typeof(Canvas)); root.transform.SetParent(transform, false);
+            touchCanvas = root.GetComponent<Canvas>(); touchCanvas.renderMode = RenderMode.ScreenSpaceOverlay; touchCanvas.sortingOrder = 110;
+            circleSprite = Sprite.Create(CircleTexture, new Rect(0, 0, 64, 64), Vector2.one * .5f);
+            foreach (var button in layout.Buttons)
+            {
+                var disk = CreateDisk(button.Action.ToString(), new Color(.08f, .12f, .19f, .68f));
+                var outline = disk.gameObject.AddComponent<Outline>(); outline.effectColor = new Color(.78f, .9f, 1f, .38f); outline.effectDistance = Vector2.one * 2;
+                var label = CreateLabel(disk.transform, "Label"); label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
+                label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
+                buttonImages.Add(button.Action, disk); buttonLabels.Add(button.Action, label);
+            }
+            stickImage = CreateDisk("Movement", new Color(.8f, .91f, 1f, .16f)); knobImage = CreateDisk("Thumb", new Color(.8f, .91f, 1f, .36f));
+            hint = CreateLabel(root.transform, "Touch hint"); hint.alignment = TextAnchor.MiddleLeft; hint.fontStyle = FontStyle.Normal;
+            hint.text = "左：移動　右の空き：カメラ";
         }
-
+        private Image CreateDisk(string name, Color color)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image)); go.transform.SetParent(touchCanvas.transform, false);
+            var result = go.GetComponent<Image>(); result.sprite = circleSprite; result.color = color; result.raycastTarget = false; return result;
+        }
+        private Text CreateLabel(Transform parent, string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Text)); go.transform.SetParent(parent, false);
+            var result = go.GetComponent<Text>(); result.font = font; result.color = Color.white; result.fontStyle = FontStyle.Bold;
+            result.alignment = TextAnchor.MiddleCenter; result.raycastTarget = false; return result;
+        }
         private Texture2D CircleTexture
         {
             get
             {
-                if (circleTexture != null)
-                {
-                    return circleTexture;
-                }
-
-                const int size = 64;
-                circleTexture = new Texture2D(size, size, TextureFormat.ARGB32, false)
-                {
-                    hideFlags = HideFlags.HideAndDontSave,
-                    filterMode = FilterMode.Bilinear
-                };
-                Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
-                float radius = (size - 1) * 0.5f;
-                for (int y = 0; y < size; y++)
-                {
-                    for (int x = 0; x < size; x++)
-                    {
-                        float distance = Vector2.Distance(new Vector2(x, y), center);
-                        float alpha = Mathf.Clamp01((radius - distance) / 2.4f);
-                        circleTexture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
-                    }
-                }
-
-                circleTexture.Apply();
-                return circleTexture;
+                if (circleTexture != null) return circleTexture;
+                const int size = 64; circleTexture = new Texture2D(size, size, TextureFormat.ARGB32, false) { hideFlags = HideFlags.HideAndDontSave, filterMode = FilterMode.Bilinear };
+                var center = Vector2.one * (size - 1) * .5f;
+                for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
+                    circleTexture.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp01(((size - 1) * .5f - Vector2.Distance(new Vector2(x, y), center)) / 2.4f)));
+                circleTexture.Apply(); return circleTexture;
             }
         }
-
-        private void EnsureStyles()
-        {
-            if (labelStyle != null)
-            {
-                return;
-            }
-
-            labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.RoundToInt(Scaled(26f)),
-                fontStyle = FontStyle.Bold,
-                wordWrap = true
-            };
-            labelStyle.normal.textColor = Color.white;
-        }
-
-        private void OnDestroy()
-        {
-            if (circleTexture != null)
-            {
-                Destroy(circleTexture);
-            }
-        }
+        private void OnDestroy() { if (touchCanvas != null) Destroy(touchCanvas.gameObject); if (circleSprite != null) Destroy(circleSprite); if (circleTexture != null) Destroy(circleTexture); if (ownsFont && font != null) Destroy(font); }
     }
 }

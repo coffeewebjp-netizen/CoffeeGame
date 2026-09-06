@@ -142,7 +142,7 @@ namespace CoffeeGame.UI
             modernView = gameObject.AddComponent<CombatGameHudView>();
             modernView.Initialize(input, coffeeLearningConnection);
             touchControls = gameObject.AddComponent<OnScreenTouchControls>();
-            touchControls.Initialize(input);
+            touchControls.Initialize(input, run);
             modernView.PauseRequested += HandlePointerPause;
             modernView.ResumeRequested += ResumeFromPauseMenu;
             modernView.StartRequested += run.StartNewRun;

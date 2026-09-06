@@ -264,6 +264,8 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (TryGetCommandLineValue("-captureMobileControls", out string mobileControlsPath))
+                MobileControlsEvidenceCapture.Begin(gameObject, runController, mobileControlsPath);
             if (TryGetCommandLineValue("-captureCatMotion", out string catMotionPath))
                 CatMotionEvidenceCapture.Begin(gameObject, runController, catMotionPath);
             if (TryGetCommandLineValue("-captureCombatPolish", out string combatPolishPath))
@@ -408,7 +410,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureCatMotion") && !HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureMobileControls") && !HasCommandLineFlag("-captureCatMotion") && !HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -438,7 +440,7 @@ namespace CoffeeGame.Bootstrap
                 Debug.Log("CoffeeGAME combat polish evidence uses memory-only progression; profile/cloud writes disabled.");
                 return;
             }
-            if (HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
+            if (HasCommandLineFlag("-captureMobileControls") || HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 sessionProgression = new PlayerProgression(1, 0, 0, 0,
                     previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
@@ -490,7 +492,7 @@ namespace CoffeeGame.Bootstrap
         {
             runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureCombatPolish") || HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
+            if (HasCommandLineFlag("-captureMobileControls") || HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureCombatPolish") || HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;
