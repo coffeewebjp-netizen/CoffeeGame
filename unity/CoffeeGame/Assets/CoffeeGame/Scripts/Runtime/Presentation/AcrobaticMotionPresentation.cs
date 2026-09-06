@@ -64,10 +64,12 @@ namespace CoffeeGame.Presentation
         public bool IsPresenting => requested || motionBlend > 0.001f;
         public AcrobaticMotionKind CurrentKind => currentKind;
         public float Progress => progress;
-        // The cat controller currently maps Dodge to an upright clip. Supply a
-        // full-body aerial spin while retaining the heroine's authored Meshy clip.
+        // Older cat controllers need an aerial spin overlay. V14 has its own
+        // authored rotation, so applying both would rotate the cat twice.
         public bool UseRunningSpinFallback => clockOwner != null &&
-            clockOwner.TryGetComponent<PlayerCombatController>(out var combat) && combat.IsCatMage;
+            clockOwner.TryGetComponent<PlayerCombatController>(out var combat) && combat.IsCatMage &&
+            (animator == null || animator.runtimeAnimatorController == null ||
+             animator.runtimeAnimatorController.name != "SilverCatMotionV14");
 
         public void Initialize(Transform characterVisualRoot, GameObject owner)
         {

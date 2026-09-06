@@ -79,6 +79,13 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-TargetLockV12", "CoffeeGAME-TargetLockV12.exe");
         }
 
+        public static void BuildCatMotionV14NoSetup()
+        {
+            PartyAudioSetup.Validate();
+            SilverCatMotionSetup.Validate();
+            BuildDiagnosticNoSetup("Windows-CatMotionV14", "CoffeeGAME-CatMotionV14.exe");
+        }
+
         public static void BuildCombatPolishV13NoSetup()
         {
             PartyAudioSetup.Validate();

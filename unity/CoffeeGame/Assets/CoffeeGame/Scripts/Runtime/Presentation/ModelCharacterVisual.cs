@@ -381,7 +381,7 @@ namespace CoffeeGame.Presentation
             }
 
             if (actionPlaying &&
-                modelStyle == CharacterModelStyle.AzureMaidenUpgraded &&
+                (modelStyle == CharacterModelStyle.AzureMaidenUpgraded || modelStyle == CharacterModelStyle.SilverCat) &&
                 normalizedSpeed > 0.01f &&
                 actionElapsed >= actionMovementLockDuration &&
                 !defeated)
@@ -406,6 +406,16 @@ namespace CoffeeGame.Presentation
             }
         }
 
+        public void PlayCatGesture(int volleyStage, bool timeStop = false)
+        {
+            if (modelStyle != CharacterModelStyle.SilverCat) return;
+            string state = timeStop ? "CatTimeStop" : "CatVolley" + Mathf.Clamp(volleyStage, 1, 3);
+            string previous = ResolveStateName(CharacterAction.MagicRelease);
+            stateNames[CharacterAction.MagicRelease] = state;
+            try { PlayAction(CharacterAction.MagicRelease, timeStop ? .65f : volleyStage == 3 ? .62f : .38f); }
+            finally { stateNames[CharacterAction.MagicRelease] = previous; }
+        }
+
         public void PlayAction(CharacterAction action, float duration)
         {
             if (defeated && action != CharacterAction.Defeated)
@@ -415,7 +425,7 @@ namespace CoffeeGame.Presentation
             if (actionPlaying &&
                 GetActionPriority(action) < GetActionPriority(currentState) &&
                 !CharacterVisualTransitionPolicy.IsForcedPhysicsTransition(currentState, action) &&
-                !(modelStyle == CharacterModelStyle.AzureMaidenUpgraded &&
+                !((modelStyle == CharacterModelStyle.AzureMaidenUpgraded || modelStyle == CharacterModelStyle.SilverCat) &&
                   actionElapsed >= actionMovementLockDuration))
             {
                 return;
@@ -446,6 +456,12 @@ namespace CoffeeGame.Presentation
 
         private float ResolvePresentationDuration(CharacterAction action, float requestedDuration)
         {
+            if (modelStyle == CharacterModelStyle.SilverCat && !float.IsInfinity(requestedDuration))
+            {
+                if (action == CharacterAction.Land) return Mathf.Max(requestedDuration, .30f);
+                if (action == CharacterAction.Hurt) return Mathf.Max(requestedDuration, .34f);
+                if (action == CharacterAction.Defeated) return Mathf.Max(requestedDuration, 1f);
+            }
             if (modelStyle != CharacterModelStyle.AzureMaidenUpgraded || float.IsInfinity(requestedDuration))
             {
                 return requestedDuration;
@@ -486,7 +502,8 @@ namespace CoffeeGame.Presentation
                  modelStyle == CharacterModelStyle.MeshySnowKimono ||
                  modelStyle == CharacterModelStyle.AzureMaidenUpgraded) &&
                 IsSnowKimonoTimedAction(action);
-            if (!snowKimonoTimedAction && !showingHeldSwordSet &&
+            bool catTimedAction = modelStyle == CharacterModelStyle.SilverCat;
+            if (!catTimedAction && !snowKimonoTimedAction && !showingHeldSwordSet &&
                 action != CharacterAction.MagicCharge &&
                 action != CharacterAction.MagicRelease &&
                 action != CharacterAction.Dodge)
@@ -494,7 +511,8 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            float length = snowKimonoTimedAction
+            // The outgoing clip during a crossfade is not the requested action.
+            float length = snowKimonoTimedAction || catTimedAction
                 ? FindControllerClipLength(action)
                 : 0f;
             if (length < 0.08f)
@@ -735,7 +753,7 @@ namespace CoffeeGame.Presentation
             }
             else
             {
-                if (modelStyle == CharacterModelStyle.AzureMaidenUpgraded)
+                if (modelStyle == CharacterModelStyle.AzureMaidenUpgraded || modelStyle == CharacterModelStyle.SilverCat)
                 {
                     animator.CrossFadeInFixedTime(stateHash, crossFadeSeconds, 0, 0f);
                 }

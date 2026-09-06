@@ -238,7 +238,8 @@ namespace CoffeeGame.Combat
                 {
                     resources.TrySpendStamina(tuning.SpecialStaminaCost);
                     specialVoice?.Play();
-                    visual?.PlayAction(CharacterAction.MagicRelease, 0.35f);
+                    if (visual is ModelCharacterVisual catVisual) catVisual.PlayCatGesture(0, true);
+                    else visual?.PlayAction(CharacterAction.MagicRelease, 0.35f);
                     CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing, gameObject);
                 }
                 return;
@@ -473,7 +474,8 @@ namespace CoffeeGame.Combat
             motor.FaceLockedTargetForAction(.32f);
             volleyStage = volleyStage % 3 + 1;
             int count = volleyStage == 3 ? 3 : 1;
-            visual?.PlayAction(CharacterAction.MagicRelease, 0.32f);
+            if (visual is ModelCharacterVisual catVisual) catVisual.PlayCatGesture(volleyStage);
+            else visual?.PlayAction(CharacterAction.MagicRelease, 0.32f);
             for (int i = 0; i < count; i++)
             {
                 Vector3 direction = Quaternion.AngleAxis((i - (count - 1) * 0.5f) * 13f, Vector3.up) * motor.Facing;

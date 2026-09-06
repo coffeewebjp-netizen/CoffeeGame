@@ -264,6 +264,8 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (TryGetCommandLineValue("-captureCatMotion", out string catMotionPath))
+                CatMotionEvidenceCapture.Begin(gameObject, runController, catMotionPath);
             if (TryGetCommandLineValue("-captureCombatPolish", out string combatPolishPath))
                 CombatPolishEvidenceCapture.Begin(gameObject, runController, combatPolishPath);
             if (TryGetCommandLineValue("-captureTargetLock", out string targetLockCapturePath))
@@ -406,7 +408,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureCatMotion") && !HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -436,7 +438,7 @@ namespace CoffeeGame.Bootstrap
                 Debug.Log("CoffeeGAME combat polish evidence uses memory-only progression; profile/cloud writes disabled.");
                 return;
             }
-            if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
+            if (HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 sessionProgression = new PlayerProgression(1, 0, 0, 0,
                     previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
@@ -488,7 +490,7 @@ namespace CoffeeGame.Bootstrap
         {
             runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureCombatPolish") || HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
+            if (HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureCombatPolish") || HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;
@@ -786,7 +788,7 @@ namespace CoffeeGame.Bootstrap
             slot.transform.SetParent(root.transform, false);
             var model = Instantiate(prefab, slot.transform);
             var visual = slot.AddComponent<ModelCharacterVisual>();
-            visual.Initialize(model.transform, Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCat/SilverCatRuntime"),
+            visual.Initialize(model.transform, Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCatV14/SilverCatMotionV14"),
                 CharacterModelStyle.SilverCat, sceneCamera, 1f, 0f);
             var motor = root.AddComponent<PlayerMotor3D>();
             motor.Initialize(input, tuning, sceneCamera, visual);
