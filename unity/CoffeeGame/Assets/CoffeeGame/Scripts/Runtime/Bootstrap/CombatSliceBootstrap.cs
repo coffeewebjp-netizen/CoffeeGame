@@ -264,7 +264,11 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (TryGetCommandLineValue("-captureParty", out string partyCapturePath))
+            if (TryGetCommandLineValue("-captureDefense", out string defenseCapturePath))
+            {
+                DefenseEvidenceCapture.Begin(gameObject, runController, defenseCapturePath);
+            }
+            else if (TryGetCommandLineValue("-captureParty", out string partyCapturePath))
             {
                 PartyEvidenceCapture.Begin(gameObject, runController, partyCapturePath);
             }
@@ -392,7 +396,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureParty")) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense")) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -416,7 +420,7 @@ namespace CoffeeGame.Bootstrap
         private void EnsurePlayerProfileLoaded()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureParty"))
+            if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense"))
             {
                 sessionProgression = new PlayerProgression(1, 0, 0, 0,
                     previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
@@ -468,7 +472,7 @@ namespace CoffeeGame.Bootstrap
         {
             runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty"))
+            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense"))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;
@@ -771,10 +775,12 @@ namespace CoffeeGame.Bootstrap
             var motor = root.AddComponent<PlayerMotor3D>();
             motor.Initialize(input, tuning, sceneCamera, visual);
             var combat = root.AddComponent<PlayerCombatController>();
+            combat.IsCatMage = true;
+            motor.CanPlunge = false;
             combat.Initialize(input, tuning, motor, resources, health, visual, audioDirector);
             var actor = root.AddComponent<PartyActor>();
             actor.Initialize(PartyMemberIds.CatMage);
-            health.Damaged += (_, hit) => visual.PlayAction(CharacterAction.Hurt, 0.18f);
+            health.Damaged += (_, hit) => { if (!hit.IsGuarded) visual.PlayAction(CharacterAction.Hurt, 0.18f); };
             health.Died += (_, hit) => visual.PlayAction(CharacterAction.Defeated, 0.6f);
             return actor;
         }
@@ -843,6 +849,7 @@ namespace CoffeeGame.Bootstrap
 
             health.Damaged += (_, damage) =>
             {
+                if (damage.IsGuarded) return;
                 visual.SetTint(new Color(1f, 0.48f, 0.48f));
                 visual.PlayAction(CharacterAction.Hurt, 0.18f);
                 audioDirector.Play(CombatSound.Impact, 0.62f);

@@ -111,7 +111,7 @@ namespace CoffeeGame.Input.Tests
             reader.EnableBattle();
             TickReader(reader);
 
-            Press(gamepad.leftStickButton);
+            Press(gamepad.leftTrigger);
             Assert.That(reader.GuardPressed, Is.True);
             Assert.That(reader.GuardHeld, Is.True);
 
@@ -125,9 +125,9 @@ namespace CoffeeGame.Input.Tests
             Assert.That(reader.GuardHeld, Is.False,
                 "A held defense control must not resume after a modal or actor context change.");
 
-            Release(gamepad.leftStickButton);
+            Release(gamepad.leftTrigger);
             TickReader(reader);
-            Press(gamepad.leftStickButton);
+            Press(gamepad.leftTrigger);
             Assert.That(reader.GuardPressed, Is.True,
                 "A fresh defense press after release must still be accepted.");
         }
@@ -151,6 +151,18 @@ namespace CoffeeGame.Input.Tests
             Set(gamepad.leftStick, Vector2.up);
             Assert.That(reader.Move.y, Is.GreaterThan(0.5f),
                 "A leftover typing/IME keyboard state must not suppress Gamepad battle movement.");
+        }
+
+        [Test]
+        public void ActorSwitchGuardReleaseDoesNotRequireStoppingMovement()
+        {
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader); reader.EnableBattle(); TickReader(reader);
+            Set(gamepad.leftStick, Vector2.up);
+            reader.ClearGuardState(); TickReader(reader);
+            Press(gamepad.leftTrigger);
+            Assert.That(reader.GuardHeld, Is.True);
+            Assert.That(reader.Move.y, Is.GreaterThan(.5f));
         }
 
         [Test]

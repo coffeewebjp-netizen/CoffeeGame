@@ -296,6 +296,9 @@ namespace CoffeeGame.UI
         {
             switch (selectedSettingsRow)
             {
+                case CombatHudSettingsRows.Guard:
+                    BeginRebind(GameInputSemantic.Guard);
+                    break;
                 case CombatHudSettingsRows.SwitchCharacter:
                     BeginRebind(GameInputSemantic.SwitchCharacter);
                     break;

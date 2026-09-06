@@ -38,6 +38,7 @@ namespace CoffeeGame.Presentation
         private Transform rightLowerArm;
         private Transform rightHand;
         private Vector3 swordAxisInRightHand;
+        private float swordLength;
         private bool hasSwordAxis;
         private Vector3 requestedFacing;
         private bool hasRequestedFacing;
@@ -92,6 +93,7 @@ namespace CoffeeGame.Presentation
             rightHand = null;
             swordAxisInRightHand = Vector3.zero;
             hasSwordAxis = false;
+            swordLength = 0f;
             for (int i = 0; i < poses.Length; i++)
             {
                 poses[i] = null;
@@ -253,7 +255,7 @@ namespace CoffeeGame.Presentation
                     -up * 0.84f + forward * 0.28f - right * 0.12f, plungeBlend);
                 AlignBone(rightLowerArm, rightHand,
                     -up * 0.92f + forward * 0.2f, plungeBlend);
-                AlignSwordAxis(Vector3.down, plungeBlend);
+                AlignSwordAxis(Vector3.down, plunging ? 1f : plungeBlend);
             }
         }
 
@@ -315,19 +317,67 @@ namespace CoffeeGame.Presentation
             for (int i = 0; i < renderers.Length; i++)
             {
                 string name = NormalizeName(renderers[i].name);
+                if (!(renderers[i] is SkinnedMeshRenderer) && !(renderers[i] is MeshRenderer)) continue;
                 if (!name.Contains("katana") && !name.Contains("sword") && !name.Contains("blade"))
                 {
                     continue;
                 }
-                Vector3 direction = renderers[i].bounds.center - rightHand.position;
+                Vector3 direction = MeasureBladeTipDirection(renderers[i]);
                 if (direction.sqrMagnitude <= bestDistance * bestDistance || direction.sqrMagnitude < 0.0025f)
                 {
                     continue;
                 }
                 bestDistance = direction.magnitude;
+                swordLength = bestDistance;
                 swordAxisInRightHand = Quaternion.Inverse(rightHand.rotation) * direction.normalized;
                 hasSwordAxis = true;
             }
+        }
+
+        // Skinned renderer bounds span animation poses; their center is not the
+        // current blade. Bake the small weapon once to calibrate its real tip.
+        private Vector3 MeasureBladeTipDirection(Renderer renderer)
+        {
+            Mesh baked = null;
+            Mesh mesh = null;
+            try
+            {
+                if (renderer is SkinnedMeshRenderer skinned)
+                {
+                    // Imported FBX renderers carry a 0.01 scale. Include that
+                    // scale so TransformPoint reconstructs the rendered tip.
+                    baked = new Mesh(); skinned.BakeMesh(baked, true); mesh = baked;
+                }
+                else
+                {
+                    var filter = renderer.GetComponent<MeshFilter>();
+                    if (filter != null) mesh = filter.sharedMesh;
+                }
+                if (mesh == null || !mesh.isReadable) return renderer.bounds.center - rightHand.position;
+                Vector3 farthest = Vector3.zero;
+                foreach (Vector3 vertex in mesh.vertices)
+                {
+                    Vector3 candidate = renderer.transform.TransformPoint(vertex) - rightHand.position;
+                    if (candidate.sqrMagnitude > farthest.sqrMagnitude) farthest = candidate;
+                }
+                return farthest;
+            }
+            finally { if (baked != null) DestroyOwned(baked); }
+        }
+
+        public Vector3 MeasureBladeWorldDirection()
+        {
+            if (animator == null || rightHand == null) return Vector3.zero;
+            Vector3 longest = Vector3.zero;
+            foreach (Renderer renderer in animator.GetComponentsInChildren<Renderer>(true))
+            {
+                string name = NormalizeName(renderer.name);
+                if (!(renderer is SkinnedMeshRenderer) && !(renderer is MeshRenderer)) continue;
+                if (!name.Contains("katana") && !name.Contains("sword") && !name.Contains("blade")) continue;
+                Vector3 direction = MeasureBladeTipDirection(renderer);
+                if (direction.sqrMagnitude > longest.sqrMagnitude) longest = direction;
+            }
+            return longest.normalized;
         }
 
         private Vector3 GetVisualForward()
@@ -531,12 +581,11 @@ namespace CoffeeGame.Presentation
                 bladeGuardLine.gameObject.SetActive(visible);
                 if (visible)
                 {
-                    Vector3 right = Vector3.Cross(Vector3.up, GetVisualForward()).normalized;
-                    Vector3 up = Vector3.up;
-                    Vector3 center = rightHand.position + up * 0.12f;
-                    bladeGuardLine.SetPosition(0, center - right * 0.42f + up * 0.26f);
-                    bladeGuardLine.SetPosition(1, center);
-                    bladeGuardLine.SetPosition(2, center + right * 0.42f - up * 0.26f);
+                    Vector3 axis = rightHand.rotation * swordAxisInRightHand;
+                    Vector3 start = rightHand.position;
+                    bladeGuardLine.SetPosition(0, start + axis * swordLength * 0.16f);
+                    bladeGuardLine.SetPosition(1, start + axis * swordLength * 0.56f);
+                    bladeGuardLine.SetPosition(2, start + axis * swordLength);
                     SetAlpha(bladeGuardLine, guardBlend * (0.7f + Mathf.Sin(clock * 11f) * 0.12f));
                 }
             }

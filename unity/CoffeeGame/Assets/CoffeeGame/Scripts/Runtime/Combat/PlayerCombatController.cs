@@ -35,7 +35,7 @@ namespace CoffeeGame.Combat
         private float attackCooldown;
         private bool airSlashUsed;
         private bool plungeWasActive;
-        private bool perfectDodgeGranted;
+        private PlayerDefense defense;
         private Coroutine specialReleaseRoutine;
         private GameObject activeIaiEffect;
         private GameObject activeMagicChargeEffect;
@@ -49,6 +49,8 @@ namespace CoffeeGame.Combat
         public ActorCommandFrame Commands { get; set; }
         public bool CanSwitch => !IsCharging && attackCooldown <= 0f && motor != null && motor.CanAct;
         public bool CanCastMajorMagic => IsCatMage && majorMagicCooldown <= 0f && resources != null && resources.MagicPoints >= resources.MaxMagicPoints * 0.25f;
+        public bool CanBeginGuard => attackCooldown <= 0f && !IsCharging;
+        public bool IsGuarding => defense != null && defense.IsGuarding;
 
         public int AttackBonus { get; set; }
         public float AttackMultiplier { get; set; } = 1f;
@@ -79,7 +81,10 @@ namespace CoffeeGame.Combat
             motor.Jumped += HandleJumped;
             motor.PlungeStarted += HandlePlungeStarted;
             motor.Dodged += HandleDodged;
-            playerHealth.AttackAvoided += HandleAttackAvoided;
+            defense = gameObject.AddComponent<PlayerDefense>();
+            defense.Initialize(input, tuning, motor, this, resources, playerHealth, audioDirector,
+                characterVisual is Component component ? component.transform : transform);
+            playerHealth.DodgeAvoided += HandleAttackAvoided;
         }
 
         public void ResetCombat()
@@ -93,12 +98,13 @@ namespace CoffeeGame.Combat
             volleyStage = 0;
             airSlashUsed = false;
             plungeWasActive = false;
-            perfectDodgeGranted = false;
+            defense?.CancelGuard();
             ChargeNormalized = 0f;
         }
 
         public void CancelPendingActions()
         {
+            defense?.CancelGuard();
             voice?.Stop();
             if (activeMagicChargeEffect != null)
             {
@@ -147,6 +153,7 @@ namespace CoffeeGame.Combat
             resources.Tick(deltaTime);
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             majorMagicCooldown = Mathf.Max(0f, majorMagicCooldown - deltaTime);
+            if (IsGuarding) return;
 
             if (chargeKind != ChargeKind.None)
             {
@@ -385,67 +392,19 @@ namespace CoffeeGame.Combat
         private void HandlePlungeStarted()
         {
             plungeWasActive = true;
+            defense?.BeginPlunge();
         }
 
         private void HandleDodged()
         {
             voice?.Dodge();
-            perfectDodgeGranted = false;
+            defense?.BeginDodge();
             playerHealth?.BeginDodgeInvulnerability(tuning.DodgeInvulnerabilitySeconds);
-            TryGrantPerfectDodgeFromWindup();
         }
 
-        private void HandleAttackAvoided()
+        private void HandleAttackAvoided(DamageInfo damage)
         {
-            GrantPerfectDodge();
-        }
-
-        private void TryGrantPerfectDodgeFromWindup()
-        {
-            if (tuning == null)
-            {
-                return;
-            }
-
-            float generousRange = tuning.SlimeAttackRange * tuning.PerfectDodgeRangeMultiplier;
-            SlimeController[] slimes = FindObjectsByType<SlimeController>(FindObjectsInactive.Exclude);
-            for (int index = 0; index < slimes.Length; index++)
-            {
-                SlimeController slime = slimes[index];
-                if (slime == null || !slime.IsWindingUp)
-                {
-                    continue;
-                }
-
-                Vector3 toSlime = Vector3.ProjectOnPlane(slime.transform.position - transform.position, Vector3.up);
-                if (toSlime.magnitude <= generousRange)
-                {
-                    GrantPerfectDodge();
-                    return;
-                }
-            }
-            GoblinController[] goblins = FindObjectsByType<GoblinController>(FindObjectsInactive.Exclude);
-            for (int index = 0; index < goblins.Length; index++)
-            {
-                GoblinController goblin = goblins[index];
-                if (goblin != null && goblin.IsWindingUp &&
-                    goblin.Threatens(transform.position, tuning.PerfectDodgeRangeMultiplier))
-                {
-                    GrantPerfectDodge();
-                    return;
-                }
-            }
-        }
-
-        private void GrantPerfectDodge()
-        {
-            if (perfectDodgeGranted || resources == null)
-            {
-                return;
-            }
-
-            perfectDodgeGranted = true;
-            resources.GainStamina(resources.MaxStamina);
+            defense?.ObserveDodgedHit(damage);
         }
 
         private void HandleJumped()
@@ -466,7 +425,7 @@ namespace CoffeeGame.Combat
             plungeWasActive = false;
             int hitCount = DamageTargets(tuning.PlungeRadius, CalculateDamage(tuning.PlungeDamage), true, false);
             audioDirector?.Play(hitCount > 0 ? CombatSound.SwordHit : CombatSound.Impact, hitCount > 0 ? 1f : 0.7f, gameObject);
-            CombatVfxFactory.SpawnPlungeImpact(position, tuning.PlungeRadius);
+            defense?.ShowPlunge(position, tuning.PlungeRadius);
         }
 
         private void OnDestroy()
@@ -482,7 +441,7 @@ namespace CoffeeGame.Combat
 
             if (playerHealth != null)
             {
-                playerHealth.AttackAvoided -= HandleAttackAvoided;
+                playerHealth.DodgeAvoided -= HandleAttackAvoided;
             }
         }
 

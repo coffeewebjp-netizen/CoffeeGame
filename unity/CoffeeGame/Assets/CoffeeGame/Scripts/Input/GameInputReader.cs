@@ -374,7 +374,7 @@ namespace CoffeeGame.Input
 
         private void Update()
         {
-            if (_guardBlockedUntilRelease && !IsAnyContextSwitchControlActuated())
+            if (_guardBlockedUntilRelease && !IsGuardControlActuated())
             {
                 _guardBlockedUntilRelease = false;
             }
@@ -425,7 +425,7 @@ namespace CoffeeGame.Input
                 _suppressActionsUntilRelease = false;
             }
 
-            if (_guardBlockedUntilRelease && !IsAnyContextSwitchControlActuated())
+            if (_guardBlockedUntilRelease && !IsGuardControlActuated())
             {
                 _guardBlockedUntilRelease = false;
             }
@@ -740,6 +740,15 @@ namespace CoffeeGame.Input
             }
 
             return IsAnySteamDesktopButtonPressed();
+        }
+
+        private bool IsGuardControlActuated()
+        {
+            if (_touchGuardHeld || _touchGuardPressed) return true;
+            if (_guard == null) return false;
+            foreach (InputControl control in _guard.controls)
+                if (control is ButtonControl button && button.isPressed) return true;
+            return false;
         }
     }
 }

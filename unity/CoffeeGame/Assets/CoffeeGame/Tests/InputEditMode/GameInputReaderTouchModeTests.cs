@@ -103,7 +103,7 @@ namespace CoffeeGame.Input.Tests
             int desktopIndex = reader.GetBindingIndexForGroup(GameInputSemantic.Guard, GameInputReader.SteamDesktopBindingGroup);
 
             Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, keyboardIndex), Is.EqualTo("<Keyboard>/g"));
-            Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, gamepadIndex), Is.EqualTo("<Gamepad>/leftStickPress"));
+            Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, gamepadIndex), Is.EqualTo("<Gamepad>/leftTrigger"));
             Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, desktopIndex), Is.EqualTo("<Keyboard>/g"));
             StringAssert.Contains("\"semantic\":\"Guard\"", reader.SaveBindingOverridesAsJson());
             StringAssert.Contains("\"semantic\":\"Guard\"", reader.SaveSteamDesktopBindingOverridesAsJson());

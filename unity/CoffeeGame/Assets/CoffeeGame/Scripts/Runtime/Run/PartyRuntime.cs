@@ -203,7 +203,8 @@ namespace CoffeeGame.Run
             Vector2 move = input.Move;
             if (TimeStopped) move.y = -move.y;
             return new ActorCommandFrame { Move = move, Jump = input.JumpPressed, Dodge = input.DodgePressed,
-                Sword = input.SwordPressed, Magic = input.MagicPressed, Special = input.SpecialPressed };
+                Sword = input.SwordPressed, Magic = input.MagicPressed, Special = input.SpecialPressed,
+                GuardHeld = input.GuardHeld, GuardPressed = input.GuardPressed };
         }
 
         private ActorCommandFrame AiCommands(PartyActor actor)
@@ -252,6 +253,8 @@ namespace CoffeeGame.Run
 
         private void SetActive(PartyActor actor)
         {
+            if (Active != null) Active.GetComponent<PlayerDefense>()?.CancelGuard();
+            input.ClearGuardState();
             Active = actor;
             State.TrySetPreferredControlledMember(actor.MemberId);
             follow?.Invoke(actor.transform);

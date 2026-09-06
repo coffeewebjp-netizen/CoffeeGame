@@ -47,7 +47,7 @@ Default controls:
 | Rotate camera vertically | V / R or hold right mouse and drag vertically | Right stick Y | V / R |
 | Jump | Space | South face button | A -> Enter |
 | Sword | F | Right trigger | RT -> Mouse Left |
-| Guard | G | Left stick press | G |
+| Guard | G | Left trigger (LT) | G |
 | Iai slash | Q | West face button | X -> PageUp |
 | Ice magic | E | North face button | Y -> PageDown |
 | Pause / confirm | Escape / Enter | Start / South face button | Steam/Back -> Escape / A -> Enter |

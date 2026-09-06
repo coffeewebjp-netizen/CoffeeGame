@@ -37,6 +37,8 @@ namespace CoffeeGame.Actors
         public bool IsGrounded { get; private set; }
         public bool IsPlunging { get; private set; }
         public bool IsDodging { get; private set; }
+        public bool IsGuarding { get; set; }
+        public bool CanPlunge { get; set; } = true;
         public bool CanMove { get; set; } = true;
         public float MovementScale { get; set; } = 1f;
         public float SpeedMultiplier { get; set; } = 1f;
@@ -83,6 +85,7 @@ namespace CoffeeGame.Actors
             fallVisualPlayed = false;
             IsPlunging = false;
             IsDodging = false;
+            IsGuarding = false;
             IsGrounded = characterController.isGrounded;
             MovementScale = 1f;
             SpeedMultiplier = 1f;
@@ -120,11 +123,11 @@ namespace CoffeeGame.Actors
                 verticalSpeed = -1.5f;
             }
 
-            if (CanMove && landingLockRemaining <= 0f && IsGrounded && !IsDodging && MovementScale >= 0.9f && (UseCommands ? Commands.Dodge : input.DodgePressed))
+            if (CanMove && !IsGuarding && landingLockRemaining <= 0f && IsGrounded && !IsDodging && MovementScale >= 0.9f && (UseCommands ? Commands.Dodge : input.DodgePressed))
             {
                 StartDodge(moveInput);
             }
-            else if (CanMove && landingLockRemaining <= 0f && IsGrounded && !IsDodging && (UseCommands ? Commands.Jump : input.JumpPressed))
+            else if (CanMove && !IsGuarding && landingLockRemaining <= 0f && IsGrounded && !IsDodging && (UseCommands ? Commands.Jump : input.JumpPressed))
             {
                 verticalSpeed = tuning.JumpVelocity;
                 IsGrounded = false;
@@ -136,7 +139,7 @@ namespace CoffeeGame.Actors
                 visual?.PlayAction(CharacterAction.Jump, float.PositiveInfinity);
             }
 
-            if (CanMove && !IsGrounded && !IsPlunging && !IsDodging && airborneTime >= MinimumPlungeAirTime && plungeInputPressed)
+            if (CanMove && CanPlunge && !IsGrounded && !IsPlunging && !IsDodging && airborneTime >= MinimumPlungeAirTime && plungeInputPressed)
             {
                 IsPlunging = true;
                 verticalSpeed = -tuning.PlungeSpeed;
@@ -156,6 +159,7 @@ namespace CoffeeGame.Actors
             float moveSpeed = sustainedDirectionTime >= tuning.RunHoldSeconds ? tuning.RunSpeed : tuning.WalkSpeed;
             float airMultiplier = IsGrounded ? 1f : tuning.AirControl;
             float effectiveScale = CanMove && landingLockRemaining <= 0f && !IsDodging ? Mathf.Clamp01(MovementScale) : 0f;
+            if (IsGuarding) effectiveScale *= 0.28f;
             float effectiveMoveSpeed = moveSpeed * Mathf.Clamp(SpeedMultiplier, 0.2f, 10f);
             if (!IsDodging)
             {

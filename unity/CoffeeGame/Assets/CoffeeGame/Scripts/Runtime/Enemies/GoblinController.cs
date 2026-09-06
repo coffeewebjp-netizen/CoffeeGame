@@ -8,9 +8,9 @@ using UnityEngine;
 namespace CoffeeGame.Enemies
 {
     [DisallowMultipleComponent]
-    public sealed class GoblinController : MonoBehaviour
+    public sealed class GoblinController : MonoBehaviour, IEnemyAttack
     {
-        public enum CombatPhase { Approach, Windup, Strike, Recovery, Hurt, Defeated }
+        public enum CombatPhase { Approach, Windup, Strike, Recovery, Hurt, Defeated, Parried }
         public const int MaximumHealth = 15;
         public const float AttackRange = 1.45f;
         public const float WindupSeconds = 0.72f;
@@ -27,10 +27,13 @@ namespace CoffeeGame.Enemies
         private float approachSeconds;
         private float circleSign;
         private bool impacted;
+        private float staggerSeconds;
+        private long strikeId;
         private Vector3 knockback;
         private Vector3 attackDirection = Vector3.forward;
         public CombatPhase Phase { get; private set; }
         public bool IsWindingUp => Phase == CombatPhase.Windup;
+        public bool IsAttacking => Phase == CombatPhase.Windup || Phase == CombatPhase.Strike;
         public Vector3 AttackDirection => attackDirection;
 
         public void Initialize(CombatTuning tuning, Transform attackTarget, Health attackTargetHealth,
@@ -94,6 +97,7 @@ namespace CoffeeGame.Enemies
                     {
                         ChangePhase(CombatPhase.Strike);
                         impacted = false;
+                        strikeId = new DamageInfo(damage, gameObject, transform.position, Vector3.zero).AttackId;
                         visual?.PlayAction(CharacterAction.Attack, StrikeSeconds);
                     }
                     break;
@@ -105,6 +109,7 @@ namespace CoffeeGame.Enemies
                         {
                             foreach (var actor in new System.Collections.Generic.List<PartyActor>(PartyTargeting.Actors))
                             {
+                                if (Phase != CombatPhase.Strike) break; // A parry cancels the whole swing immediately.
                                 if (actor != null && actor.Targetable && Threatens(actor.transform.position))
                                     HitTarget(actor.Health);
                             }
@@ -112,11 +117,11 @@ namespace CoffeeGame.Enemies
                         else if (Threatens(target.position))
                         {
                             if (targetHealth.ApplyDamage(new DamageInfo(damage, gameObject,
-                                target.position, attackDirection * 0.8f)))
+                                target.position, attackDirection * 0.8f, strikeId)) && target.GetComponent<PlayerDefense>()?.IsGuarding != true)
                                 target.GetComponent<PlayerMotor3D>()?.AddKnockback(attackDirection * 1.4f);
                         }
                     }
-                    if (elapsed >= StrikeSeconds) ChangePhase(CombatPhase.Recovery);
+                    if (Phase == CombatPhase.Strike && elapsed >= StrikeSeconds) ChangePhase(CombatPhase.Recovery);
                     break;
                 case CombatPhase.Recovery:
                     visual?.SetLocomotion(CharacterAction.Idle, 0f);
@@ -124,6 +129,9 @@ namespace CoffeeGame.Enemies
                     break;
                 case CombatPhase.Hurt:
                     if (elapsed >= 0.32f) BeginApproach();
+                    break;
+                case CombatPhase.Parried:
+                    if (elapsed >= staggerSeconds) BeginApproach();
                     break;
             }
         }
@@ -138,7 +146,7 @@ namespace CoffeeGame.Enemies
 
         private void HitTarget(Health victim)
         {
-            if (victim.ApplyDamage(new DamageInfo(damage, gameObject, victim.transform.position, attackDirection * 0.8f)))
+            if (victim.ApplyDamage(new DamageInfo(damage, gameObject, victim.transform.position, attackDirection * 0.8f, strikeId)) && victim.GetComponent<PlayerDefense>()?.IsGuarding != true)
                 victim.GetComponent<PlayerMotor3D>()?.AddKnockback(attackDirection * 1.4f);
         }
 
@@ -152,10 +160,21 @@ namespace CoffeeGame.Enemies
         }
         private void HandleDamaged(Health _, DamageInfo hit)
         {
+            if (Phase == CombatPhase.Parried) return; // Follow-up hits must not shorten the parry stun.
             ChangePhase(CombatPhase.Hurt);
             knockback += Vector3.ProjectOnPlane(hit.Knockback, Vector3.up) * 2.1f;
             visual?.SetTint(new Color(0.8f, 0.9f, 1f));
             visual?.PlayAction(CharacterAction.Hurt, 0.32f);
+        }
+        public void Parry(float seconds)
+        {
+            if (health == null || !health.IsAlive) return;
+            staggerSeconds = Mathf.Max(0f, seconds);
+            knockback = Vector3.zero;
+            impacted = true;
+            ChangePhase(CombatPhase.Parried);
+            visual?.SetTint(new Color(1f, 0.85f, 0.45f));
+            visual?.PlayAction(CharacterAction.Hurt, staggerSeconds);
         }
         private void HandleDied(Health _, DamageInfo hit)
         {

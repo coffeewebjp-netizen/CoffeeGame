@@ -9,7 +9,7 @@ using UnityEngine;
 namespace CoffeeGame.Enemies
 {
     [DisallowMultipleComponent]
-    public sealed class SlimeController : MonoBehaviour
+    public sealed class SlimeController : MonoBehaviour, IEnemyAttack
     {
         private const float AttackHeightTolerance = 0.72f;
 
@@ -22,6 +22,8 @@ namespace CoffeeGame.Enemies
         private float attackCooldown;
         private float windupRemaining;
         private bool windingUp;
+        private float staggerRemaining;
+        private float strikeRemaining;
         private Vector3 knockbackVelocity;
 
         public event Action<SlimeController> Defeated;
@@ -29,6 +31,8 @@ namespace CoffeeGame.Enemies
         public string ClaimId { get; private set; }
         public Health Health => health;
         public bool IsWindingUp => windingUp;
+        public bool IsAttacking => staggerRemaining <= 0f && (windingUp || strikeRemaining > 0f);
+        public bool IsParried => staggerRemaining > 0f;
 
         public void Initialize(
             string claimId,
@@ -62,6 +66,19 @@ namespace CoffeeGame.Enemies
 
             float deltaTime = CombatClock.DeltaTime(gameObject);
             if (deltaTime <= 0f) return;
+            Tick(deltaTime);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (deltaTime <= 0f || tuning == null || health == null || !health.IsAlive || target == null || targetHealth == null || !targetHealth.IsAlive) return;
+            if (staggerRemaining > 0f)
+            {
+                staggerRemaining = Mathf.Max(0f, staggerRemaining - deltaTime);
+                if (staggerRemaining == 0f) visual?.SetTint(Color.white);
+                return;
+            }
+            strikeRemaining = Mathf.Max(0f, strikeRemaining - deltaTime);
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, 4.5f * deltaTime);
             transform.position += knockbackVelocity * deltaTime;
@@ -109,22 +126,25 @@ namespace CoffeeGame.Enemies
         private void ReleaseAttack(float distanceAtRelease, Vector3 direction)
         {
             windingUp = false;
+            strikeRemaining = 0.26f;
             attackCooldown = tuning.SlimeAttackInterval;
             transform.localScale = Vector3.one;
             visual?.SetTint(Color.white);
             transform.position += direction * 0.28f;
             ClampToArena();
             visual?.PlayAction(CharacterAction.Attack, 0.26f);
+            long strikeId = new DamageInfo(tuning.SlimeDamage, gameObject, transform.position, Vector3.zero).AttackId;
 
             if (PartyTargeting.Actors.Count > 0)
             {
                 var victims = new System.Collections.Generic.List<PartyActor>(PartyTargeting.Actors);
                 foreach (var actor in victims)
                 {
+                    if (staggerRemaining > 0f) break;
                     if (actor == null || !actor.Targetable) continue;
                     Vector3 offset = actor.transform.position - transform.position;
                     if (Mathf.Abs(offset.y) > AttackHeightTolerance || Vector3.ProjectOnPlane(offset, Vector3.up).magnitude > tuning.SlimeAttackRange * 1.18f) continue;
-                    if (actor.Health.ApplyDamage(new DamageInfo(tuning.SlimeDamage, gameObject, actor.transform.position, direction * 0.65f)))
+                    if (actor.Health.ApplyDamage(new DamageInfo(tuning.SlimeDamage, gameObject, actor.transform.position, direction * 0.65f, strikeId)) && actor.GetComponent<PlayerDefense>()?.IsGuarding != true)
                         actor.Motor.AddKnockback(direction * 1.3f);
                 }
                 return;
@@ -133,8 +153,8 @@ namespace CoffeeGame.Enemies
             float heightDifference = Mathf.Abs(target.position.y - transform.position.y);
             if (distanceAtRelease <= tuning.SlimeAttackRange * 1.18f && heightDifference <= AttackHeightTolerance)
             {
-                var damage = new DamageInfo(tuning.SlimeDamage, gameObject, target.position, direction * 0.65f);
-                if (targetHealth.ApplyDamage(damage))
+                var damage = new DamageInfo(tuning.SlimeDamage, gameObject, target.position, direction * 0.65f, strikeId);
+                if (targetHealth.ApplyDamage(damage) && target.GetComponent<PlayerDefense>()?.IsGuarding != true)
                 {
                     PlayerMotor3D targetMotor = target.GetComponent<PlayerMotor3D>();
                     targetMotor?.AddKnockback(direction * 1.3f);
@@ -149,11 +169,25 @@ namespace CoffeeGame.Enemies
 
         private void HandleDamaged(Health _, DamageInfo damage)
         {
+            if (staggerRemaining > 0f) return;
             windingUp = false;
+            strikeRemaining = 0f;
             attackCooldown = Mathf.Max(attackCooldown, 0.28f);
             knockbackVelocity += Vector3.ProjectOnPlane(damage.Knockback, Vector3.up) * 2.4f;
             visual?.SetTint(new Color(0.75f, 0.9f, 1f));
             visual?.PlayAction(CharacterAction.Hurt, 0.16f);
+        }
+
+        public void Parry(float seconds)
+        {
+            if (health == null || !health.IsAlive) return;
+            windingUp = false; strikeRemaining = 0f;
+            staggerRemaining = Mathf.Max(0f, seconds);
+            attackCooldown = Mathf.Max(attackCooldown, 0.6f);
+            knockbackVelocity = Vector3.zero;
+            transform.localScale = Vector3.one;
+            visual?.SetTint(new Color(1f, 0.85f, 0.45f));
+            visual?.PlayAction(CharacterAction.Hurt, staggerRemaining);
         }
 
         private void HandleDied(Health _, DamageInfo damage)

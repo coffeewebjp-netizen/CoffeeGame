@@ -32,6 +32,11 @@ namespace CoffeeGame.Domain
         [SerializeField, Min(1f)] private float perfectDodgeRangeMultiplier = 1.65f;
 
         [Header("Sword")]
+        [SerializeField, Range(0f, 1f)] private float guardDamageMultiplier = 0.1f;
+        [SerializeField, Min(0.01f)] private float justGuardSeconds = 0.18f;
+        [SerializeField, Min(0.01f)] private float guardRearmSeconds = 0.35f;
+        [SerializeField, Min(0.01f)] private float parryStaggerSeconds = 1.5f;
+        [SerializeField, Min(0.01f)] private float justDodgeSeconds = 0.18f;
         [SerializeField, Min(0)] private int swordDamage = 3;
         [SerializeField, Min(0f)] private float swordRange = 0.78f;
         [SerializeField, Min(0f)] private float swordCooldown = 0.34f;
@@ -84,6 +89,11 @@ namespace CoffeeGame.Domain
         public float ExpectedDodgeAirSeconds => gravity <= 0f ? 0f : 2f * jumpVelocity / gravity;
         public float DodgeInvulnerabilitySeconds => ExpectedDodgeAirSeconds * dodgeInvulnerabilityFraction;
         public int SwordDamage => swordDamage;
+        public float GuardDamageMultiplier => guardDamageMultiplier;
+        public float JustGuardSeconds => justGuardSeconds;
+        public float GuardRearmSeconds => guardRearmSeconds;
+        public float ParryStaggerSeconds => parryStaggerSeconds;
+        public float JustDodgeSeconds => justDodgeSeconds;
         public float SwordRange => swordRange;
         public float SwordCooldown => swordCooldown;
         public int AirSlashDamage => airSlashDamage;
@@ -141,6 +151,11 @@ namespace CoffeeGame.Domain
             RequireUnitInterval(errors, nameof(dodgeInvulnerabilityFraction), dodgeInvulnerabilityFraction);
             RequirePositive(errors, nameof(perfectDodgeRangeMultiplier), perfectDodgeRangeMultiplier);
             RequireNonNegative(errors, nameof(swordDamage), swordDamage);
+            RequireUnitInterval(errors, nameof(guardDamageMultiplier), guardDamageMultiplier);
+            RequirePositive(errors, nameof(justGuardSeconds), justGuardSeconds);
+            RequirePositive(errors, nameof(guardRearmSeconds), guardRearmSeconds);
+            RequirePositive(errors, nameof(parryStaggerSeconds), parryStaggerSeconds);
+            RequirePositive(errors, nameof(justDodgeSeconds), justDodgeSeconds);
             RequireNonNegative(errors, nameof(swordRange), swordRange);
             RequireNonNegative(errors, nameof(swordCooldown), swordCooldown);
             RequireNonNegative(errors, nameof(airSlashDamage), airSlashDamage);

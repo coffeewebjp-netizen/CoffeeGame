@@ -12,5 +12,7 @@ namespace CoffeeGame.Actors
         public bool Sword;
         public bool Magic;
         public bool Special;
+        public bool GuardHeld;
+        public bool GuardPressed;
     }
 }

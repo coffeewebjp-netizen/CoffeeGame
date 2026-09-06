@@ -17,6 +17,7 @@ namespace CoffeeGame.Actors
         public event Action<Health, DamageInfo> Damaged;
         public event Action<Health, DamageInfo> Died;
         public event Action AttackAvoided;
+        public event Action<DamageInfo> DodgeAvoided;
 
         public int Current { get; private set; }
         public int Maximum => maxHealth;
@@ -79,7 +80,7 @@ namespace CoffeeGame.Actors
 
         public bool ApplyDamage(DamageInfo damage)
         {
-            if (!IsAlive || damage.Amount <= 0 || !DamageFaction.CanDamage(damage.Source, this))
+            if (!IsAlive || damage.Amount <= 0 || CombatClock.IsPaused || !DamageFaction.CanDamage(damage.Source, this))
             {
                 return false;
             }
@@ -102,6 +103,7 @@ namespace CoffeeGame.Actors
                 if (now < dodgeInvulnerableUntil)
                 {
                     AttackAvoided?.Invoke();
+                    DodgeAvoided?.Invoke(damage);
                 }
 
                 return false;
@@ -112,22 +114,35 @@ namespace CoffeeGame.Actors
                 return false;
             }
 
+            bool counter = GetComponent<IEnemyAttack>()?.IsAttacking == true &&
+                damage.Source != null && damage.Source.GetComponentInParent<Health>()?.Team == DamageTeam.Party;
             int adjustedAmount = Mathf.Max(
                 1,
-                Mathf.RoundToInt(damage.Amount * Mathf.Clamp(IncomingDamageMultiplier, 0.05f, 10f)));
+                Mathf.RoundToInt(damage.Amount * (counter ? 2f : 1f) * Mathf.Clamp(IncomingDamageMultiplier, 0.05f, 10f)));
             var appliedDamage = new DamageInfo(
                 adjustedAmount,
                 damage.Source,
                 damage.HitPoint,
                 damage.Knockback,
-                damage.AttackId);
+                damage.AttackId, damage.IsGuarded, counter);
+
+            var defense = GetComponent<PlayerDefense>();
+            if (defense != null && defense.TryGuard(damage, adjustedAmount, out DamageInfo guarded))
+            {
+                if (guarded.Amount == 0) return false;
+                appliedDamage = guarded;
+            }
 
             if (deferredHit)
             {
-                return timeStop.TryQueueDamage(this, appliedDamage);
+                bool queued = timeStop.TryQueueDamage(this, appliedDamage);
+                if (queued && counter) damage.Source.GetComponent<PlayerDefense>()?.ShowCounter(damage.HitPoint);
+                return queued;
             }
 
-            return ApplyResolvedDamage(appliedDamage);
+            bool accepted = ApplyResolvedDamage(appliedDamage);
+            if (accepted && counter) damage.Source.GetComponent<PlayerDefense>()?.ShowCounter(damage.HitPoint);
+            return accepted;
         }
 
         internal bool ApplyResolvedDamage(DamageInfo appliedDamage)
