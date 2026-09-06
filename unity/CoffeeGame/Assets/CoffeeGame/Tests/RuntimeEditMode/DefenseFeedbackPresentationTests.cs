@@ -169,23 +169,44 @@ namespace CoffeeGame.Presentation.Tests
             Child(chest, "Head", new Vector3(0f, .25f, 0f));
             AddArmChain(chest, "Left", -1f);
             AddArmChain(chest, "Right", 1f);
-            AddLegChain(hips, "Left", -1f);
-            AddLegChain(hips, "Right", 1f);
+            Transform rightHand = chest.Find("RightArm/RightForeArm/RightHand");
+            GameObject sword = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sword.name = "GroundedKatana";
+            sword.transform.SetParent(rightHand, false);
+            sword.transform.localPosition = new Vector3(0f, .5f, 0f);
+            sword.transform.localScale = new Vector3(.05f, .9f, .05f);
+            Transform leftFoot = AddLegChain(hips, "Left", -1f);
+            Transform rightFoot = AddLegChain(hips, "Right", 1f);
             Transform leftKnee = hips.Find("LeftUpLeg/LeftLeg");
             var pose = actor.AddComponent<DefensePosePresentation>();
             Vector3 authoredHips = hips.position;
             float authoredKneeToChest = Vector3.Distance(leftKnee.position, chest.position);
+            float authoredGroundY = Mathf.Min(leftFoot.position.y, rightFoot.position.y);
             try
             {
                 pose.Initialize(visual, DefensePoseStyle.HeroineBlade, actor);
                 pose.SetPlungeRecovery(1f);
                 InvokePrivate(pose, "ApplyPose");
-                InvokePrivate(pose, "ApplyDirectionalPose");
-
                 Assert.That(authoredHips.y - hips.position.y, Is.EqualTo(.42f).Within(.001f));
+
+                InvokePrivate(pose, "ApplyDirectionalPose");
+                Vector3 torsoDirection = (chest.position - spine.position).normalized;
+                Assert.That(Vector3.Dot(torsoDirection, Vector3.up), Is.GreaterThan(.55f),
+                    "the planted recovery torso must remain diagonally upright");
+                Assert.That(Vector3.Dot(torsoDirection, Vector3.forward), Is.GreaterThan(.5f),
+                    "the planted recovery torso must still bow forward");
+                Assert.That(Mathf.Min(leftFoot.position.y, rightFoot.position.y),
+                    Is.GreaterThanOrEqualTo(authoredGroundY - .001f),
+                    "the crouch may lift Hips as needed but must not push either foot underground");
                 Assert.That(Vector3.Distance(leftKnee.position, chest.position),
                     Is.LessThan(authoredKneeToChest * .7f),
                     "the recovery must bring the knee toward the deeply bowed torso");
+                float measuredSwordLength = GetPrivateField<float>(pose, "swordLength");
+                Assert.That(Mathf.Abs(rightHand.position.y -
+                    (authoredGroundY + measuredSwordLength - .05f)), Is.LessThan(.08f),
+                    "the hand must hold the grounded sword with only its tip below the floor");
+                Assert.That(Vector3.Dot(pose.MeasureBladeWorldDirection(), Vector3.down),
+                    Is.GreaterThan(.98f));
                 Assert.That(pose.PlungeRecovery, Is.EqualTo(1f));
 
                 pose.SetPlungeRecovery(0f);
@@ -313,6 +334,13 @@ namespace CoffeeGame.Presentation.Tests
             const System.Reflection.BindingFlags flags =
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
             target.GetType().GetField(fieldName, flags).SetValue(target, value);
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            const System.Reflection.BindingFlags flags =
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            return (T)target.GetType().GetField(fieldName, flags).GetValue(target);
         }
 
         private static float VerticalSpan(params Transform[] points)

@@ -61,6 +61,7 @@ namespace CoffeeGame.Presentation
         private Vector3 hipsAuthoredPosition;
         private Vector3 hipsAppliedPosition;
         private bool hipsPositionWasApplied;
+        private float groundOffsetFromVisualRoot;
         private GameObject barrierRoot;
         private LineRenderer[] barrierLines;
         private Material barrierMaterial;
@@ -158,6 +159,10 @@ namespace CoffeeGame.Presentation
             leftFoot = ResolveBone(HumanBodyBones.LeftFoot);
             rightFoot = ResolveBone(HumanBodyBones.RightFoot);
             leftHand = ResolveBone(HumanBodyBones.LeftHand);
+            float footY = MinimumY(leftFoot, rightFoot);
+            groundOffsetFromVisualRoot = float.IsPositiveInfinity(footY)
+                ? 0f
+                : footY - visualRoot.position.y;
             CacheSwordAxis();
         }
 
@@ -314,23 +319,19 @@ namespace CoffeeGame.Presentation
                 if (crouch > 0.001f)
                 {
                     AlignBone(spine, chest,
-                        forward * 0.9f - up * 0.12f, crouch);
+                        forward * 0.72f + up * 0.68f, crouch);
                     AlignBone(chest, head,
-                        forward * 0.72f - up * 0.24f, crouch);
+                        forward * 0.55f + up * 0.82f, crouch);
                     AlignBone(leftUpperLeg, leftLowerLeg,
-                        forward * 0.9f - up * 0.22f + right * 0.08f, crouch);
+                        forward * 0.96f - up * 0.1f + right * 0.08f, crouch);
                     AlignBone(leftLowerLeg, leftFoot,
-                        -forward * 0.34f - up * 0.94f, crouch);
+                        -forward * 0.18f - up * 0.98f, crouch);
                     AlignBone(rightUpperLeg, rightLowerLeg,
-                        forward * 0.9f - up * 0.22f - right * 0.08f, crouch);
+                        forward * 0.96f - up * 0.1f - right * 0.08f, crouch);
                     AlignBone(rightLowerLeg, rightFoot,
-                        -forward * 0.34f - up * 0.94f, crouch);
-                    // Curling the parent spine moves the sword arm too. Replant
-                    // the weapon after the torso and knees reach their final pose.
-                    AlignBone(rightUpperArm, rightLowerArm,
-                        -up * 0.84f + forward * 0.28f - right * 0.12f, effectivePlungeBlend);
-                    AlignBone(rightLowerArm, rightHand,
-                        -up * 0.92f + forward * 0.2f, effectivePlungeBlend);
+                        -forward * 0.18f - up * 0.98f, crouch);
+                    LiftHipsForFootClearance();
+                    PlaceGroundedSwordHand(forward, right, crouch);
                     AlignSwordAxis(Vector3.down, effectivePlungeBlend);
                 }
             }
@@ -370,6 +371,85 @@ namespace CoffeeGame.Presentation
             hipsAppliedPosition = authored + localOffset;
             hips.localPosition = hipsAppliedPosition;
             hipsPositionWasApplied = true;
+        }
+
+        private void LiftHipsForFootClearance()
+        {
+            if (hips == null || visualRoot == null)
+            {
+                return;
+            }
+            float footY = MinimumY(leftFoot, rightFoot);
+            if (float.IsPositiveInfinity(footY))
+            {
+                return;
+            }
+            float groundY = visualRoot.position.y + groundOffsetFromVisualRoot;
+            float lift = Mathf.Max(0f, groundY - footY);
+            if (lift <= 0f)
+            {
+                return;
+            }
+            Vector3 correctedWorld = hips.position + Vector3.up * lift;
+            hipsAppliedPosition = hips.parent != null
+                ? hips.parent.InverseTransformPoint(correctedWorld)
+                : correctedWorld;
+            hips.localPosition = hipsAppliedPosition;
+            hipsPositionWasApplied = true;
+        }
+
+        private void PlaceGroundedSwordHand(Vector3 forward, Vector3 right, float weight)
+        {
+            if (rightUpperArm == null || rightLowerArm == null || rightHand == null ||
+                visualRoot == null || swordLength <= 0.05f)
+            {
+                return;
+            }
+
+            float upperLength = Vector3.Distance(rightUpperArm.position, rightLowerArm.position);
+            float lowerLength = Vector3.Distance(rightLowerArm.position, rightHand.position);
+            if (upperLength <= 0.001f || lowerLength <= 0.001f)
+            {
+                return;
+            }
+
+            float groundY = visualRoot.position.y + groundOffsetFromVisualRoot;
+            Vector3 target = hips.position + forward * 0.32f - right * 0.08f;
+            target.y = groundY + swordLength - 0.05f;
+            Vector3 shoulder = rightUpperArm.position;
+            Vector3 shoulderToTarget = target - shoulder;
+            float targetDistance = Mathf.Clamp(shoulderToTarget.magnitude,
+                Mathf.Abs(upperLength - lowerLength) + 0.001f,
+                (upperLength + lowerLength) * 0.98f);
+            Vector3 reach = shoulderToTarget.sqrMagnitude > 0.0001f
+                ? shoulderToTarget.normalized
+                : Vector3.down;
+            target = shoulder + reach * targetDistance;
+
+            float along = (upperLength * upperLength - lowerLength * lowerLength +
+                targetDistance * targetDistance) / (2f * targetDistance);
+            float bend = Mathf.Sqrt(Mathf.Max(0f, upperLength * upperLength - along * along));
+            Vector3 hint = Vector3.ProjectOnPlane(right - forward * 0.35f + Vector3.up * 0.15f, reach);
+            if (hint.sqrMagnitude < 0.0001f)
+            {
+                hint = Vector3.Cross(reach, right);
+            }
+            Vector3 elbow = shoulder + reach * along + hint.normalized * bend;
+            AlignBone(rightUpperArm, rightLowerArm, elbow - shoulder, weight);
+            AlignBone(rightLowerArm, rightHand, target - rightLowerArm.position, weight);
+        }
+
+        private static float MinimumY(params Transform[] points)
+        {
+            float minimum = float.PositiveInfinity;
+            for (int i = 0; i < points.Length; i++)
+            {
+                if (points[i] != null)
+                {
+                    minimum = Mathf.Min(minimum, points[i].position.y);
+                }
+            }
+            return minimum;
         }
 
         private void AlignBone(Transform bone, Transform child, Vector3 desiredDirection, float weight)
