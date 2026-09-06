@@ -22,9 +22,10 @@ namespace CoffeeGame.Presentation.Tests
         private Health playerHealth;
         private int spawnedEnemies;
 
-        [SetUp]
-        public void SetUp()
+        [UnitySetUp]
+        public IEnumerator SetUp()
         {
+            yield return new EnterPlayMode();
             Time.timeScale = 1f;
             host = new GameObject("encounter-lifecycle-test");
             tuning = CombatTuning.CreateDefault();
@@ -60,12 +61,14 @@ namespace CoffeeGame.Presentation.Tests
             run.StartNewRun();
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
-            Object.DestroyImmediate(host);
-            Object.DestroyImmediate(tuning);
+            if (host != null) Object.Destroy(host);
+            if (tuning != null) Object.Destroy(tuning);
+            yield return null;
             Time.timeScale = 1f;
+            yield return new ExitPlayMode();
         }
 
         [Test]
