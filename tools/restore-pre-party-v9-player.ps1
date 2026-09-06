@@ -106,8 +106,12 @@ function Read-UnitySavePreferences {
   if ($kindNames.Count -gt 1 -or $folderNames.Count -gt 1) {
     throw 'Ambiguous CoffeeGAME save preferences in HKCU.'
   }
-  $kindValue = if ($kindNames.Count -eq 1) { $key.GetValue($kindNames[0], $null) } else { $null }
-  $folderValue = if ($folderNames.Count -eq 1) { $key.GetValue($folderNames[0], $null) } else { $null }
+  # Assign the method result directly: returning byte[] through an if pipeline
+  # unrolls it into object[], losing the registry's binary value type.
+  $kindValue = $null
+  $folderValue = $null
+  if ($kindNames.Count -eq 1) { $kindValue = $key.GetValue($kindNames[0], $null) }
+  if ($folderNames.Count -eq 1) { $folderValue = $key.GetValue($folderNames[0], $null) }
   [ordered]@{
     kind = Decode-PreferenceText $kindValue 'CoffeeGame.Save.Kind.v1'
     folder = Decode-PreferenceText $folderValue 'CoffeeGame.Save.Folder.v1'
