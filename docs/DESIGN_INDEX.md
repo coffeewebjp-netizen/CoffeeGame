@@ -21,7 +21,7 @@ The live game is `unity/CoffeeGame`.
 | 戦闘スライス | `docs/first-combat-slice.md` | `Scripts/Runtime/Combat/`, `Scripts/Runtime/Bootstrap/` |
 | 敵固定・ジャストスロー・剣士音声・親密度デバッグ | `docs/combat-polish-v13.md`, `docs/target-lock-v12.md` | `TargetLockController`, `PlayerDefense`, `PerfectDefenseMoment`, `SpecialCombatVoice`, `CombatGameHudView.Settings` |
 | 防御・回避・バク転・2体出現 | `docs/acrobatics-v11.md`, `docs/defense-v10.md` | `PlayerDefense`, `PlayerMotor3D`, `AcrobaticMotionPresentation`, `CombatRunController` |
-| Android / タッチ | `docs/mobile-controls-v15.md` | `TouchGestureRouter`, `TouchControlLayout`, `OnScreenTouchControls`, `CameraOrbitInputDriver` |
+| Android / タッチ | `docs/mobile-ui-v16.md`, `docs/mobile-controls-v15.md` | `TouchGestureRouter`, `TouchControlLayout`, `OnScreenTouchControls`, `CombatTouchGlyph`, `CameraOrbitInputDriver` |
 | HUD / ポーズ | `docs/player-profile-and-pause-ui.md` | `CombatSliceHud`（制御）と `CombatGameHudView`（表示）。設定行は `CombatHudSettingsRows` |
 | CoffeeLearning 連携 | `docs/coffeelearning-integration.md` | `Scripts/Integration/`。HUD 接続面は `CombatSliceHud.CoffeeLearning.cs` / `CombatGameHudView.Settings.cs`。ライバル出題は `*.Rival*.cs` |
 | HD-2D 素材 | `art/hd2d/README.md` | `Resources/Art/HD2D/` |

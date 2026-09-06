@@ -24,6 +24,11 @@ namespace CoffeeGame.UI
         private bool ownsFont;
         private readonly Dictionary<GameInputSemantic, Image> buttonImages = new Dictionary<GameInputSemantic, Image>();
         private readonly Dictionary<GameInputSemantic, Text> buttonLabels = new Dictionary<GameInputSemantic, Text>();
+        private readonly Dictionary<GameInputSemantic, CombatTouchGlyph> icons = new Dictionary<GameInputSemantic, CombatTouchGlyph>();
+        private readonly Dictionary<GameInputSemantic, CombatTouchGlyph> rings = new Dictionary<GameInputSemantic, CombatTouchGlyph>();
+        private readonly Dictionary<GameInputSemantic, float> feedback = new Dictionary<GameInputSemantic, float>();
+        private CombatTouchGlyph specialRing, stickRing;
+        private Text specialValue;
         private Image stickImage, knobImage;
         private Text hint;
         private Texture2D circleTexture;
@@ -85,20 +90,38 @@ namespace CoffeeGame.UI
             {
                 Rect rect = button.Bounds;
                 bool held = gestures.IsHeld(button.Action) || button.Action == GameInputSemantic.LockOn && locked;
-                Color color = held ? new Color(.25f, .77f, 1, .78f) : new Color(.08f, .12f, .19f, .68f);
-                SetRect(buttonImages[button.Action].rectTransform, rect);
-                buttonImages[button.Action].color = color;
+                bool primary = button.Action == GameInputSemantic.Sword;
+                bool special = button.Action == GameInputSemantic.Special;
+                float meter = run?.Party?.Active?.Combat != null ? run.Party.Active.Combat.SpecialMeterNormalized : 0;
+                bool ready = special && meter >= .999f;
+                Color accent = special ? new Color(1f,.79f,.38f) : new Color(.55f,.9f,1f);
+                float target = held ? 1 : 0;
+                feedback[button.Action] = Mathf.MoveTowards(feedback[button.Action], target, Time.unscaledDeltaTime * 12);
+                float press = feedback[button.Action];
+                float size = rect.width * (primary ? .93f : .82f) * (1 - press * .06f);
+                SetRect(buttonImages[button.Action].rectTransform, new Rect(rect.center-Vector2.one*size/2,Vector2.one*size));
+                buttonImages[button.Action].color = Color.Lerp(new Color(.025f,.04f,.055f,primary ? .57f : .4f), new Color(accent.r*.24f,accent.g*.24f,accent.b*.24f,.84f),press);
+                icons[button.Action].Icon(button.Action,cat);
+                icons[button.Action].color = Color.Lerp(new Color(.95f,.96f,.94f, special && !ready ? .5f : .96f),accent,held || ready ? 1 : 0);
+                rings[button.Action].color = held || ready ? accent : new Color(.91f,.94f,.93f,primary ? .72f : .32f);
                 var label = buttonLabels[button.Action]; label.text = Label(button.Action, cat, locked);
-                label.fontSize = Mathf.Max(12, Mathf.RoundToInt(20 * layout.Scale));
+                label.fontSize = Mathf.Max(10, Mathf.RoundToInt(11 * layout.Scale));
+                label.color = held || ready ? accent : new Color(.92f,.94f,.95f,.78f);
+                if(special) {
+                    specialRing.Ring(meter,.042f); specialRing.color = accent;
+                    specialValue.text = ready ? "READY" : Mathf.FloorToInt(meter*100)+"%";
+                    specialValue.fontSize = Mathf.Max(10,Mathf.RoundToInt(11*layout.Scale));
+                }
             }
             Vector2 origin = gestures.HasMoveFinger ? gestures.MoveOrigin : layout.StickCenter;
             float radius = layout.StickRadius;
             SetRect(stickImage.rectTransform, new Rect(origin.x - radius, origin.y - radius, radius * 2, radius * 2));
+            stickRing.color = new Color(.92f,.96f,1f,gestures.HasMoveFinger ? .5f : .23f);
             Vector2 knob = gestures.HasMoveFinger ? gestures.MovePosition : origin;
             float diameter = radius * .65f;
             SetRect(knobImage.rectTransform, new Rect(knob.x - diameter / 2, knob.y - diameter / 2, diameter, diameter));
             SetRect(hint.rectTransform, new Rect(layout.SafeArea.xMin + 20 * layout.Scale, layout.SafeArea.yMin + 10 * layout.Scale, 300 * layout.Scale, 27 * layout.Scale));
-            hint.fontSize = Mathf.Max(11, Mathf.RoundToInt(16 * layout.Scale));
+            hint.fontSize = Mathf.Max(10, Mathf.RoundToInt(11 * layout.Scale));
         }
         public static string Label(GameInputSemantic action, bool cat, bool locked = false)
         {
@@ -145,14 +168,33 @@ namespace CoffeeGame.UI
             foreach (var button in layout.Buttons)
             {
                 var disk = CreateDisk(button.Action.ToString(), new Color(.08f, .12f, .19f, .68f));
-                var outline = disk.gameObject.AddComponent<Outline>(); outline.effectColor = new Color(.78f, .9f, 1f, .38f); outline.effectDistance = Vector2.one * 2;
-                var label = CreateLabel(disk.transform, "Label"); label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
+                var rim = CreateGlyph(disk.transform,"Rim",0,0,1,1); rim.Ring(1,button.Action == GameInputSemantic.Sword ? .022f : .017f);
+                var icon = CreateGlyph(disk.transform,"Icon",.14f,.17f,.86f,.89f); icon.Icon(button.Action,false);
+                rings.Add(button.Action,rim); icons.Add(button.Action,icon); feedback.Add(button.Action,0);
+                var label = CreateLabel(disk.transform, "Label"); label.rectTransform.anchorMin = new Vector2(-.2f,-.22f); label.rectTransform.anchorMax = new Vector2(1.2f,-.01f);
                 label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
                 buttonImages.Add(button.Action, disk); buttonLabels.Add(button.Action, label);
+                if(button.Action == GameInputSemantic.Special) {
+                    specialRing = CreateGlyph(disk.transform,"Energy",-.06f,-.06f,1.06f,1.06f);
+                    specialValue = CreateLabel(disk.transform,"Energy amount");
+                    specialValue.rectTransform.anchorMin = new Vector2(-.2f,1.05f); specialValue.rectTransform.anchorMax = new Vector2(1.2f,1.3f);
+                    specialValue.rectTransform.offsetMin=specialValue.rectTransform.offsetMax=Vector2.zero;
+                    specialValue.color=new Color(1,.79f,.38f);
+                }
             }
-            stickImage = CreateDisk("Movement", new Color(.8f, .91f, 1f, .16f)); knobImage = CreateDisk("Thumb", new Color(.8f, .91f, 1f, .36f));
+            stickImage = CreateDisk("Movement", new Color(.025f,.04f,.055f,.12f));
+            stickRing = CreateGlyph(stickImage.transform,"Movement rim",0,0,1,1); stickRing.Ring(1,.013f);
+            knobImage = CreateDisk("Thumb", new Color(.85f,.91f,.94f,.2f));
+            var knobRing = CreateGlyph(knobImage.transform,"Thumb rim",0,0,1,1); knobRing.Ring(1,.025f); knobRing.color=new Color(1,1,1,.38f);
             hint = CreateLabel(root.transform, "Touch hint"); hint.alignment = TextAnchor.MiddleLeft; hint.fontStyle = FontStyle.Normal;
-            hint.text = "左：移動　右の空き：カメラ";
+            hint.text = "MOVE / 左スワイプ"; hint.color=new Color(.85f,.9f,.93f,.42f);
+        }
+        private static CombatTouchGlyph CreateGlyph(Transform parent,string name,float x,float y,float xx,float yy)
+        {
+            var go=new GameObject(name,typeof(RectTransform),typeof(CombatTouchGlyph));go.transform.SetParent(parent,false);
+            var glyph=go.GetComponent<CombatTouchGlyph>();glyph.raycastTarget=false;
+            glyph.rectTransform.anchorMin=new Vector2(x,y);glyph.rectTransform.anchorMax=new Vector2(xx,yy);
+            glyph.rectTransform.offsetMin=glyph.rectTransform.offsetMax=Vector2.zero;return glyph;
         }
         private Image CreateDisk(string name, Color color)
         {

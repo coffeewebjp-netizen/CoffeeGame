@@ -253,6 +253,7 @@ namespace CoffeeGame.UI
             var activeMember = run.Party != null && run.Party.Active != null ? progression.Party.Find(run.Party.Active.MemberId) : null;
             identityText.text = $"Lv.{activeMember?.Level ?? progression.Level}  {activeMember?.Status.ClassName ?? progression.Status.ClassName}\n討伐 {run.Kills}    Gold {progression.Gold}";
             RefreshParty(run, pauseMenuOpen);
+            RefreshTouchHudDensity();
             objectiveText.text = run.LastEvent;
             SetBar(healthFill, healthText, run.PlayerHealth.Normalized,
                 $"HP  {run.PlayerHealth.Current} / {run.PlayerHealth.Maximum}");
@@ -509,6 +510,24 @@ namespace CoffeeGame.UI
             chargeText = CreateText("Label", charge.transform, 24, FontStyle.Bold, TextAnchor.MiddleCenter, Ink);
             Stretch(chargeText.rectTransform, 2f);
             chargePanel.SetActive(false);
+        }
+
+        private bool? compactTouchHud;
+        private void RefreshTouchHudDensity()
+        {
+            bool compact = input != null && input.UsesTouchOverlay;
+            if (compactTouchHud == compact) return;
+            compactTouchHud = compact;
+            // Touch leaves more of the arena visible; menus and desktop retain
+            // their existing size and hierarchy.
+            var status = gameplayHud.transform.Find("Player Status");
+            status.localScale = Vector3.one * (compact ? .78f : 1f);
+            status.GetComponent<Image>().color = compact ? new Color(.025f,.043f,.066f,.58f) : Panel;
+            SetTopRight(pauseButton.GetComponent<RectTransform>(),new Vector2(-28,-28),compact ? new Vector2(96,96) : new Vector2(174,58));
+            pauseButton.GetComponentInChildren<Text>().text = compact ? "Ⅱ" : "Ⅱ  ポーズ";
+            SetTopRight(performanceText.rectTransform,new Vector2(-30,compact ? -132 : -94),new Vector2(250,32));
+            performanceText.fontSize = compact ? 16 : 19;
+            objectiveText.fontSize = compact ? 22 : 27;
         }
 
 

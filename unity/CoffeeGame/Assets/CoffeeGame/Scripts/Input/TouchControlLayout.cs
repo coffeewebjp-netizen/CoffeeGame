@@ -24,14 +24,21 @@ namespace CoffeeGame.Input
                 ? Rect.MinMaxRect(Mathf.Clamp(safeArea.xMin, 0, screen.width), Mathf.Clamp(safeArea.yMin, 0, screen.height),
                     Mathf.Clamp(safeArea.xMax, 0, screen.width), Mathf.Clamp(safeArea.yMax, 0, screen.height)) : screen;
             Scale = Mathf.Max(.1f, Mathf.Min(SafeArea.width / 960f, SafeArea.height / 540f));
-            float size = 76f * Scale, gap = 12f * Scale;
-            float right = SafeArea.xMax - 24f * Scale, bottom = SafeArea.yMin + 28f * Scale;
-            Rect Cell(int column, int row) => new Rect(right - (3 - column) * size - (2 - column) * gap, bottom + row * (size + gap), size, size);
+            // Attack is the thumb's home position. Travel actions sit below/above
+            // it; skills follow the inner arc, utilities sit outside that arc.
+            // Hit rectangles are deliberately larger than the visible medallions.
+            Rect Target(float fromRight, float fromBottom, float size) => new Rect(
+                SafeArea.xMax - (fromRight + size / 2) * Scale,
+                SafeArea.yMin + (fromBottom - size / 2) * Scale, size * Scale, size * Scale);
             Buttons = new[] {
-                new Button(GameInputSemantic.Dodge, Cell(0, 0)), new Button(GameInputSemantic.Jump, Cell(1, 0)), new Button(GameInputSemantic.Sword, Cell(2, 0)),
-                new Button(GameInputSemantic.Guard, Cell(0, 1)), new Button(GameInputSemantic.Magic, Cell(1, 1)), new Button(GameInputSemantic.Special, Cell(2, 1)),
-                new Button(GameInputSemantic.LockOn, new Rect(right - 2 * size - gap, bottom + 2 * (size + gap), size, 48f * Scale)),
-                new Button(GameInputSemantic.SwitchCharacter, new Rect(right - size, bottom + 2 * (size + gap), size, 48f * Scale))
+                new Button(GameInputSemantic.Sword, Target(94, 102, 108)),
+                new Button(GameInputSemantic.Dodge, Target(220, 68, 80)),
+                new Button(GameInputSemantic.Jump, Target(66, 232, 76)),
+                new Button(GameInputSemantic.Guard, Target(314, 134, 76)),
+                new Button(GameInputSemantic.Magic, Target(190, 210, 84)),
+                new Button(GameInputSemantic.Special, Target(292, 260, 84)),
+                new Button(GameInputSemantic.LockOn, Target(68, 324, 72)),
+                new Button(GameInputSemantic.SwitchCharacter, Target(168, 324, 76))
             };
         }
         public bool TryHit(Vector2 position, out GameInputSemantic action)

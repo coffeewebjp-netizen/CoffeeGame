@@ -58,6 +58,8 @@ namespace CoffeeGame.Combat
         public float CriticalChance { get; set; }
         public float SpecialChargeSpeedMultiplier { get; set; } = 1f;
         public bool IsCharging => chargeKind != ChargeKind.None;
+        public float SpecialMeterNormalized => tuning != null && resources != null
+            ? Mathf.Clamp01(resources.Stamina / Mathf.Max(1, tuning.SpecialStaminaCost)) : 0f;
         public float ChargeNormalized { get; private set; }
         public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? (IsCatMage ? "星環の大魔法" : "氷魔法") : string.Empty;
 

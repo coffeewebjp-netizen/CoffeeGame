@@ -84,9 +84,18 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-MobileV15", "CoffeeGAME-MobileV15.exe");
         }
 
+        public static void BuildMobileControlsV16NoSetup()
+        {
+            BuildDiagnosticNoSetup("Windows-MobileV16", "CoffeeGAME-MobileV16.exe");
+        }
+
+        public static void BuildAndroidMobileV16NoSetup() => BuildAndroidMobileNoSetup("MobileV16");
+
         // Build the accepted scene/assets without regenerating any character.
         // Temporary development settings are restored even after a build failure.
-        public static void BuildAndroidMobileV15NoSetup()
+        public static void BuildAndroidMobileV15NoSetup() => BuildAndroidMobileNoSetup("MobileV15");
+
+        private static void BuildAndroidMobileNoSetup(string version)
         {
             ApplyLocalAndroidToolchain();
             EnsureCombatSceneExists();
@@ -103,7 +112,7 @@ namespace CoffeeGame.Editor
                 PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
                 PlayerSettings.Android.useCustomKeystore = false;
                 EditorUserBuildSettings.buildAppBundle = false;
-                Build(GetOutputPath("Android-MobileV15", "CoffeeGAME-MobileV15-development.apk"), BuildTarget.Android, BuildOptions.Development);
+                Build(GetOutputPath("Android-" + version, "CoffeeGAME-" + version + "-development.apk"), BuildTarget.Android, BuildOptions.Development);
             }
             finally
             {

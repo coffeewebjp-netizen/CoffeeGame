@@ -59,6 +59,11 @@ namespace CoffeeGame.UI
                     partyRestButtons.Add(id, restButton);
                 }
                 label.text = MemberSummary(member, run.Party.Active != null && run.Party.Active.MemberId == member.Id);
+                bool touchHud = input != null && input.UsesTouchOverlay;
+                var memberPanel = label.transform.parent.GetComponent<RectTransform>();
+                memberPanel.localScale = Vector3.one * (touchHud ? .78f : 1f);
+                SetTopLeft(memberPanel, new Vector2(28, touchHud ? -188-index*74 : -236-index*92),new Vector2(560,84));
+                memberPanel.GetComponent<Image>().color = touchHud ? new Color(.025f,.043f,.066f,.48f) : Panel;
                 bool available = member.RecoveryState != PartyRecoveryState.KnockedOut && !run.Party.TimeStopped;
                 partySwitches[member.Id].interactable = available && member.RecoveryState == PartyRecoveryState.Deployed && run.Mode == CombatRunMode.Playing;
                 var rest = partyRestButtons[member.Id];
@@ -78,6 +83,13 @@ namespace CoffeeGame.UI
             partyNotice.text = run.Party.TimeStopped
                 ? $"時を止める　{Combat.TimeStopController.Instance.Remaining:0.0} 秒\n停止中の命中は解除時に反映"
                 : (input != null && input.UsesTouchOverlay ? "切替：操作キャラ変更　休息中はHP・MPが回復\n" : "T / RB：操作切替　休息中はHP・MPが回復\n") + run.Party.Notice;
+            if (input != null && input.UsesTouchOverlay)
+            {
+                if (!run.Party.TimeStopped) partyNotice.text = run.Party.Notice;
+                SetTopLeft(partyNotice.rectTransform,new Vector2(28,-188-index*74),new Vector2(520,65));
+                partyNotice.fontSize = 18;
+            }
+            else { SetTopLeft(partyNotice.rectTransform,new Vector2(28,-434),new Vector2(620,65)); partyNotice.fontSize=21; }
             if (activeCatPortrait != null) activeCatPortrait.gameObject.SetActive(run.Party.Active != null && run.Party.Active.IsCat);
         }
 

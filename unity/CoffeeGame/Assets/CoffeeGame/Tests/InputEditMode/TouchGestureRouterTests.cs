@@ -29,6 +29,20 @@ namespace CoffeeGame.Input.Tests
             Assert.That(l.IsMoveZone(l.StickCenter), Is.True);
         }
         [Test]
+        public void PrimaryAttackHasTheLargestTargetAndUtilityControlsStayAboveIt()
+        {
+            var attack=layout.Buttons.Single(b=>b.Action==GameInputSemantic.Sword).Bounds;
+            foreach(var b in layout.Buttons.Where(b=>b.Action!=GameInputSemantic.Sword))
+                Assert.That(attack.width,Is.GreaterThan(b.Bounds.width));
+            Assert.That(Button(GameInputSemantic.LockOn).y,Is.GreaterThan(attack.yMax));
+            Assert.That(Button(GameInputSemantic.SwitchCharacter).y,Is.GreaterThan(attack.yMax));
+            foreach(var b in layout.Buttons)
+            {
+                Assert.That(layout.TryHit(b.Bounds.center,out var command),Is.True);
+                Assert.That(command,Is.EqualTo(b.Action));
+            }
+        }
+        [Test]
         public void MoveGuardAttackAndCameraCanBeHeldByIndependentFingers()
         {
             var r = new TouchGestureRouter();
