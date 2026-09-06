@@ -264,7 +264,11 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (TryGetCommandLineValue("-captureDefense", out string defenseCapturePath))
+            if (TryGetCommandLineValue("-captureAcrobatics", out string acrobaticsCapturePath))
+            {
+                AcrobaticsEvidenceCapture.Begin(gameObject, runController, acrobaticsCapturePath);
+            }
+            else if (TryGetCommandLineValue("-captureDefense", out string defenseCapturePath))
             {
                 DefenseEvidenceCapture.Begin(gameObject, runController, defenseCapturePath);
             }
@@ -396,7 +400,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense")) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !HasCommandLineFlag("-captureAcrobatics")) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -420,7 +424,7 @@ namespace CoffeeGame.Bootstrap
         private void EnsurePlayerProfileLoaded()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense"))
+            if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || HasCommandLineFlag("-captureAcrobatics"))
             {
                 sessionProgression = new PlayerProgression(1, 0, 0, 0,
                     previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
@@ -472,7 +476,7 @@ namespace CoffeeGame.Bootstrap
         {
             runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense"))
+            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || HasCommandLineFlag("-captureAcrobatics"))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;

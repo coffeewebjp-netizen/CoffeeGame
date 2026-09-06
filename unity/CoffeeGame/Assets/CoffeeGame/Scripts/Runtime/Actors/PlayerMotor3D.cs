@@ -27,6 +27,10 @@ namespace CoffeeGame.Actors
         private float airborneTime;
         private bool plungeInputWasHeld;
         private bool fallVisualPlayed;
+        private float acrobaticElapsed;
+        private float acrobaticDuration;
+        private Vector3 acrobaticDirection;
+        private AcrobaticMotionPresentation acrobaticVisual;
 
         public event Action Jumped;
         public event Action Dodged;
@@ -37,20 +41,29 @@ namespace CoffeeGame.Actors
         public bool IsGrounded { get; private set; }
         public bool IsPlunging { get; private set; }
         public bool IsDodging { get; private set; }
+        public bool IsBackflipping { get; private set; }
+        public bool IsCartwheeling { get; private set; }
+        public bool IsGuardJumping => IsBackflipping || IsCartwheeling;
+        public bool IsRunning { get; private set; }
+        public bool IsRunningDodge { get; private set; }
+        public bool UsesRunningSpinFallback => IsRunningDodge && acrobaticVisual != null && acrobaticVisual.UseRunningSpinFallback;
+        public float AcrobaticProgress => acrobaticDuration > 0f ? Mathf.Clamp01(acrobaticElapsed / acrobaticDuration) : 0f;
+        public Vector3 AcrobaticDirection => acrobaticDirection;
+        public float PlungeRecoveryRemaining => landingLockRemaining;
         public bool IsGuarding { get; set; }
         public bool CanPlunge { get; set; } = true;
         public bool CanMove { get; set; } = true;
         public float MovementScale { get; set; } = 1f;
         public float SpeedMultiplier { get; set; } = 1f;
         public float VerticalSpeed => verticalSpeed;
-        public bool CanAct => CanMove && landingLockRemaining <= 0f && !IsPlunging && !IsDodging;
+        public bool CanAct => CanMove && landingLockRemaining <= 0f && !IsPlunging && !IsDodging && !IsGuardJumping;
         public bool UseCommands { get; set; }
         public ActorCommandFrame Commands { get; set; }
 
         public void FaceTowards(Vector3 position)
         {
             Vector3 direction = Vector3.ProjectOnPlane(position - transform.position, Vector3.up);
-            if (direction.sqrMagnitude < 0.001f || IsDodging) return;
+            if (direction.sqrMagnitude < 0.001f || IsDodging || IsGuardJumping || IsGuarding) return;
             Facing = direction.normalized;
             visual?.SetFacing(Facing);
         }
@@ -64,6 +77,11 @@ namespace CoffeeGame.Actors
             characterController = GetComponent<CharacterController>();
             IsGrounded = characterController.isGrounded;
             verticalSpeed = -1f;
+            if (characterVisual is Component component)
+            {
+                acrobaticVisual = gameObject.AddComponent<AcrobaticMotionPresentation>();
+                acrobaticVisual.Initialize(component.transform, gameObject);
+            }
         }
 
         public void ResetMotor(Vector3 position)
@@ -85,6 +103,10 @@ namespace CoffeeGame.Actors
             fallVisualPlayed = false;
             IsPlunging = false;
             IsDodging = false;
+            IsBackflipping = IsCartwheeling = false;
+            IsRunningDodge = IsRunning = false;
+            acrobaticElapsed = acrobaticDuration = 0f;
+            acrobaticVisual?.ClearMotion();
             IsGuarding = false;
             IsGrounded = characterController.isGrounded;
             MovementScale = 1f;
@@ -103,14 +125,23 @@ namespace CoffeeGame.Actors
 
         private void Update()
         {
-            if (input == null || tuning == null || characterController == null)
+            Tick(CombatClock.DeltaTime(gameObject));
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if ((input == null && !UseCommands) || tuning == null || characterController == null)
             {
                 return;
             }
 
-            float deltaTime = CombatClock.DeltaTime(gameObject);
-            if (deltaTime <= 0f || !CanMove) return;
+            if (deltaTime <= 0f || CombatClock.IsPaused) return;
+            var stop = TimeStopController.Instance;
+            if (stop != null && stop.IsActive && stop.IsFrozen(gameObject)) return;
+            if (!CanMove) { CancelAcrobatics(); return; }
             Vector2 moveInput = UseCommands ? Commands.Move : input.Move;
+            Vector3 desiredDirection = GetCameraRelativeDirection(moveInput);
+            if (IsDodging || IsGuardJumping) acrobaticElapsed += deltaTime;
             bool plungeInputHeld = moveInput.y <= -0.72f;
             bool plungeInputPressed = plungeInputHeld && !plungeInputWasHeld;
             landingLockRemaining = Mathf.Max(0f, landingLockRemaining - deltaTime);
@@ -123,11 +154,17 @@ namespace CoffeeGame.Actors
                 verticalSpeed = -1.5f;
             }
 
-            if (CanMove && !IsGuarding && landingLockRemaining <= 0f && IsGrounded && !IsDodging && MovementScale >= 0.9f && (UseCommands ? Commands.Dodge : input.DodgePressed))
+            if (IsGuarding && CanAct && IsGrounded && MovementScale >= .9f &&
+                (UseCommands ? Commands.Jump : input.JumpPressed) &&
+                (IsBackwardInput(Facing, desiredDirection) || IsSidewaysInput(Facing, desiredDirection)))
+            {
+                StartGuardJump(desiredDirection);
+            }
+            else if (CanMove && !IsGuarding && landingLockRemaining <= 0f && IsGrounded && !IsDodging && !IsGuardJumping && MovementScale >= 0.9f && (UseCommands ? Commands.Dodge : input.DodgePressed))
             {
                 StartDodge(moveInput);
             }
-            else if (CanMove && !IsGuarding && landingLockRemaining <= 0f && IsGrounded && !IsDodging && (UseCommands ? Commands.Jump : input.JumpPressed))
+            else if (CanMove && !IsGuarding && landingLockRemaining <= 0f && IsGrounded && !IsDodging && !IsGuardJumping && (UseCommands ? Commands.Jump : input.JumpPressed))
             {
                 verticalSpeed = tuning.JumpVelocity;
                 IsGrounded = false;
@@ -139,7 +176,7 @@ namespace CoffeeGame.Actors
                 visual?.PlayAction(CharacterAction.Jump, float.PositiveInfinity);
             }
 
-            if (CanMove && CanPlunge && !IsGrounded && !IsPlunging && !IsDodging && airborneTime >= MinimumPlungeAirTime && plungeInputPressed)
+            if (CanMove && CanPlunge && !IsGrounded && !IsPlunging && !IsDodging && !IsGuardJumping && airborneTime >= MinimumPlungeAirTime && plungeInputPressed)
             {
                 IsPlunging = true;
                 verticalSpeed = -tuning.PlungeSpeed;
@@ -152,16 +189,15 @@ namespace CoffeeGame.Actors
                 visual?.PlayAction(CharacterAction.Plunge, float.PositiveInfinity);
             }
 
-            Vector3 desiredDirection = GetCameraRelativeDirection(moveInput);
             float inputMagnitude = Mathf.Clamp01(moveInput.magnitude);
-            UpdateRunState(desiredDirection, inputMagnitude, deltaTime);
+            if (!IsDodging && !IsGuardJumping) UpdateRunState(desiredDirection, inputMagnitude, deltaTime);
 
             float moveSpeed = sustainedDirectionTime >= tuning.RunHoldSeconds ? tuning.RunSpeed : tuning.WalkSpeed;
             float airMultiplier = IsGrounded ? 1f : tuning.AirControl;
-            float effectiveScale = CanMove && landingLockRemaining <= 0f && !IsDodging ? Mathf.Clamp01(MovementScale) : 0f;
+            float effectiveScale = CanMove && landingLockRemaining <= 0f && !IsDodging && !IsGuardJumping ? Mathf.Clamp01(MovementScale) : 0f;
             if (IsGuarding) effectiveScale *= 0.28f;
             float effectiveMoveSpeed = moveSpeed * Mathf.Clamp(SpeedMultiplier, 0.2f, 10f);
-            if (!IsDodging)
+            if (!IsDodging && !IsGuardJumping)
             {
                 Vector3 desiredPlanarVelocity = desiredDirection * (effectiveMoveSpeed * inputMagnitude * airMultiplier * effectiveScale);
                 planarVelocity = Vector3.MoveTowards(planarVelocity, desiredPlanarVelocity, 14f * deltaTime);
@@ -177,7 +213,7 @@ namespace CoffeeGame.Actors
                 verticalSpeed -= tuning.Gravity * deltaTime;
             }
 
-            if (!IsGrounded && !IsPlunging && !IsDodging && !fallVisualPlayed && verticalSpeed <= 0f)
+            if (!IsGrounded && !IsPlunging && !IsDodging && !IsGuardJumping && !fallVisualPlayed && verticalSpeed <= 0f)
             {
                 fallVisualPlayed = true;
                 visual?.PlayAction(CharacterAction.Fall, float.PositiveInfinity);
@@ -185,12 +221,17 @@ namespace CoffeeGame.Actors
 
             CollisionFlags flags = characterController.Move((planarVelocity + Vector3.up * verticalSpeed) * deltaTime);
             bool groundedAfterMove = (flags & CollisionFlags.Below) != 0 || characterController.isGrounded;
-            if (groundedAfterMove && !wasGrounded)
+            bool rollingOnGround = IsDodging && !IsRunningDodge && acrobaticElapsed < acrobaticDuration;
+            if (groundedAfterMove && !rollingOnGround && (!wasGrounded || IsDodging || IsGuardJumping))
             {
                 bool landedFromPlunge = IsPlunging;
                 bool landedFromDodge = IsDodging;
+                bool landedFromBackflip = IsGuardJumping;
                 IsPlunging = false;
                 IsDodging = false;
+                IsBackflipping = IsCartwheeling = false;
+                IsRunningDodge = IsRunning = false;
+                acrobaticVisual?.ClearMotion();
                 IsGrounded = true;
                 airborneTime = 0f;
                 fallVisualPlayed = false;
@@ -198,9 +239,10 @@ namespace CoffeeGame.Actors
                 if (landedFromPlunge)
                 {
                     landingLockRemaining = tuning.LandingLag;
+                    planarVelocity = Vector3.zero;
                     visual?.PlayAction(CharacterAction.Land, Mathf.Max(0.18f, tuning.LandingLag));
                 }
-                else if (landedFromDodge)
+                else if (landedFromDodge || landedFromBackflip)
                 {
                     landingLockRemaining = 0f;
                     planarVelocity = Vector3.zero;
@@ -221,7 +263,7 @@ namespace CoffeeGame.Actors
 
             plungeInputWasHeld = plungeInputHeld;
 
-            if (!IsDodging && desiredDirection.sqrMagnitude > 0.01f)
+            if (!IsDodging && !IsGuardJumping && !IsGuarding && landingLockRemaining <= 0f && desiredDirection.sqrMagnitude > 0.01f)
             {
                 Facing = desiredDirection.normalized;
                 visual?.SetFacing(Facing);
@@ -229,11 +271,16 @@ namespace CoffeeGame.Actors
 
             CharacterAction locomotion = inputMagnitude < 0.08f ? CharacterAction.Idle :
                 sustainedDirectionTime >= tuning.RunHoldSeconds ? CharacterAction.Run : CharacterAction.Walk;
-            if (IsGrounded && !IsPlunging && !IsDodging)
+            if (IsGrounded && !IsPlunging && !IsDodging && !IsGuardJumping && landingLockRemaining <= 0f)
             {
                 visual?.SetLocomotion(locomotion, effectiveMoveSpeed <= 0f ? 0f : planarVelocity.magnitude / effectiveMoveSpeed);
             }
             visual?.SetAirHeight(Mathf.Max(0f, transform.position.y));
+            if (IsGuardJumping || (IsDodging && (!IsRunningDodge || UsesRunningSpinFallback)))
+                acrobaticVisual?.SetMotion(UsesRunningSpinFallback ? AcrobaticMotionKind.RunningSpin :
+                    IsCartwheeling ? AcrobaticMotionKind.Cartwheel :
+                    IsBackflipping ? AcrobaticMotionKind.Backflip : AcrobaticMotionKind.GroundRoll,
+                    AcrobaticProgress, acrobaticDirection);
         }
 
         private void StartDodge(Vector2 moveInput)
@@ -251,18 +298,73 @@ namespace CoffeeGame.Actors
             }
 
             direction.Normalize();
+            // Latch the pre-input locomotion state; changing direction during
+            // the evasive action must not switch its physical/visual style.
+            IsRunningDodge = IsRunning && moveInput.magnitude >= .55f;
+            IsRunning = false;
+            sustainedDirectionTime = 0f;
             IsDodging = true;
             IsGrounded = false;
             airborneTime = 0f;
             fallVisualPlayed = true;
-            verticalSpeed = tuning.JumpVelocity;
+            verticalSpeed = IsRunningDodge ? tuning.JumpVelocity : Mathf.Sqrt(2f * tuning.Gravity * tuning.GroundRollHopHeight);
             planarVelocity = direction * tuning.DodgeSpeed;
             Facing = direction;
             visual?.SetFacing(Facing);
-            float airSeconds = Mathf.Max(0.18f, tuning.ExpectedDodgeAirSeconds);
-            visual?.PlayAction(CharacterAction.Dodge, airSeconds);
+            acrobaticElapsed = 0f;
+            acrobaticDuration = IsRunningDodge ? tuning.ExpectedDodgeAirSeconds : tuning.GroundRollSeconds;
+            acrobaticDirection = direction;
+            // Walking/idle uses the low overlay; running reuses the saved
+            // Meshy Dodge clip and its original jump trajectory.
+            acrobaticVisual?.ClearMotion();
+            visual?.PlayAction(IsRunningDodge && !UsesRunningSpinFallback ? CharacterAction.Dodge : CharacterAction.Idle, acrobaticDuration);
             Dodged?.Invoke();
         }
+
+        public static bool IsBackwardInput(Vector3 facing, Vector3 direction)
+        {
+            direction = Vector3.ProjectOnPlane(direction, Vector3.up);
+            return direction.sqrMagnitude >= .04f && Vector3.Dot(facing.normalized, direction.normalized) <= -.5f;
+        }
+
+        public static bool IsSidewaysInput(Vector3 facing, Vector3 direction)
+        {
+            direction = Vector3.ProjectOnPlane(direction, Vector3.up);
+            return direction.sqrMagnitude >= .04f &&
+                Mathf.Abs(Vector3.Dot(facing.normalized, direction.normalized)) < .5f;
+        }
+
+        private void StartGuardJump(Vector3 direction)
+        {
+            GetComponent<PlayerDefense>()?.CancelGuard();
+            IsGuarding = false;
+            IsCartwheeling = IsSidewaysInput(Facing, direction);
+            IsBackflipping = !IsCartwheeling;
+            IsRunning = false;
+            sustainedDirectionTime = 0f;
+            IsGrounded = false;
+            airborneTime = 0f;
+            fallVisualPlayed = true;
+            verticalSpeed = Mathf.Sqrt(2f * tuning.Gravity * tuning.GuardBackflipHeight);
+            acrobaticElapsed = 0f;
+            acrobaticDuration = 2f * verticalSpeed / tuning.Gravity;
+            Vector3 sideways = Vector3.Cross(Vector3.up, Facing.normalized);
+            acrobaticDirection = IsCartwheeling
+                ? sideways * Mathf.Sign(Vector3.Dot(direction, sideways)) : -Facing.normalized;
+            planarVelocity = acrobaticDirection * tuning.GuardBackflipSpeed;
+            visual?.PlayAction(CharacterAction.Idle, acrobaticDuration);
+            Jumped?.Invoke();
+        }
+
+        private void CancelAcrobatics()
+        {
+            if (IsDodging || IsGuardJumping) planarVelocity = Vector3.zero;
+            IsDodging = IsBackflipping = IsCartwheeling = false;
+            IsRunningDodge = IsRunning = false;
+            acrobaticVisual?.ClearMotion();
+        }
+
+        private void OnDisable() => CancelAcrobatics();
 
         private Vector3 GetCameraRelativeDirection(Vector2 move)
         {
@@ -279,10 +381,13 @@ namespace CoffeeGame.Actors
 
         private void UpdateRunState(Vector3 desiredDirection, float magnitude, float deltaTime)
         {
-            if (magnitude < 0.55f || desiredDirection.sqrMagnitude < 0.01f)
+            if (!IsGrounded) { IsRunning = false; return; }
+            if (IsGuarding || landingLockRemaining > 0f || MovementScale < .9f ||
+                magnitude < 0.55f || desiredDirection.sqrMagnitude < 0.01f)
             {
                 sustainedDirectionTime = 0f;
                 previousInputDirection = Vector3.zero;
+                IsRunning = false;
                 return;
             }
 
@@ -296,6 +401,7 @@ namespace CoffeeGame.Actors
                 sustainedDirectionTime = 0f;
             }
             previousInputDirection = direction;
+            IsRunning = sustainedDirectionTime >= tuning.RunHoldSeconds;
         }
     }
 }

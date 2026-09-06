@@ -157,15 +157,16 @@ namespace CoffeeGame.Presentation.Tests
             finally { Object.DestroyImmediate(actor); Object.DestroyImmediate(mesh); }
         }
 
-        [Test]
-        public void PlungeRecoveryLowersGenericHipsAndRestoresTheAuthoredPosition()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void PlungeRecoveryLowersGenericHipsAndRestoresTheAuthoredPosition(bool reverseSpineNames)
         {
             var actor = new GameObject("plunge-recovery-owner");
             var visual = Child(actor.transform, "visual", Vector3.zero);
             visual.gameObject.AddComponent<Animator>();
             Transform hips = Child(visual, "Hips", new Vector3(0f, 1f, 0f));
-            Transform spine = Child(hips, "Spine", new Vector3(0f, .24f, 0f));
-            Transform chest = Child(spine, "Spine01", new Vector3(0f, .2f, 0f));
+            Transform spine = Child(hips, reverseSpineNames ? "Spine02" : "Spine", new Vector3(0f, .24f, 0f));
+            Transform chest = Child(spine, reverseSpineNames ? "Spine" : "Spine01", new Vector3(0f, .2f, 0f));
             Child(chest, "Head", new Vector3(0f, .25f, 0f));
             AddArmChain(chest, "Left", -1f);
             AddArmChain(chest, "Right", 1f);
@@ -191,10 +192,10 @@ namespace CoffeeGame.Presentation.Tests
 
                 InvokePrivate(pose, "ApplyDirectionalPose");
                 Vector3 torsoDirection = (chest.position - spine.position).normalized;
-                Assert.That(Vector3.Dot(torsoDirection, Vector3.up), Is.GreaterThan(.55f),
-                    "the planted recovery torso must remain diagonally upright");
-                Assert.That(Vector3.Dot(torsoDirection, Vector3.forward), Is.GreaterThan(.5f),
-                    "the planted recovery torso must still bow forward");
+                Assert.That(Vector3.Dot(torsoDirection, Vector3.up), Is.InRange(.2f,.5f),
+                    "the planted torso must bow almost horizontally rather than arch upward");
+                Assert.That(Vector3.Dot(torsoDirection, Vector3.forward), Is.GreaterThan(.85f),
+                    "the planted recovery torso must strongly bow forward");
                 Assert.That(Mathf.Min(leftFoot.position.y, rightFoot.position.y),
                     Is.GreaterThanOrEqualTo(authoredGroundY - .001f),
                     "the crouch may lift Hips as needed but must not push either foot underground");
@@ -203,10 +204,17 @@ namespace CoffeeGame.Presentation.Tests
                     "the recovery must bring the knee toward the deeply bowed torso");
                 float measuredSwordLength = GetPrivateField<float>(pose, "swordLength");
                 Assert.That(Mathf.Abs(rightHand.position.y -
-                    (authoredGroundY + measuredSwordLength - .05f)), Is.LessThan(.08f),
+                    (actor.transform.position.y + measuredSwordLength - .05f)), Is.LessThan(.08f),
                     "the hand must hold the grounded sword with only its tip below the floor");
+                float bladeMinY=float.PositiveInfinity;
+                foreach(var vertex in sword.GetComponent<MeshFilter>().sharedMesh.vertices)
+                    bladeMinY=Mathf.Min(bladeMinY,sword.transform.TransformPoint(vertex).y);
+                Assert.That(bladeMinY-actor.transform.position.y,Is.InRange(-.13f,.03f),
+                    "the rendered blade must touch physical ground, not the elevated ankle joint plane");
                 Assert.That(Vector3.Dot(pose.MeasureBladeWorldDirection(), Vector3.down),
                     Is.GreaterThan(.98f));
+                Assert.That(Vector3.Dot(chest.Find("Head").forward,Vector3.up),Is.LessThan(-.5f), "face looks down at the strike");
+                Assert.That(Mathf.Abs(leftFoot.position.x-rightFoot.position.x),Is.GreaterThan(.5f), "feet separate into a wider squat");
                 Assert.That(pose.PlungeRecovery, Is.EqualTo(1f));
 
                 pose.SetPlungeRecovery(0f);

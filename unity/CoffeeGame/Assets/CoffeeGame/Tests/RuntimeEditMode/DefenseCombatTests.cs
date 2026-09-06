@@ -47,6 +47,21 @@ namespace CoffeeGame.Tests
         }
         private void HoldPastJustWindow() => defense.TickGuard(true, true, CombatClock.Time(hero) - 1f);
 
+        [Test] public void PauseMenuPreservesHeldGuardAndPlantedRecovery()
+        {
+            var motor=hero.AddComponent<PlayerMotor3D>();
+            typeof(PlayerDefense).GetField("motor",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(defense,motor);
+            HoldPastJustWindow();
+            motor.CanMove=false;Time.timeScale=0f;
+            var update=typeof(PlayerDefense).GetMethod("Update",BindingFlags.NonPublic|BindingFlags.Instance);
+            update.Invoke(defense,null);
+            Assert.That(defense.IsGuarding,Is.True);
+            Assert.That(defense.IsPerfectGuardWindow,Is.False,"pause cannot rearm an expired parry window");
+            var pose=hero.GetComponent<CoffeeGame.Presentation.DefensePosePresentation>();
+            pose.SetGuarding(false);pose.SetPlungeRecovery(.8f);update.Invoke(defense,null);
+            Assert.That(pose.PlungeRecovery,Is.EqualTo(.8f));
+        }
+
         [Test] public void HeldGuardTakesTenPercentAndSuppressesKnockback()
         {
             HoldPastJustWindow(); DamageInfo observed = default;

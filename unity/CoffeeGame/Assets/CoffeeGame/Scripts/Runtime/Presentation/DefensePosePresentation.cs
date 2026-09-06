@@ -34,6 +34,7 @@ namespace CoffeeGame.Presentation
         private Transform spine;
         private Transform chest;
         private Transform head;
+        private Vector3 headForwardAxis;
         private Transform leftUpperArm;
         private Transform leftLowerArm;
         private Transform leftHand;
@@ -150,7 +151,7 @@ namespace CoffeeGame.Presentation
             rightUpperArm = AddPose(4, HumanBodyBones.RightUpperArm, new Vector3(-8f, -6f, -12f), new Vector3(8f, -3f, -6f));
             rightLowerArm = AddPose(5, HumanBodyBones.RightLowerArm, new Vector3(0f, 9f, -3f), new Vector3(2f, 3f, -2f));
             rightHand = AddPose(6, HumanBodyBones.RightHand, new Vector3(4f, 5f, -8f), Vector3.zero);
-            head = AddPose(7, HumanBodyBones.Head, new Vector3(-2f, 5f, 0f), new Vector3(-10f, 0f, 0f));
+            head = AddPose(7, HumanBodyBones.Head, new Vector3(-2f, 5f, 0f), Vector3.zero);
             hips = AddPose(8, HumanBodyBones.Hips, Vector3.zero, Vector3.zero);
             leftUpperLeg = AddPose(9, HumanBodyBones.LeftUpperLeg, Vector3.zero, Vector3.zero);
             leftLowerLeg = AddPose(10, HumanBodyBones.LeftLowerLeg, Vector3.zero, Vector3.zero);
@@ -163,6 +164,7 @@ namespace CoffeeGame.Presentation
             groundOffsetFromVisualRoot = float.IsPositiveInfinity(footY)
                 ? 0f
                 : footY - visualRoot.position.y;
+            headForwardAxis = head != null ? Quaternion.Inverse(head.rotation) * GetVisualForward() : Vector3.forward;
             CacheSwordAxis();
         }
 
@@ -319,20 +321,35 @@ namespace CoffeeGame.Presentation
                 if (crouch > 0.001f)
                 {
                     AlignBone(spine, chest,
-                        forward * 0.72f + up * 0.68f, crouch);
+                        forward * 0.94f + up * 0.34f, crouch);
                     AlignBone(chest, head,
-                        forward * 0.55f + up * 0.82f, crouch);
+                        forward * 0.98f + up * 0.18f, crouch);
                     AlignBone(leftUpperLeg, leftLowerLeg,
-                        forward * 0.96f - up * 0.1f + right * 0.08f, crouch);
+                        forward * 0.84f - up * 0.12f - right * 0.55f, crouch);
                     AlignBone(leftLowerLeg, leftFoot,
-                        -forward * 0.18f - up * 0.98f, crouch);
+                        -forward * 0.18f - up * 0.98f - right * .14f, crouch);
                     AlignBone(rightUpperLeg, rightLowerLeg,
-                        forward * 0.96f - up * 0.1f - right * 0.08f, crouch);
+                        forward * 0.84f - up * 0.12f + right * 0.55f, crouch);
                     AlignBone(rightLowerLeg, rightFoot,
-                        -forward * 0.18f - up * 0.98f, crouch);
+                        -forward * 0.18f - up * 0.98f + right * .14f, crouch);
                     LiftHipsForFootClearance();
                     PlaceGroundedSwordHand(forward, right, crouch);
                     AlignSwordAxis(Vector3.down, effectivePlungeBlend);
+                }
+                else if (plunging)
+                {
+                    AlignBone(spine, chest, forward * .65f + up * .76f, effectivePlungeBlend);
+                    AlignBone(chest, head, forward * .75f + up * .66f, effectivePlungeBlend);
+                    AlignSwordAxis(Vector3.down, 1f);
+                }
+                // Generic head local axes vary. Calibrate the face direction from
+                // the standing rig, then aim toward the strike instead of the sky.
+                if (head != null)
+                {
+                    Vector3 desiredLook = (forward * .72f - up * .69f).normalized;
+                    Quaternion correction = Quaternion.FromToRotation(head.rotation * headForwardAxis, desiredLook);
+                    head.rotation = Quaternion.Slerp(Quaternion.identity, correction, effectivePlungeBlend) * head.rotation;
+                    RecordAppliedRotation(head);
                 }
             }
         }
@@ -413,7 +430,9 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            float groundY = visualRoot.position.y + groundOffsetFromVisualRoot;
+            // Foot joints sit above the geta sole. Their cached plane preserves
+            // foot placement, but the blade must meet the actor's physical floor.
+            float groundY = clockOwner != null ? clockOwner.transform.position.y : visualRoot.position.y;
             Vector3 target = hips.position + forward * 0.32f - right * 0.08f;
             target.y = groundY + swordLength - 0.05f;
             Vector3 shoulder = rightUpperArm.position;
@@ -629,6 +648,25 @@ namespace CoffeeGame.Presentation
             return inactiveFallback;
         }
 
+        private Transform ResolveSpineChain(bool upper)
+        {
+            // Generic exports number the torso in different directions. The
+            // current Meshy rig is Hips -> Spine02 -> Spine01 -> Spine -> neck.
+            // Resolve anatomy from ancestry, never from the numerical suffix.
+            Transform nearestHead = null, nearestHips = null;
+            Transform resolvedHead = FindNamedTransform(animator.transform, "head");
+            for (Transform node = resolvedHead != null ? resolvedHead.parent : null;
+                node != null && node != animator.transform; node = node.parent)
+            {
+                string name = NormalizeName(node.name);
+                if (!name.Contains("spine") && !name.EndsWith("chest")) continue;
+                if (nearestHead == null) nearestHead = node;
+                nearestHips = node;
+            }
+            return (upper ? nearestHead : nearestHips) ??
+                FindNamedTransform(animator.transform, upper ? "spine01" : "spine", "chest", "spine02");
+        }
+
         private Transform ResolveBone(HumanBodyBones bone)
         {
             if (animator == null)
@@ -646,8 +684,8 @@ namespace CoffeeGame.Presentation
 
             switch (bone)
             {
-                case HumanBodyBones.Spine: return FindNamedTransform(animator.transform, "spine");
-                case HumanBodyBones.Chest: return FindNamedTransform(animator.transform, "spine01", "chest", "spine02");
+                case HumanBodyBones.Spine: return ResolveSpineChain(false);
+                case HumanBodyBones.Chest: return ResolveSpineChain(true);
                 case HumanBodyBones.Head: return FindNamedTransform(animator.transform, "head");
                 case HumanBodyBones.Hips: return FindNamedTransform(animator.transform, "hips", "pelvis");
                 case HumanBodyBones.LeftUpperLeg: return FindNamedTransform(animator.transform, "leftupleg", "leftthigh", "upperlegl");

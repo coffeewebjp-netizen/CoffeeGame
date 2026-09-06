@@ -28,6 +28,11 @@ namespace CoffeeGame.Domain
         [SerializeField, Min(0f)] private float gravity = 11.8f;
         [SerializeField, Range(0f, 1f)] private float airControl = 0.72f;
         [SerializeField, Min(0f)] private float dodgeSpeed = 4.2f;
+        [SerializeField, Min(0.1f)] private float groundRollSeconds = 0.62f;
+        [SerializeField, Min(0f)] private float groundRollHopHeight = 0.06f;
+        [SerializeField, Min(0.1f)] private float guardBackflipHeight = 0.72f;
+        [SerializeField, Min(0f)] private float guardBackflipSpeed = 3.5f;
+        [SerializeField, Min(0f)] private float plungeRecoverySeconds = 1f;
         [SerializeField, Range(0.05f, 1f)] private float dodgeInvulnerabilityFraction = 0.5f;
         [SerializeField, Min(1f)] private float perfectDodgeRangeMultiplier = 1.65f;
 
@@ -84,6 +89,10 @@ namespace CoffeeGame.Domain
         public float Gravity => gravity;
         public float AirControl => airControl;
         public float DodgeSpeed => dodgeSpeed;
+        public float GroundRollSeconds => groundRollSeconds;
+        public float GroundRollHopHeight => groundRollHopHeight;
+        public float GuardBackflipHeight => guardBackflipHeight;
+        public float GuardBackflipSpeed => guardBackflipSpeed;
         public float DodgeInvulnerabilityFraction => dodgeInvulnerabilityFraction;
         public float PerfectDodgeRangeMultiplier => perfectDodgeRangeMultiplier;
         public float ExpectedDodgeAirSeconds => gravity <= 0f ? 0f : 2f * jumpVelocity / gravity;
@@ -101,7 +110,7 @@ namespace CoffeeGame.Domain
         public int PlungeDamage => plungeDamage;
         public float PlungeRadius => plungeRadius;
         public float PlungeSpeed => plungeSpeed;
-        public float LandingLag => plungeLandingLag;
+        public float LandingLag => plungeRecoverySeconds;
         public int SpecialDamage => specialDamage;
         public float SpecialRange => specialRange;
         public float SpecialChargeSeconds => specialChargeDuration;
@@ -148,6 +157,11 @@ namespace CoffeeGame.Domain
             RequirePositive(errors, nameof(gravity), gravity);
             RequireUnitInterval(errors, nameof(airControl), airControl);
             RequireNonNegative(errors, nameof(dodgeSpeed), dodgeSpeed);
+            RequirePositive(errors, nameof(groundRollSeconds), groundRollSeconds);
+            RequireNonNegative(errors, nameof(groundRollHopHeight), groundRollHopHeight);
+            RequirePositive(errors, nameof(guardBackflipHeight), guardBackflipHeight);
+            RequireNonNegative(errors, nameof(guardBackflipSpeed), guardBackflipSpeed);
+            RequireNonNegative(errors, nameof(plungeRecoverySeconds), plungeRecoverySeconds);
             RequireUnitInterval(errors, nameof(dodgeInvulnerabilityFraction), dodgeInvulnerabilityFraction);
             RequirePositive(errors, nameof(perfectDodgeRangeMultiplier), perfectDodgeRangeMultiplier);
             RequireNonNegative(errors, nameof(swordDamage), swordDamage);

@@ -10,6 +10,7 @@ using CoffeeGame.Run;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEditor.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace CoffeeGame.Presentation.Tests
@@ -25,6 +26,8 @@ namespace CoffeeGame.Presentation.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            // Do not execute the Owner's combat scene or its save bootstrap in tests.
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             yield return new EnterPlayMode();
             Time.timeScale = 1f;
             host = new GameObject("encounter-lifecycle-test");

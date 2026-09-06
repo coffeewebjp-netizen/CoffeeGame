@@ -26,7 +26,6 @@ namespace CoffeeGame.Combat
         private bool dodgeRewarded;
         private long lastParriedAttack;
         private long lastDodgedAttack;
-        private float plungePoseUntil;
 
         public bool IsGuarding { get; private set; }
         public bool IsPerfectGuardWindow => IsGuarding && CombatClock.Time(gameObject) <= parryUntil;
@@ -47,13 +46,15 @@ namespace CoffeeGame.Combat
         private void Update()
         {
             if (health == null || motor == null || combat == null) return;
-            if (!health.IsAlive || !motor.CanMove) { CancelGuard(); return; }
+            if (!health.IsAlive) { CancelGuard(); return; }
             if (CombatClock.DeltaTime(gameObject) <= 0f) return;
+            if (!motor.CanMove) { CancelGuard(); return; }
             bool held = combat.UseCommands ? combat.Commands.GuardHeld : input != null && input.GuardHeld;
             bool allowed = motor.IsGrounded && motor.CanAct && !combat.IsCharging && combat.CanBeginGuard;
             TickGuard(held, allowed, CombatClock.Time(gameObject));
             pose?.SetFacing(motor.Facing);
-            pose?.SetPlunging(!combat.IsCatMage && (motor.IsPlunging || CombatClock.Time(gameObject) < plungePoseUntil));
+            pose?.SetPlunging(!combat.IsCatMage && motor.IsPlunging);
+            pose?.SetPlungeRecovery(!combat.IsCatMage && tuning.LandingLag > 0f ? motor.PlungeRecoveryRemaining / tuning.LandingLag : 0f);
         }
 
         // Explicit actor clock allows exact boundary checks without frame timing sleeps.
@@ -121,16 +122,15 @@ namespace CoffeeGame.Combat
         public void BeginPlunge() => pose?.SetPlunging(combat != null && !combat.IsCatMage);
         public void ShowPlunge(Vector3 point, float radius)
         {
-            plungePoseUntil = CombatClock.Time(gameObject) + .18f;
             feedback?.Emit(DefenseFeedbackEvent.PlungeImpact, point, Vector3.up, radius);
         }
 
         public void CancelGuard()
         {
             IsGuarding = false; heldLastTick = false; parryUntil = float.NegativeInfinity;
-            plungePoseUntil = 0f;
             if (motor != null) motor.IsGuarding = false;
             pose?.SetGuarding(false); pose?.SetPlunging(false);
+            pose?.SetPlungeRecovery(0f);
         }
         private void OnDisable() { CancelGuard(); feedback?.CancelAll(); }
     }

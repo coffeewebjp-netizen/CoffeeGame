@@ -42,6 +42,7 @@ namespace CoffeeGame.Combat
         private float majorMagicCooldown;
         private int volleyStage;
         private HeroineCombatVoice voice;
+        private SpecialCombatVoice specialVoice;
 
         public bool IsCatMage { get; set; }
         public bool IsManual { get; set; } = true;
@@ -77,6 +78,8 @@ namespace CoffeeGame.Combat
             visual = characterVisual;
             audioDirector = audio;
             voice = GetComponent<HeroineCombatVoice>();
+            specialVoice = gameObject.AddComponent<SpecialCombatVoice>();
+            specialVoice.Initialize(IsCatMage);
             motor.Landed += HandleLanding;
             motor.Jumped += HandleJumped;
             motor.PlungeStarted += HandlePlungeStarted;
@@ -106,6 +109,7 @@ namespace CoffeeGame.Combat
         {
             defense?.CancelGuard();
             voice?.Stop();
+            specialVoice?.Stop();
             if (activeMagicChargeEffect != null)
             {
                 Destroy(activeMagicChargeEffect);
@@ -232,6 +236,7 @@ namespace CoffeeGame.Combat
                 if (stop.TryBegin(gameObject, 10f))
                 {
                     resources.TrySpendStamina(tuning.SpecialStaminaCost);
+                    specialVoice?.Play();
                     visual?.PlayAction(CharacterAction.MagicRelease, 0.35f);
                     CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing, gameObject);
                 }
@@ -296,6 +301,7 @@ namespace CoffeeGame.Combat
 
         private void ReleaseSpecial()
         {
+            specialVoice?.Play();
             motor.MovementScale = 0f;
             visual?.PlayAction(CharacterAction.SpinRelease, IaiCinematicTiming.Duration);
             activeIaiEffect = CombatVfxFactory.SpawnIaiCinematic(

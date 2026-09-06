@@ -67,6 +67,12 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-DefenseV10", "CoffeeGAME-DefenseV10.exe");
         }
 
+        public static void BuildAcrobaticsV11NoSetup()
+        {
+            PartyAudioSetup.Validate();
+            BuildDiagnosticNoSetup("Windows-AcrobaticsV11", "CoffeeGAME-AcrobaticsV11.exe");
+        }
+
         public static void BuildForestV7NoSetup()
         {
             BuildDiagnosticNoSetup("Windows-ForestV7", "CoffeeGAME-ForestV7.exe");

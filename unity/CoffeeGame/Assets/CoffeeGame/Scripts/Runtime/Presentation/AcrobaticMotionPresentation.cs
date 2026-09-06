@@ -6,7 +6,9 @@ namespace CoffeeGame.Presentation
     public enum AcrobaticMotionKind
     {
         GroundRoll,
-        Backflip
+        Backflip,
+        Cartwheel,
+        RunningSpin
     }
 
     /// <summary>
@@ -62,6 +64,10 @@ namespace CoffeeGame.Presentation
         public bool IsPresenting => requested || motionBlend > 0.001f;
         public AcrobaticMotionKind CurrentKind => currentKind;
         public float Progress => progress;
+        // The cat controller currently maps Dodge to an upright clip. Supply a
+        // full-body aerial spin while retaining the heroine's authored Meshy clip.
+        public bool UseRunningSpinFallback => clockOwner != null &&
+            clockOwner.TryGetComponent<PlayerCombatController>(out var combat) && combat.IsCatMage;
 
         public void Initialize(Transform characterVisualRoot, GameObject owner)
         {
@@ -202,21 +208,26 @@ namespace CoffeeGame.Presentation
                 pose.WasApplied = true;
             }
 
-            Vector3 bodyForward = currentKind == AcrobaticMotionKind.Backflip ? -direction : direction;
+            Vector3 bodyForward = currentKind == AcrobaticMotionKind.Cartwheel ? GetVisualForward() :
+                currentKind == AcrobaticMotionKind.Backflip ? -direction : direction;
             if (bodyForward.sqrMagnitude < 0.0001f)
             {
                 bodyForward = GetVisualForward();
             }
             bodyForward.Normalize();
             Vector3 right = Vector3.Cross(Vector3.up, bodyForward).normalized;
-            ApplyTuckDirections(bodyForward, right, tuck);
+            if (currentKind == AcrobaticMotionKind.Cartwheel || currentKind == AcrobaticMotionKind.RunningSpin)
+                ApplyCartwheelDirections(right, TuckEnvelope(progress) * motionBlend * (currentKind == AcrobaticMotionKind.RunningSpin ? .75f : 1f));
+            else ApplyTuckDirections(bodyForward, right, tuck);
 
             float degrees = progress * 360f *
                 (currentKind == AcrobaticMotionKind.Backflip ? -1f : 1f);
             // Blend the completed orientation along the shortest arc; scaling a nearly
             // 360-degree angle would unwind the entire flip during its recovery.
             hips.rotation = Quaternion.Slerp(Quaternion.identity,
-                Quaternion.AngleAxis(degrees, right), motionBlend) * hips.rotation;
+                Quaternion.AngleAxis(degrees, currentKind == AcrobaticMotionKind.Cartwheel
+                    ? Vector3.Cross(Vector3.up, direction).normalized :
+                    currentKind == AcrobaticMotionKind.RunningSpin ? (right + direction * .45f).normalized : right), motionBlend) * hips.rotation;
             RecordAppliedRotation(hips);
 
             if (currentKind == AcrobaticMotionKind.GroundRoll)
@@ -227,6 +238,22 @@ namespace CoffeeGame.Presentation
             {
                 ApplyHipsPosition(hipsAuthoredPosition);
             }
+        }
+
+        private void ApplyCartwheelDirections(Vector3 right, float weight)
+        {
+            // A lateral wheel uses extended, separated legs rather than the
+            // compact tuck used by forward and backward somersaults.
+            AlignBone(spine, chest, Vector3.up, weight);
+            AlignBone(chest, head, Vector3.up, weight);
+            AlignBone(leftUpperLeg, leftLowerLeg, -Vector3.up - right * .52f, weight);
+            AlignBone(leftLowerLeg, leftFoot, -Vector3.up - right * .48f, weight);
+            AlignBone(rightUpperLeg, rightLowerLeg, -Vector3.up + right * .52f, weight);
+            AlignBone(rightLowerLeg, rightFoot, -Vector3.up + right * .48f, weight);
+            AlignBone(leftUpperArm, leftLowerArm, Vector3.up - right * .55f, weight);
+            AlignBone(leftLowerArm, leftHand, Vector3.up - right * .2f, weight);
+            AlignBone(rightUpperArm, rightLowerArm, Vector3.up + right * .55f, weight);
+            AlignBone(rightLowerArm, rightHand, Vector3.up + right * .2f, weight);
         }
 
         private void ApplyTuckDirections(Vector3 forward, Vector3 right, float weight)
@@ -349,6 +376,25 @@ namespace CoffeeGame.Presentation
             return target;
         }
 
+        private Transform ResolveSpineChain(bool upper)
+        {
+            // Generic exports number the torso in different directions. The
+            // current Meshy rig is Hips -> Spine02 -> Spine01 -> Spine -> neck.
+            // Resolve anatomy from ancestry, never from the numerical suffix.
+            Transform nearestHead = null, nearestHips = null;
+            Transform resolvedHead = FindNamedTransform(animator.transform, "head");
+            for (Transform node = resolvedHead != null ? resolvedHead.parent : null;
+                node != null && node != animator.transform; node = node.parent)
+            {
+                string name = NormalizeName(node.name);
+                if (!name.Contains("spine") && !name.EndsWith("chest")) continue;
+                if (nearestHead == null) nearestHead = node;
+                nearestHips = node;
+            }
+            return (upper ? nearestHead : nearestHips) ??
+                FindNamedTransform(animator.transform, upper ? "spine01" : "spine", "chest", "spine02");
+        }
+
         private Transform ResolveBone(HumanBodyBones bone)
         {
             if (animator == null)
@@ -367,8 +413,8 @@ namespace CoffeeGame.Presentation
             switch (bone)
             {
                 case HumanBodyBones.Hips: return FindNamedTransform(animator.transform, "hips", "pelvis");
-                case HumanBodyBones.Spine: return FindNamedTransform(animator.transform, "spine");
-                case HumanBodyBones.Chest: return FindNamedTransform(animator.transform, "spine01", "chest", "spine02");
+                case HumanBodyBones.Spine: return ResolveSpineChain(false);
+                case HumanBodyBones.Chest: return ResolveSpineChain(true);
                 case HumanBodyBones.Head: return FindNamedTransform(animator.transform, "head");
                 case HumanBodyBones.LeftUpperArm: return FindNamedTransform(animator.transform, "leftarm", "upperarml");
                 case HumanBodyBones.LeftLowerArm: return FindNamedTransform(animator.transform, "leftforearm", "forearml", "leftlowerarm");
