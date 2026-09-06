@@ -13,6 +13,7 @@ namespace CoffeeGame.Combat
         private float remainingLifetime;
         private GameObject source;
         private Material visualMaterial;
+        private Material facetA, facetB;
         private long attackId;
 
         public event Action<IceProjectile> Destroyed;
@@ -86,17 +87,15 @@ namespace CoffeeGame.Combat
                 "Ice spear facet a",
                 new Vector3(0.045f, 0.22f, 0.045f),
                 IceCrystalVisuals.Frost,
-                out Material facetA);
+                out facetA);
             transform.GetChild(transform.childCount - 1).localRotation = Quaternion.Euler(18f, 35f, 0f);
             IceCrystalVisuals.CreateCrystal(
                 transform,
                 "Ice spear facet b",
                 new Vector3(0.04f, 0.18f, 0.04f),
                 IceCrystalVisuals.Frost,
-                out Material facetB);
+                out facetB);
             transform.GetChild(transform.childCount - 1).localRotation = Quaternion.Euler(-16f, -40f, 12f);
-            Destroy(facetA, remainingLifetime + 0.1f);
-            Destroy(facetB, remainingLifetime + 0.1f);
 
             var trail = gameObject.AddComponent<TrailRenderer>();
             trail.time = 0.12f;
@@ -122,6 +121,8 @@ namespace CoffeeGame.Combat
 
         private void OnDestroy()
         {
+            if (facetA != null) Destroy(facetA);
+            if (facetB != null) Destroy(facetB);
             Destroyed?.Invoke(this);
             if (visualMaterial != null)
             {

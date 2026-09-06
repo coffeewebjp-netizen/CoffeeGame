@@ -4,6 +4,8 @@ CoffeeLearningでの学習を、少女剣士の成長と結び付けるアクシ
 
 ## 現在の開発方針
 
+2026-09-06 Party V9：猫少女の共闘・操作切替・大魔法・時間停止・実時間回復と、承認済みの主人公ボイス・戦闘BGM・効果音を実装しました。245件の関連テストと画像付き実行確認15項目が通過しています。確認用は`Builds/Windows-PartyV9/CoffeeGAME-PartyV9.exe`です。通常のSteam起動先への反映はOwner確認待ちで、現時点の通常版は変更していません。[操作・回復・復元手順](docs/cat-companion-v9.md)を参照してください。
+
 ゲームの土台はUnity 6 + URPで、移動・衝突・ジャンプ・戦闘判定は3D空間に置きます。表示は原画へ忠実なHD-2Dを優先し、Blender製3Dモデルは将来の本格3D化に備えたフォールバックとして残します。
 
 2026-09-06、Owner承認により通常Windows版・Steam起動へ赤羽織の改良3Dモデル（保存選択値4）を仮反映しました。Steamの起動先は従来の `Builds/Windows/CoffeeGAME.exe` のままです。ジャンプの違和感は未調整で、Ownerによる総チェック前の段階です。元のHD-2D（記録値0）は `tools/launch-previous-character.cmd`、黒着物Meshy版は `tools/launch-meshy-snow-kimono-default.cmd` で切り替えられます。
@@ -25,7 +27,7 @@ HD-2D directional sprite
 
 ## 最初の戦闘スライス
 
-- 主人公1人、森のゴブリンとスライム（ゴブリンから交互に出現）
+- 主人公と、加入後に共闘・操作切替できる猫少女。森のゴブリンとスライム（ゴブリンから交互に出現）
 - 歩行、一定時間後の走行、ジャンプ
 - 通常斬り、空中斬り、急降下攻撃
 - 溜め付き回転斬り、溜め付き氷魔法

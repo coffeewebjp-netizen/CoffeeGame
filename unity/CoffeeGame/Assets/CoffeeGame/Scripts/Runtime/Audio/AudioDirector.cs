@@ -15,7 +15,9 @@ namespace CoffeeGame.Audio
         Impact,
         Reward,
         LevelUp,
-        Victory
+        Victory,
+        Jump,
+        Land
     }
 
     [DisallowMultipleComponent]
@@ -39,6 +41,11 @@ namespace CoffeeGame.Audio
         private AudioSource effectSource;
         private AudioClip swordClip;
         private AudioClip magicClip;
+        private AudioClip swordSwingClip;
+        private AudioClip jumpClip;
+        private AudioClip landClip;
+        private readonly Dictionary<GameObject, AudioSource> actorSources = new Dictionary<GameObject, AudioSource>();
+        private float effectsVolume = 0.72f;
 
         public void Initialize()
         {
@@ -47,13 +54,16 @@ namespace CoffeeGame.Audio
 
             musicSource.loop = true;
             musicSource.playOnAwake = false;
-            musicSource.volume = 0.32f;
+            musicSource.volume = 0.24f;
             effectSource.playOnAwake = false;
             effectSource.volume = 0.72f;
 
-            musicSource.clip = Resources.Load<AudioClip>("Audio/Rituals_of_the_Jade_Valley");
+            musicSource.clip = Resources.Load<AudioClip>("Audio/Music/ForestBattle20260906");
             swordClip = Resources.Load<AudioClip>("Audio/katana-slash1");
             magicClip = Resources.Load<AudioClip>("Audio/magic-wind2");
+            swordSwingClip = Resources.Load<AudioClip>("Audio/Actions/sword_01_quick");
+            jumpClip = Resources.Load<AudioClip>("Audio/Actions/jump_01_light");
+            landClip = Resources.Load<AudioClip>("Audio/Actions/land_01_soft");
         }
 
         public void StartMusic()
@@ -64,21 +74,37 @@ namespace CoffeeGame.Audio
             }
         }
 
-        public void Play(CombatSound sound, float volume = 1f)
+        public void Play(CombatSound sound, float volume = 1f, GameObject owner = null)
         {
             if (effectSource == null)
             {
                 return;
             }
 
-            AudioClip clip = IsMagicSound(sound) ? magicClip : swordClip;
+            AudioClip clip = sound == CombatSound.SwordSwing ? swordSwingClip
+                : sound == CombatSound.Jump ? jumpClip
+                : sound == CombatSound.Land ? landClip
+                : IsMagicSound(sound) ? magicClip : swordClip;
             if (clip == null)
             {
                 return;
             }
 
-            effectSource.pitch = pitchBySound.TryGetValue(sound, out float pitch) ? pitch : 1f;
-            effectSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+            AudioSource source = effectSource;
+            if (owner != null)
+            {
+                if (!actorSources.TryGetValue(owner, out source) || source == null)
+                {
+                    var host = new GameObject("Actor combat effects");
+                    host.transform.SetParent(owner.transform, false);
+                    source = host.AddComponent<AudioSource>();
+                    source.playOnAwake = false;
+                    source.volume = effectsVolume;
+                    actorSources[owner] = source;
+                }
+            }
+            source.pitch = pitchBySound.TryGetValue(sound, out float pitch) ? pitch : 1f;
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
         }
 
         public void SetMusicVolume(float value)
@@ -91,6 +117,8 @@ namespace CoffeeGame.Audio
 
         public void SetEffectsVolume(float value)
         {
+            effectsVolume = Mathf.Clamp01(value);
+            foreach (var source in actorSources.Values) if (source != null) source.volume = effectsVolume;
             if (effectSource != null)
             {
                 effectSource.volume = Mathf.Clamp01(value);

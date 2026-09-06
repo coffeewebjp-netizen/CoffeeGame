@@ -1,5 +1,6 @@
 using System;
 using CoffeeGame.Actors;
+using CoffeeGame.Combat;
 using CoffeeGame.Domain;
 using CoffeeGame.Presentation;
 using CoffeeGame.World;
@@ -52,12 +53,15 @@ namespace CoffeeGame.Enemies
 
         private void Update()
         {
+            var next = PartyTargeting.NearestParty(transform.position);
+            if (next != null) { targetHealth = next; target = next.transform; }
             if (tuning == null || target == null || health == null || !health.IsAlive || targetHealth == null || !targetHealth.IsAlive)
             {
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
+            float deltaTime = CombatClock.DeltaTime(gameObject);
+            if (deltaTime <= 0f) return;
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, 4.5f * deltaTime);
             transform.position += knockbackVelocity * deltaTime;
@@ -71,7 +75,7 @@ namespace CoffeeGame.Enemies
             if (windingUp)
             {
                 windupRemaining -= deltaTime;
-                float pulse = 1f + Mathf.Sin(Time.time * 28f) * 0.05f;
+                float pulse = 1f + Mathf.Sin(CombatClock.Time(gameObject) * 28f) * 0.05f;
                 transform.localScale = Vector3.one * pulse;
                 if (windupRemaining <= 0f)
                 {
@@ -111,6 +115,20 @@ namespace CoffeeGame.Enemies
             transform.position += direction * 0.28f;
             ClampToArena();
             visual?.PlayAction(CharacterAction.Attack, 0.26f);
+
+            if (PartyTargeting.Actors.Count > 0)
+            {
+                var victims = new System.Collections.Generic.List<PartyActor>(PartyTargeting.Actors);
+                foreach (var actor in victims)
+                {
+                    if (actor == null || !actor.Targetable) continue;
+                    Vector3 offset = actor.transform.position - transform.position;
+                    if (Mathf.Abs(offset.y) > AttackHeightTolerance || Vector3.ProjectOnPlane(offset, Vector3.up).magnitude > tuning.SlimeAttackRange * 1.18f) continue;
+                    if (actor.Health.ApplyDamage(new DamageInfo(tuning.SlimeDamage, gameObject, actor.transform.position, direction * 0.65f)))
+                        actor.Motor.AddKnockback(direction * 1.3f);
+                }
+                return;
+            }
 
             float heightDifference = Mathf.Abs(target.position.y - transform.position.y);
             if (distanceAtRelease <= tuning.SlimeAttackRange * 1.18f && heightDifference <= AttackHeightTolerance)

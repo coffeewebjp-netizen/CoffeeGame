@@ -49,6 +49,18 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-GoblinV8", "CoffeeGAME-GoblinV8.exe");
         }
 
+        public static void BuildPartyV9NoSetup()
+        {
+            PartyAudioSetup.Validate();
+            if (Resources.Load<GameObject>("Models/Characters/SilverCat/silver-cat-girl") == null ||
+                Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCat/SilverCatRuntime") == null)
+                throw new InvalidOperationException("The silver cat model/controller must be prepared before building the companion player.");
+            foreach (string voice in new[] { "magic_02_freeze", "dodge_02_over_here", "sword_01_ya", "sword_02_ha" })
+                if (Resources.Load<AudioClip>("Audio/Voices/Heroine/" + voice) == null)
+                    throw new InvalidOperationException("Missing heroine voice: " + voice);
+            BuildDiagnosticNoSetup("Windows-PartyV9", "CoffeeGAME-PartyV9.exe");
+        }
+
         public static void BuildForestV7NoSetup()
         {
             BuildDiagnosticNoSetup("Windows-ForestV7", "CoffeeGAME-ForestV7.exe");

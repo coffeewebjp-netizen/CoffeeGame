@@ -264,7 +264,11 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (TryGetCommandLineValue("-captureGoblin", out string goblinCapturePath))
+            if (TryGetCommandLineValue("-captureParty", out string partyCapturePath))
+            {
+                PartyEvidenceCapture.Begin(gameObject, runController, partyCapturePath);
+            }
+            else if (TryGetCommandLineValue("-captureGoblin", out string goblinCapturePath))
             {
                 GoblinEvidenceCapture.Begin(gameObject, sceneCamera, runtimeRoot.Find("Player"), runController, goblinCapturePath);
             }
@@ -314,13 +318,14 @@ namespace CoffeeGame.Bootstrap
         {
             if (hasFocus)
             {
-                TryApplyCloudProfile();
+                if (runController == null || runController.Mode == CombatRunMode.Ready || runController.Mode == CombatRunMode.GameOver) TryApplyCloudProfile();
             }
         }
 
         private void OnApplicationQuit()
         {
             coffeeLearningConnection?.CancelPendingOrActiveAction();
+            runController?.Party?.PrepareForExit();
             SavePlayerProfile();
         }
 
@@ -387,7 +392,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureParty")) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -398,11 +403,26 @@ namespace CoffeeGame.Bootstrap
                 StageLayout.CameraMaxZ);
             CameraOrbitInputDriver orbitInput = sceneCamera.gameObject.AddComponent<CameraOrbitInputDriver>();
             orbitInput.Initialize(cameraRig, input);
+
+            gameObject.AddComponent<TimeStopController>().InitializeWorldVisual(sceneCamera);
+            PartyActor heroActor = player.Root.AddComponent<PartyActor>();
+            heroActor.Initialize(PartyMemberIds.Hero);
+            var party = gameObject.AddComponent<PartyRuntime>();
+            party.Initialize(runController, tuning, input, heroActor, () => CreateCat(input, audioDirector),
+                SavePlayerProfile, actor => { cameraRig.Follow(actor); forestVisuals?.SetFocus(actor); });
+            if (runController.Mode == CombatRunMode.Playing) party.TryStartRun();
         }
 
         private void EnsurePlayerProfileLoaded()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (HasCommandLineFlag("-captureParty"))
+            {
+                sessionProgression = new PlayerProgression(1, 0, 0, 0,
+                    previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
+                Debug.Log("CoffeeGAME party evidence uses in-memory progression; profile/cloud writes disabled.");
+                return;
+            }
             if (HasCommandLineFlag("-captureGoblin"))
             {
                 sessionProgression = new PlayerProgression();
@@ -446,8 +466,9 @@ namespace CoffeeGame.Bootstrap
 
         private bool TrySavePlayerProfile(out string message)
         {
+            runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureGoblin"))
+            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty"))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;
@@ -565,8 +586,9 @@ namespace CoffeeGame.Bootstrap
                 return false;
             }
 
-            PlayerProgression imported = new PlayerProfileStore(profileStore.ProfilePath).LoadOrCreate(out string loadMessage);
-            if (loadMessage.IndexOf("初期化", StringComparison.Ordinal) >= 0)
+            var importedStore = new PlayerProfileStore(profileStore.ProfilePath);
+            PlayerProgression imported = importedStore.LoadOrCreate(out string loadMessage);
+            if (importedStore.HasUnsupportedVersion || loadMessage.IndexOf("初期化", StringComparison.Ordinal) >= 0)
             {
                 message = loadMessage;
                 return false;
@@ -584,34 +606,34 @@ namespace CoffeeGame.Bootstrap
                 return;
             }
 
-            sessionProgression.ReplaceFrom(imported);
+            runController?.Party?.BeginProfileReplacement();
+            try { sessionProgression.ReplaceFrom(imported); }
+            finally { runController?.Party?.EndProfileReplacement(); }
             runController?.ApplyLoadedProgression();
         }
 
         private void RebindProfileStore()
         {
-            profileStore = new PlayerProfileStore(CloudSaveSettings.ResolveProfilePath());
+            var candidate = new PlayerProfileStore(CloudSaveSettings.ResolveProfilePath());
             if (sessionProgression == null)
             {
                 return;
             }
 
-            if (TryApplyCloudProfile())
+            if (System.IO.File.Exists(candidate.ProfilePath))
             {
-                return;
-            }
-
-            if (System.IO.File.Exists(profileStore.ProfilePath))
-            {
-                PlayerProgression loaded = profileStore.LoadOrCreate(out string loadMessage);
+                PlayerProgression loaded = candidate.LoadOrCreate(out string loadMessage);
+                if (candidate.HasUnsupportedVersion) { Debug.LogWarning(loadMessage); return; }
                 if (loadMessage.IndexOf("初期化", StringComparison.Ordinal) < 0)
                 {
+                    profileStore = candidate;
                     ApplyImportedProgression(loaded);
                     return;
                 }
             }
 
-            TrySavePlayerProfile(out _);
+            profileStore = candidate;
+            if (!TryApplyCloudProfile()) TrySavePlayerProfile(out _);
         }
 
         private Camera CreateCamera()
@@ -725,6 +747,38 @@ namespace CoffeeGame.Bootstrap
                 new Vector3(0.22f, 3f, StageLayout.Depth));
         }
 
+        private PartyActor CreateCat(GameInputReader input, AudioDirector audioDirector)
+        {
+            var root = new GameObject("Silver Cat Companion");
+            root.transform.SetParent(runtimeRoot, false);
+            root.transform.position = new Vector3(-0.4f, 0.05f, 0f);
+            var controller = root.AddComponent<CharacterController>();
+            controller.radius = 0.25f; controller.height = 1.24f;
+            controller.center = new Vector3(0f, 0.62f, 0f);
+            controller.stepOffset = 0.14f; controller.skinWidth = 0.035f;
+            var health = root.AddComponent<Health>();
+            health.Initialize(Mathf.RoundToInt(tuning.PlayerMaxHealth * 0.8f), 0.68f);
+            var resources = root.AddComponent<PlayerResources>();
+            resources.Initialize(tuning.MaxStamina, tuning.PlayerMaxMp * 1.5f, tuning.MagicMpRegenPerSecond);
+            var prefab = Resources.Load<GameObject>("Models/Characters/SilverCat/silver-cat-girl");
+            if (prefab == null) throw new InvalidOperationException("Silver cat companion model is missing.");
+            var slot = new GameObject("Silver Cat Visual");
+            slot.transform.SetParent(root.transform, false);
+            var model = Instantiate(prefab, slot.transform);
+            var visual = slot.AddComponent<ModelCharacterVisual>();
+            visual.Initialize(model.transform, Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCat/SilverCatRuntime"),
+                CharacterModelStyle.SilverCat, sceneCamera, 1f, 0f);
+            var motor = root.AddComponent<PlayerMotor3D>();
+            motor.Initialize(input, tuning, sceneCamera, visual);
+            var combat = root.AddComponent<PlayerCombatController>();
+            combat.Initialize(input, tuning, motor, resources, health, visual, audioDirector);
+            var actor = root.AddComponent<PartyActor>();
+            actor.Initialize(PartyMemberIds.CatMage);
+            health.Damaged += (_, hit) => visual.PlayAction(CharacterAction.Hurt, 0.18f);
+            health.Died += (_, hit) => visual.PlayAction(CharacterAction.Defeated, 0.6f);
+            return actor;
+        }
+
         private PlayerParts CreatePlayer(GameInputReader input, AudioDirector audioDirector)
         {
             var player = new GameObject("Player");
@@ -740,6 +794,7 @@ namespace CoffeeGame.Bootstrap
 
             Health health = player.AddComponent<Health>();
             health.Initialize(tuning.PlayerMaxHealth, 0.68f);
+            health.SetTeam(DamageTeam.Party);
             PlayerResources resources = player.AddComponent<PlayerResources>();
             resources.Initialize(tuning.MaxStamina, tuning.PlayerMaxMp, tuning.MagicMpRegenPerSecond);
 
@@ -778,6 +833,7 @@ namespace CoffeeGame.Bootstrap
 
             PlayerMotor3D motor = player.AddComponent<PlayerMotor3D>();
             motor.Initialize(input, tuning, sceneCamera, visual);
+            player.AddComponent<HeroineCombatVoice>();
             PlayerCombatController combat = player.AddComponent<PlayerCombatController>();
             combat.Initialize(input, tuning, motor, resources, health, visual, audioDirector);
             if (trialAnimeGirl)
@@ -869,6 +925,7 @@ namespace CoffeeGame.Bootstrap
             collider.center = new Vector3(0f, 0.575f, 0f);
             var health = root.AddComponent<Health>();
             health.Initialize(GoblinController.MaximumHealth);
+            health.SetTeam(DamageTeam.Enemy);
             var slot = new GameObject("Goblin VisualSlot");
             slot.transform.SetParent(root.transform, false);
             var visual = slot.AddComponent<GoblinCharacterVisual>();
@@ -896,6 +953,7 @@ namespace CoffeeGame.Bootstrap
 
             Health health = slime.AddComponent<Health>();
             health.Initialize(tuning.SlimeMaxHealth);
+            health.SetTeam(DamageTeam.Enemy);
             ICharacterVisual visual = CreatePreferredVisual(
                 slime.transform,
                 "Slime VisualSlot",

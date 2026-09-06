@@ -39,6 +39,12 @@ namespace CoffeeGame.Presentation
             Snap();
         }
 
+        public void Follow(Transform followTarget)
+        {
+            target = followTarget;
+            targetGroundY = 0f;
+        }
+
         public void SetBounds(float minimumX, float maximumX, float minimumZ, float maximumZ)
         {
             minX = Mathf.Min(minimumX, maximumX);

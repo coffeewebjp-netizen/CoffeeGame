@@ -66,6 +66,7 @@ namespace CoffeeGame.UI
             AddCommandButton(menuScrollContent, "CoffeeLearning Primary", () => CoffeeLearningPrimaryRequested?.Invoke());
             AddCommandButton(menuScrollContent, "CoffeeLearning Disconnect", () => CoffeeLearningDisconnectRequested?.Invoke());
             AddCommandButton(menuScrollContent, "CoffeeLearning Cancel", () => CoffeeLearningCancelRequested?.Invoke());
+            AddControlButton(menuScrollContent, GameInputSemantic.SwitchCharacter, "操作切替");
         }
 
 
@@ -130,6 +131,9 @@ namespace CoffeeGame.UI
             string[] labels = { "ジャンプ", "刀攻撃", "居合斬り", "氷魔法", "回避" };
             bool supportsRebind = input.SelectedInputMode == InputMode.ControllerGamepad ||
                                   input.SelectedInputMode == InputMode.SteamDesktopCompatibility;
+            controlButtons[CombatHudSettingsRows.SwitchCharacter].GetComponentInChildren<Text>().text =
+                "操作切替　" + input.GetActiveControllerBindingDescription(GameInputSemantic.SwitchCharacter);
+            controlButtons[CombatHudSettingsRows.SwitchCharacter].interactable = supportsRebind && !rebinding;
             for (int index = 0; index < semantics.Length; index++)
             {
                 controlButtons[index].GetComponentInChildren<Text>().text =

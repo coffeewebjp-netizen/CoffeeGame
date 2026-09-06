@@ -99,7 +99,7 @@ namespace CoffeeGame.Presentation.Tests
                 view.SetSelectedTab(CharacterMenuTab.System);
                 view.RebuildMenuContent(run);
                 Button save = root.GetComponentsInChildren<Button>(true)
-                    .Single(button => button.GetComponentInChildren<Text>()?.text == "セーブする");
+                    .Single(button => button.name == "Dock セーブする");
                 save.onClick.Invoke();
 
                 Assert.That(saveRequested, Is.True);

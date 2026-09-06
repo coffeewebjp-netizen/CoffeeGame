@@ -39,6 +39,16 @@ namespace CoffeeGame.Actors
             }
         }
 
+        public void SetCurrentAndMaximum(float magic, float stamina, float maximumMagic, float maximumStamina, float regen)
+        {
+            MaxStamina = Mathf.Max(1f, maximumStamina);
+            MaxMagicPoints = Mathf.Max(0f, maximumMagic);
+            MagicRegenPerSecond = Mathf.Max(0f, regen);
+            MagicPoints = Mathf.Clamp(magic, 0f, MaxMagicPoints);
+            Stamina = Mathf.Clamp(stamina, 0f, MaxStamina);
+            Changed?.Invoke();
+        }
+
         public bool TrySpendStamina(float amount)
         {
             float cost = Mathf.Max(0f, amount);
@@ -91,4 +101,3 @@ namespace CoffeeGame.Actors
         }
     }
 }
-

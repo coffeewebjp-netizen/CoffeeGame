@@ -116,10 +116,12 @@ namespace CoffeeGame.Presentation.Tests
         [Test]
         public async Task LoadedQuestionShowsEditableAnswerAndExplicitConfirmationAction()
         {
+            var bridge = new MockLearningBridge();
             EventSystem originalEventSystem = EventSystem.current;
             var root = new GameObject("Rival Question UI Test");
+            var testEvents = root.AddComponent<RivalTestEventSystem>();
             using (var session = new RivalLearningQuestionSession(
-                () => new MockLearningBridge(),
+                () => bridge,
                 () => "ui-test",
                 () => 0))
             {
@@ -129,6 +131,9 @@ namespace CoffeeGame.Presentation.Tests
                     view.Initialize(null);
                     await session.BeginNewEncounterAsync();
                     view.RefreshRivalLearning(session);
+
+                    root.GetComponentsInChildren<Transform>(true)
+                        .Single(item => item.name == "Rival Encounter Overlay").gameObject.SetActive(true);
 
                     Text message = root.GetComponentsInChildren<Text>(true)
                         .Single(text => text.name == "Rival Message");
@@ -145,7 +150,8 @@ namespace CoffeeGame.Presentation.Tests
                     Assert.That(view.ReleaseRivalAnswerInputFocus(), Is.True);
                     Assert.That(view.IsRivalAnswerInputFocused, Is.False,
                         "The first native Gamepad command after pointer editing must restore controller focus.");
-                    Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Rival Primary"));
+                    Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Rival Continue"),
+                        "With an empty answer, submission is disabled and focus must move to the enabled continuation.");
                     Assert.That(view.ReleaseRivalAnswerInputFocus(), Is.False);
 
                     EventSystem.current.SetSelectedGameObject(answer.gameObject);
@@ -191,8 +197,9 @@ namespace CoffeeGame.Presentation.Tests
         [Test]
         public async Task CompletedCorrectQuestionShowsAppliedGameRewardAndAffinity()
         {
+            var bridge = new MockLearningBridge();
             using (var session = new RivalLearningQuestionSession(
-                () => new MockLearningBridge(),
+                () => bridge,
                 () => "reward-ui",
                 () => 0))
             {
@@ -222,10 +229,11 @@ namespace CoffeeGame.Presentation.Tests
         [Test]
         public async Task CompletedIncorrectQuestionShowsFullAiFeedbackInExpandedResultArea()
         {
+            var bridge = new MockLearningBridge();
             EventSystem originalEventSystem = EventSystem.current;
             var root = new GameObject("Rival Incorrect Result UI Test");
             using (var session = new RivalLearningQuestionSession(
-                () => new MockLearningBridge(),
+                () => bridge,
                 () => "incorrect-result-ui",
                 () => 0))
             {
@@ -273,4 +281,7 @@ namespace CoffeeGame.Presentation.Tests
             }
         }
     }
+
+    [ExecuteAlways]
+    public sealed class RivalTestEventSystem : EventSystem { }
 }

@@ -39,6 +39,16 @@ namespace CoffeeGame.Combat
         private Coroutine specialReleaseRoutine;
         private GameObject activeIaiEffect;
         private GameObject activeMagicChargeEffect;
+        private float majorMagicCooldown;
+        private int volleyStage;
+        private HeroineCombatVoice voice;
+
+        public bool IsCatMage { get; set; }
+        public bool IsManual { get; set; } = true;
+        public bool UseCommands { get; set; }
+        public ActorCommandFrame Commands { get; set; }
+        public bool CanSwitch => !IsCharging && attackCooldown <= 0f && motor != null && motor.CanAct;
+        public bool CanCastMajorMagic => IsCatMage && majorMagicCooldown <= 0f && resources != null && resources.MagicPoints >= resources.MaxMagicPoints * 0.25f;
 
         public int AttackBonus { get; set; }
         public float AttackMultiplier { get; set; } = 1f;
@@ -46,7 +56,7 @@ namespace CoffeeGame.Combat
         public float SpecialChargeSpeedMultiplier { get; set; } = 1f;
         public bool IsCharging => chargeKind != ChargeKind.None;
         public float ChargeNormalized { get; private set; }
-        public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? "氷魔法" : string.Empty;
+        public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? (IsCatMage ? "星環の大魔法" : "氷魔法") : string.Empty;
 
         public void Initialize(
             GameInputReader inputReader,
@@ -64,7 +74,9 @@ namespace CoffeeGame.Combat
             playerHealth = health;
             visual = characterVisual;
             audioDirector = audio;
+            voice = GetComponent<HeroineCombatVoice>();
             motor.Landed += HandleLanding;
+            motor.Jumped += HandleJumped;
             motor.PlungeStarted += HandlePlungeStarted;
             motor.Dodged += HandleDodged;
             playerHealth.AttackAvoided += HandleAttackAvoided;
@@ -77,6 +89,8 @@ namespace CoffeeGame.Combat
             chargeRemaining = 0f;
             activeChargeDuration = 0f;
             attackCooldown = 0f;
+            majorMagicCooldown = 0f;
+            volleyStage = 0;
             airSlashUsed = false;
             plungeWasActive = false;
             perfectDodgeGranted = false;
@@ -85,6 +99,7 @@ namespace CoffeeGame.Combat
 
         public void CancelPendingActions()
         {
+            voice?.Stop();
             if (activeMagicChargeEffect != null)
             {
                 Destroy(activeMagicChargeEffect);
@@ -127,9 +142,11 @@ namespace CoffeeGame.Combat
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
+            float deltaTime = CombatClock.DeltaTime(gameObject);
+            if (deltaTime <= 0f || !motor.CanMove) return;
             resources.Tick(deltaTime);
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
+            majorMagicCooldown = Mathf.Max(0f, majorMagicCooldown - deltaTime);
 
             if (chargeKind != ChargeKind.None)
             {
@@ -142,19 +159,19 @@ namespace CoffeeGame.Combat
                 return;
             }
 
-            if (input.SwordPressed)
+            if (UseCommands ? Commands.Sword : input.SwordPressed)
             {
                 TrySwordAttack();
                 return;
             }
 
-            if (input.SpecialPressed)
+            if (UseCommands ? Commands.Special : input.SpecialPressed)
             {
                 TryStartSpecial();
                 return;
             }
 
-            if (input.MagicPressed)
+            if (UseCommands ? Commands.Magic : input.MagicPressed)
             {
                 TryStartMagic();
             }
@@ -162,6 +179,11 @@ namespace CoffeeGame.Combat
 
         private void TrySwordAttack()
         {
+            if (IsCatMage)
+            {
+                ReleaseCatVolley();
+                return;
+            }
             if (!motor.IsGrounded)
             {
                 if (airSlashUsed)
@@ -176,7 +198,8 @@ namespace CoffeeGame.Combat
             float range = airborne ? tuning.AirSlashRange : tuning.SwordRange;
             attackCooldown = tuning.SwordCooldown;
             visual?.PlayAction(airborne ? CharacterAction.AirSlash : CharacterAction.Sword, tuning.SwordCooldown);
-            audioDirector?.Play(CombatSound.SwordSwing, 0.72f);
+            audioDirector?.Play(CombatSound.SwordSwing, 0.72f, gameObject);
+            voice?.Sword();
             CombatVfxFactory.SpawnSwordSlash(
                 transform.position,
                 motor.Facing,
@@ -188,13 +211,25 @@ namespace CoffeeGame.Combat
             if (hitCount > 0)
             {
                 resources.GainStamina(tuning.StaminaPerHit);
-                audioDirector?.Play(CombatSound.SwordHit, 0.95f);
+                audioDirector?.Play(CombatSound.SwordHit, 0.95f, gameObject);
                 CombatVfxFactory.SpawnSwordImpact(transform.position + motor.Facing * range * 0.65f, motor.Facing);
             }
         }
 
         private void TryStartSpecial()
         {
+            if (IsCatMage)
+            {
+                var stop = TimeStopController.Instance;
+                if (!IsManual || !motor.IsGrounded || stop == null || stop.IsActive || resources.Stamina < tuning.SpecialStaminaCost) return;
+                if (stop.TryBegin(gameObject, 10f))
+                {
+                    resources.TrySpendStamina(tuning.SpecialStaminaCost);
+                    visual?.PlayAction(CharacterAction.MagicRelease, 0.35f);
+                    CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing, gameObject);
+                }
+                return;
+            }
             if (!motor.IsGrounded || !resources.TrySpendStamina(tuning.SpecialStaminaCost))
             {
                 return;
@@ -206,24 +241,24 @@ namespace CoffeeGame.Combat
             ChargeNormalized = 0f;
             motor.MovementScale = 0.15f;
             visual?.PlayAction(CharacterAction.SpinCharge, activeChargeDuration);
-            audioDirector?.Play(CombatSound.SpinCharge, 0.55f);
+            audioDirector?.Play(CombatSound.SpinCharge, 0.55f, gameObject);
         }
 
         private void TryStartMagic()
         {
-            if (!motor.IsGrounded || !resources.TrySpendMagic(tuning.MagicCost))
+            if (!motor.IsGrounded || (IsCatMage && majorMagicCooldown > 0f) || !resources.TrySpendMagic(IsCatMage ? resources.MaxMagicPoints * 0.25f : tuning.MagicCost))
             {
                 return;
             }
 
             chargeKind = ChargeKind.Magic;
-            activeChargeDuration = tuning.MagicChargeSeconds;
+            activeChargeDuration = IsCatMage ? 1.2f : tuning.MagicChargeSeconds;
             chargeRemaining = activeChargeDuration;
             ChargeNormalized = 0f;
             motor.MovementScale = 0.22f;
-            visual?.PlayAction(CharacterAction.MagicCharge, tuning.MagicChargeSeconds);
-            audioDirector?.Play(CombatSound.MagicCharge, 0.6f);
-            activeMagicChargeEffect = CombatVfxFactory.SpawnMagicCharge(transform, tuning.MagicChargeSeconds);
+            visual?.PlayAction(CharacterAction.MagicCharge, activeChargeDuration);
+            audioDirector?.Play(CombatSound.MagicCharge, 0.6f, gameObject);
+            activeMagicChargeEffect = CombatVfxFactory.SpawnMagicCharge(transform, activeChargeDuration);
         }
 
         private void TickCharge(float deltaTime)
@@ -266,15 +301,15 @@ namespace CoffeeGame.Combat
 
         private IEnumerator ResolveIaiStrike()
         {
-            yield return new WaitForSeconds(IaiCinematicTiming.StrikeTime);
+            yield return WaitForActor(IaiCinematicTiming.StrikeTime);
             int hitCount = DamageTargets(
                 tuning.SpecialRange,
                 CalculateDamage(tuning.SpecialDamage),
                 true,
                 false);
-            audioDirector?.Play(CombatSound.SpinRelease, hitCount > 0 ? 1f : 0.72f);
+            audioDirector?.Play(CombatSound.SpinRelease, hitCount > 0 ? 1f : 0.72f, gameObject);
 
-            yield return new WaitForSeconds(
+            yield return WaitForActor(
                 IaiCinematicTiming.Duration - IaiCinematicTiming.StrikeTime);
             if (motor != null)
             {
@@ -286,6 +321,12 @@ namespace CoffeeGame.Combat
 
         private void ReleaseMagic()
         {
+            if (activeMagicChargeEffect != null) Destroy(activeMagicChargeEffect);
+            if (IsCatMage)
+            {
+                ReleaseCatMajorMagic();
+                return;
+            }
             visual?.PlayAction(CharacterAction.MagicRelease, 0.36f);
             CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing);
             var projectileObject = new GameObject("Ice bolt");
@@ -294,7 +335,8 @@ namespace CoffeeGame.Combat
             projectile.Initialize(motor.Facing, CalculateDamage(tuning.MagicDamage), tuning.MagicProjectileSpeed, gameObject);
             projectile.Destroyed += HandleProjectileDestroyed;
             activeProjectiles.Add(projectile);
-            audioDirector?.Play(CombatSound.IceRelease, 0.92f);
+            audioDirector?.Play(CombatSound.IceRelease, 0.92f, gameObject);
+            voice?.Magic();
             attackCooldown = 0.32f;
         }
 
@@ -307,7 +349,7 @@ namespace CoffeeGame.Combat
             foreach (Collider overlap in overlaps)
             {
                 Health target = overlap.GetComponentInParent<Health>();
-                if (target == null || target == playerHealth || !target.IsAlive || !uniqueTargets.Add(target))
+                if (target == null || target == playerHealth || !target.IsAlive || !DamageFaction.CanDamage(gameObject, target) || !uniqueTargets.Add(target))
                 {
                     continue;
                 }
@@ -347,6 +389,7 @@ namespace CoffeeGame.Combat
 
         private void HandleDodged()
         {
+            voice?.Dodge();
             perfectDodgeGranted = false;
             playerHealth?.BeginDodgeInvulnerability(tuning.DodgeInvulnerabilitySeconds);
             TryGrantPerfectDodgeFromWindup();
@@ -405,8 +448,14 @@ namespace CoffeeGame.Combat
             resources.GainStamina(resources.MaxStamina);
         }
 
+        private void HandleJumped()
+        {
+            audioDirector?.Play(CombatSound.Jump, 0.65f, gameObject);
+        }
+
         private void HandleLanding(Vector3 position)
         {
+            audioDirector?.Play(CombatSound.Land, 0.65f, gameObject);
             airSlashUsed = false;
             playerHealth?.EndDodgeInvulnerability();
             if (!plungeWasActive)
@@ -416,7 +465,7 @@ namespace CoffeeGame.Combat
 
             plungeWasActive = false;
             int hitCount = DamageTargets(tuning.PlungeRadius, CalculateDamage(tuning.PlungeDamage), true, false);
-            audioDirector?.Play(hitCount > 0 ? CombatSound.SwordHit : CombatSound.Impact, hitCount > 0 ? 1f : 0.7f);
+            audioDirector?.Play(hitCount > 0 ? CombatSound.SwordHit : CombatSound.Impact, hitCount > 0 ? 1f : 0.7f, gameObject);
             CombatVfxFactory.SpawnPlungeImpact(position, tuning.PlungeRadius);
         }
 
@@ -426,6 +475,7 @@ namespace CoffeeGame.Combat
             if (motor != null)
             {
                 motor.Landed -= HandleLanding;
+                motor.Jumped -= HandleJumped;
                 motor.PlungeStarted -= HandlePlungeStarted;
                 motor.Dodged -= HandleDodged;
             }
@@ -443,6 +493,54 @@ namespace CoffeeGame.Combat
                 projectile.Destroyed -= HandleProjectileDestroyed;
             }
             activeProjectiles.Remove(projectile);
+        }
+
+        private IEnumerator WaitForActor(float seconds)
+        {
+            for (float elapsed = 0f; elapsed < seconds; elapsed += CombatClock.DeltaTime(gameObject)) yield return null;
+        }
+
+        private void ReleaseCatVolley()
+        {
+            volleyStage = volleyStage % 3 + 1;
+            int count = volleyStage == 3 ? 3 : 1;
+            visual?.PlayAction(CharacterAction.MagicRelease, 0.32f);
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 direction = Quaternion.AngleAxis((i - (count - 1) * 0.5f) * 13f, Vector3.up) * motor.Facing;
+                var root = new GameObject("Cat star bolt");
+                root.transform.position = transform.position + Vector3.up * 0.72f + direction * 0.42f;
+                var bolt = root.AddComponent<IceProjectile>();
+                bolt.Initialize(direction, CalculateDamage(Mathf.Max(1, tuning.SwordDamage)), tuning.MagicProjectileSpeed, gameObject);
+                bolt.Destroyed += HandleProjectileDestroyed;
+                bolt.Hit += _ => resources.GainStamina(tuning.StaminaPerHit);
+                activeProjectiles.Add(bolt);
+            }
+            attackCooldown = volleyStage == 3 ? 0.62f : 0.38f;
+            audioDirector?.Play(CombatSound.IceRelease, 0.38f, gameObject);
+        }
+
+        private void ReleaseCatMajorMagic()
+        {
+            Vector3 center = transform.position + motor.Facing * 2.8f;
+            var target = PartyTargeting.NearestEnemy(transform.position);
+            if (target != null && Vector3.Distance(target.transform.position, transform.position) <= 7f) center = target.transform.position;
+            visual?.PlayAction(CharacterAction.MagicRelease, 0.48f);
+            CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing, gameObject);
+            CombatVfxFactory.SpawnRing(center, 2.5f, new Color(0.76f, 0.65f, 1f), 0.6f, gameObject);
+            CombatVfxFactory.SpawnRing(center, 1.7f, new Color(1f, 0.9f, 0.65f), 0.45f, gameObject);
+            CombatVfxFactory.SpawnIceBurst(center + Vector3.up * 0.3f, Vector3.up, 2.2f, 0.65f, gameObject);
+            uniqueTargets.Clear();
+            foreach (var collider in Physics.OverlapSphere(center + Vector3.up * 0.4f, 2.5f))
+            {
+                var enemy = collider.GetComponentInParent<Health>();
+                if (enemy == null || !enemy.IsAlive || !DamageFaction.CanDamage(gameObject, enemy) || !uniqueTargets.Add(enemy)) continue;
+                if (enemy.ApplyDamage(new DamageInfo(CalculateDamage(tuning.MagicDamage * 2), gameObject, enemy.transform.position, motor.Facing * 0.8f)))
+                    resources.GainStamina(tuning.StaminaPerHit);
+            }
+            majorMagicCooldown = 6f;
+            attackCooldown = 0.48f;
+            audioDirector?.Play(CombatSound.IceRelease, 1f, gameObject);
         }
     }
 }

@@ -388,7 +388,12 @@ namespace CoffeeGame.Persistence
 
         private static PlayerStatus RestoreStatus(StatusFile data)
         {
-            if (data == null)
+            if (data == null || (string.IsNullOrWhiteSpace(data.archetypeId)
+                && string.IsNullOrWhiteSpace(data.className)
+                && string.IsNullOrWhiteSpace(data.talentId)
+                && string.IsNullOrWhiteSpace(data.talentName)
+                && (data.attributes == null || data.attributes.Count == 0)
+                && (data.growthRemainders == null || data.growthRemainders.Count == 0)))
             {
                 return new PlayerStatus();
             }

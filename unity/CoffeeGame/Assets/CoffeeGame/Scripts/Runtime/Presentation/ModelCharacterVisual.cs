@@ -13,7 +13,8 @@ namespace CoffeeGame.Presentation
         Slime,
         SnowKimono,
         MeshySnowKimono,
-        AzureMaidenUpgraded
+        AzureMaidenUpgraded,
+        SilverCat
     }
 
     [DisallowMultipleComponent]
@@ -246,7 +247,7 @@ namespace CoffeeGame.Presentation
 
         private void GroundImportedModel(Transform root)
         {
-            if (modelStyle != CharacterModelStyle.Imported || root == null)
+            if ((modelStyle != CharacterModelStyle.Imported && modelStyle != CharacterModelStyle.SilverCat) || root == null)
             {
                 return;
             }
@@ -951,7 +952,7 @@ namespace CoffeeGame.Presentation
 
         private void ApplyReferenceMaterials()
         {
-            if (modelStyle == CharacterModelStyle.Imported || modelRoot == null)
+            if (modelStyle == CharacterModelStyle.Imported || modelStyle == CharacterModelStyle.SilverCat || modelRoot == null)
             {
                 return;
             }

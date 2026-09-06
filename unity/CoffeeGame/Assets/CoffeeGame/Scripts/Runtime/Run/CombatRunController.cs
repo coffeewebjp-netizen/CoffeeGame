@@ -58,9 +58,11 @@ namespace CoffeeGame.Run
         private readonly DeterministicRivalSelector rivalSelector =
             new DeterministicRivalSelector(new UnityBoundedIntegerSource());
         public string LastEvent { get; private set; } = "A / Enter / Startで開始";
-        public Health PlayerHealth => playerHealth;
-        public PlayerResources PlayerResources => playerResources;
-        public PlayerCombatController PlayerCombat => playerCombat;
+        public PartyRuntime Party { get; private set; }
+        public Health PlayerHealth => Party != null && Party.Active != null ? Party.Active.Health : playerHealth;
+        public PlayerResources PlayerResources => Party != null && Party.Active != null ? Party.Active.Resources : playerResources;
+        public PlayerCombatController PlayerCombat => Party != null && Party.Active != null ? Party.Active.Combat : playerCombat;
+        public void AttachParty(PartyRuntime party) => Party = party;
         public CombatEnemy CurrentEnemy => currentEnemy;
 
         public void Initialize(
@@ -131,6 +133,12 @@ namespace CoffeeGame.Run
             }
 
             Time.timeScale = 1f;
+            if (Party != null && !Party.TryStartRun())
+            {
+                LastEvent = Party.Notice;
+                StateChanged?.Invoke();
+                return;
+            }
             if (spawnRoutine != null)
             {
                 StopCoroutine(spawnRoutine);
@@ -142,10 +150,13 @@ namespace CoffeeGame.Run
             spawnSequence = 0;
             resetEnemySequence?.Invoke();
             Kills = 0;
-            playerMotor.ResetMotor(new Vector3(-1.6f, 0.05f, 0f));
-            playerMotor.CanMove = true;
-            ApplyProgressionTuning();
-            playerCombat.ResetCombat();
+            if (Party == null)
+            {
+                playerMotor.ResetMotor(new Vector3(-1.6f, 0.05f, 0f));
+                playerMotor.CanMove = true;
+                ApplyProgressionTuning();
+                playerCombat.ResetCombat();
+            }
 
             Mode = CombatRunMode.Playing;
             input.EnableBattle();
@@ -468,6 +479,7 @@ namespace CoffeeGame.Run
 
         private void ApplyProgressionTuning()
         {
+            if (Party != null) { Party.RefreshMembers(); return; }
             int levelBonus = Progression.Level - 1;
             PlayerDerivedStats derived = PlayerDerivedStatCalculator.Calculate(Progression.Status);
             playerHealth.Initialize(tuning.PlayerMaxHealth + 4 * levelBonus, 0.68f);
@@ -486,7 +498,7 @@ namespace CoffeeGame.Run
 
         private IEnumerator RespawnAfterDelay(CombatEnemy defeated)
         {
-            yield return new WaitForSeconds(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
+            yield return WaitForWorld(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
             if (defeated != null)
             {
                 Destroy(defeated.gameObject);
@@ -498,7 +510,7 @@ namespace CoffeeGame.Run
 
         private IEnumerator EnterRivalEncounterAfterDelay(CombatEnemy defeated)
         {
-            yield return new WaitForSeconds(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
+            yield return WaitForWorld(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
             if (defeated != null)
             {
                 Destroy(defeated.gameObject);
@@ -525,6 +537,7 @@ namespace CoffeeGame.Run
 
         private void HandlePlayerDied(Health _, DamageInfo damage)
         {
+            if (Party != null) return;
             if (Mode != CombatRunMode.Playing)
             {
                 return;
@@ -564,12 +577,14 @@ namespace CoffeeGame.Run
             }
 
             currentEnemy.Defeated -= HandleEnemyDefeated;
-            Destroy(currentEnemy.gameObject);
+            if (Application.isPlaying) Destroy(currentEnemy.gameObject);
+            else DestroyImmediate(currentEnemy.gameObject);
             currentEnemy = null;
         }
 
         private void OnDestroy()
         {
+            TimeStopController.Instance?.Cancel();
             Time.timeScale = 1f;
             if (playerHealth != null)
             {
@@ -580,6 +595,35 @@ namespace CoffeeGame.Run
                 input.RebindFinished -= HandleRebindFinished;
             }
             RemoveCurrentEnemy();
+        }
+
+        public void EndRunForRest()
+        {
+            StopRun();
+            EnterReadyMode();
+            LastEvent = "全員休息中 — 出撃する仲間を選んで再開できます";
+            StateChanged?.Invoke();
+        }
+
+        public void EndRunForDefeat()
+        {
+            StopRun();
+            Mode = CombatRunMode.GameOver;
+            input.EnableUI();
+            LastEvent = "全員が戦闘不能 — 10分でHP1%に回復し、休息へ移ります";
+            StateChanged?.Invoke();
+        }
+
+        private void StopRun()
+        {
+            TimeStopController.Instance?.Cancel();
+            if (spawnRoutine != null) { StopCoroutine(spawnRoutine); spawnRoutine = null; }
+            RemoveCurrentEnemy();
+        }
+
+        private IEnumerator WaitForWorld(float seconds)
+        {
+            for (float elapsed = 0f; elapsed < seconds; elapsed += CombatClock.WorldDeltaTime) yield return null;
         }
     }
 }

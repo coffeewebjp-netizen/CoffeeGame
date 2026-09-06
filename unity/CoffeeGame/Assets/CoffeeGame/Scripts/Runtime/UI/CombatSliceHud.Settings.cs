@@ -22,6 +22,12 @@ namespace CoffeeGame.UI
                 SelectModernTab((CharacterMenuTab)next);
             }
 
+            if ((CharacterMenuTab)selectedPauseMenuTab == CharacterMenuTab.Companions)
+            {
+                int direction = MenuNavigationAxisLatch.Read(navigation.y, ref navigationLatch);
+                modernView.NavigateParty(-direction, input.ConfirmPressed);
+                return;
+            }
             if ((CharacterMenuTab)selectedPauseMenuTab != CharacterMenuTab.System)
             {
                 navigationLatch = 0;
@@ -63,6 +69,9 @@ namespace CoffeeGame.UI
         {
             switch (selectedSettingsRow)
             {
+                case CombatHudSettingsRows.SwitchCharacter:
+                    BeginRebind(GameInputSemantic.SwitchCharacter);
+                    break;
                 case CombatHudSettingsRows.Jump:
                     BeginRebind(GameInputSemantic.Jump);
                     break;
@@ -283,6 +292,9 @@ namespace CoffeeGame.UI
         {
             switch (selectedSettingsRow)
             {
+                case CombatHudSettingsRows.SwitchCharacter:
+                    BeginRebind(GameInputSemantic.SwitchCharacter);
+                    break;
                 case CombatHudSettingsRows.Jump:
                     BeginRebind(GameInputSemantic.Jump);
                     break;

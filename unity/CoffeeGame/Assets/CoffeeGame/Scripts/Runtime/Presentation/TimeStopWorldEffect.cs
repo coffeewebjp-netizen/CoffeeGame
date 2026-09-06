@@ -50,8 +50,8 @@ namespace CoffeeGame.Presentation
                 }
 
                 EnsureOverlay();
-                EnsureRenderTexture();
                 previousTarget = worldCamera.targetTexture;
+                EnsureRenderTexture();
                 worldCamera.targetTexture = worldTexture;
                 overlayCanvas.enabled = true;
             }

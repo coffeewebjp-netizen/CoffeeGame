@@ -205,5 +205,23 @@ namespace CoffeeGame.Combat.Tests
         {
             return new DamageInfo(amount, caster, target.transform.position, Vector3.zero, attackId);
         }
+
+        [Test]
+        public void WorldCompositorRestoresOriginalCameraTarget()
+        {
+            var cameraObject = new GameObject("world-render-test");
+            var camera = cameraObject.AddComponent<Camera>();
+            var original = new RenderTexture(32, 32, 16);
+            camera.targetTexture = original;
+            try
+            {
+                controller.InitializeWorldVisual(camera);
+                controller.TryBegin(caster, 10f);
+                Assert.That(camera.targetTexture, Is.Not.SameAs(original));
+                controller.Advance(10f);
+                Assert.That(camera.targetTexture, Is.SameAs(original));
+            }
+            finally { Object.DestroyImmediate(cameraObject); Object.DestroyImmediate(original); }
+        }
     }
 }

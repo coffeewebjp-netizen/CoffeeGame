@@ -633,7 +633,8 @@ namespace CoffeeGame.Domain
                 PartyMemberIds.CatMage,
                 hero.Level,
                 hero.Experience,
-                hero.Status,
+                new PlayerStatus("cat-mage", "銀の猫魔導士", hero.Status.TalentId, hero.Status.Talent,
+                    hero.Status.Attributes.CreateSnapshot(), hero.Status.CreateGrowthRemainderSnapshot()),
                 hero.Resources.MaximumHitPoints,
                 hero.Resources.MaximumHitPoints,
                 hero.Resources.MaximumMagicPoints,
@@ -645,7 +646,7 @@ namespace CoffeeGame.Domain
                     : PartyRecoveryState.Resting,
                 hero.RecoveryAnchorUtc,
                 talentGrowthProfileResolver: hero.GrowthProfileResolver,
-                resourcesInitialized: hero.ResourcesInitialized));
+                resourcesInitialized: false));
             return true;
         }
 

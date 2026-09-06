@@ -56,11 +56,7 @@ namespace CoffeeGame.Combat
                 line.material = material;
             }
 
-            Object.Destroy(flash, 0.22f);
-            if (material != null)
-            {
-                Object.Destroy(material, 0.22f);
-            }
+            flash.AddComponent<FadeLineEffect>().Initialize(line, 0.22f, material);
 
             SpawnIceBurst(center + Vector3.up * 0.12f, Vector3.up, radius * 0.7f, 0.28f);
         }

@@ -247,7 +247,9 @@ namespace CoffeeGame.UI
             pauseButton.gameObject.SetActive(run.Mode == CombatRunMode.Playing);
 
             PlayerProgression progression = run.Progression;
-            identityText.text = $"Lv.{progression.Level}  {progression.Status.ClassName}\n討伐 {run.Kills}    Gold {progression.Gold}";
+            var activeMember = run.Party != null && run.Party.Active != null ? progression.Party.Find(run.Party.Active.MemberId) : null;
+            identityText.text = $"Lv.{activeMember?.Level ?? progression.Level}  {activeMember?.Status.ClassName ?? progression.Status.ClassName}\n討伐 {run.Kills}    Gold {progression.Gold}";
+            RefreshParty(run, pauseMenuOpen);
             objectiveText.text = run.LastEvent;
             SetBar(healthFill, healthText, run.PlayerHealth.Normalized,
                 $"HP  {run.PlayerHealth.Current} / {run.PlayerHealth.Maximum}");
@@ -258,8 +260,8 @@ namespace CoffeeGame.UI
                 SafeRatio(run.PlayerResources.MagicPoints, run.PlayerResources.MaxMagicPoints),
                 $"MP  {run.PlayerResources.MagicPoints:0.0} / {run.PlayerResources.MaxMagicPoints:0}");
             SetBar(experienceFill, experienceText,
-                SafeRatio(progression.Experience, progression.ExperienceRequiredForNextLevel),
-                $"EXP  {progression.Experience} / {progression.ExperienceRequiredForNextLevel}");
+                SafeRatio(activeMember?.Experience ?? progression.Experience, activeMember?.ExperienceRequiredForNextLevel ?? progression.ExperienceRequiredForNextLevel),
+                $"EXP  {activeMember?.Experience ?? progression.Experience} / {activeMember?.ExperienceRequiredForNextLevel ?? progression.ExperienceRequiredForNextLevel}");
 
             bool charging = !pauseMenuOpen && run.PlayerCombat.IsCharging;
             chargePanel.SetActive(charging);
@@ -337,6 +339,7 @@ namespace CoffeeGame.UI
                     break;
                 case CharacterMenuTab.Companions:
                 {
+                    if (run.Party != null) BuildPartyMenu(run);
                     var companions = new StringBuilder();
                     string[] companionIds = RivalCharacterIds.VisibleCompanionIds(run.Progression.IsRivalRecruited);
                     for (int index = 0; index < companionIds.Length; index++)
@@ -441,6 +444,7 @@ namespace CoffeeGame.UI
             RectTransform safeArea = CreateRect("Safe Area", canvasObject.transform, Vector2.zero, Vector2.one);
             safeArea.gameObject.AddComponent<SafeAreaRectTransform>();
             BuildGameplayHud(safeArea);
+            BuildPartyHud(safeArea);
             BuildRunOverlay(safeArea);
             BuildRivalOverlay(safeArea);
             BuildPauseMenu(safeArea);
@@ -458,6 +462,14 @@ namespace CoffeeGame.UI
             SetTopLeft(portrait.rectTransform, new Vector2(14f, -14f), new Vector2(154f, 154f));
             portrait.sprite = Resources.Load<Sprite>(PortraitResource);
             portrait.preserveAspect = true;
+            activeCatPortrait = new GameObject("Cat Portrait", typeof(RectTransform), typeof(RawImage)).GetComponent<RawImage>();
+            activeCatPortrait.transform.SetParent(portrait.transform, false);
+            activeCatPortrait.rectTransform.anchorMin = Vector2.zero;
+            activeCatPortrait.rectTransform.anchorMax = Vector2.one;
+            activeCatPortrait.rectTransform.offsetMin = activeCatPortrait.rectTransform.offsetMax = Vector2.zero;
+            activeCatPortrait.texture = Resources.Load<Texture2D>(RivalPortraitResource);
+            activeCatPortrait.raycastTarget = false;
+            activeCatPortrait.gameObject.SetActive(false);
 
             identityText = CreateText("Identity", playerPanel.transform, 26, FontStyle.Bold, TextAnchor.UpperLeft, Ink);
             SetTopLeft(identityText.rectTransform, new Vector2(180f, -14f), new Vector2(360f, 63f));

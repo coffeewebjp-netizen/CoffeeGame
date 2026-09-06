@@ -36,6 +36,7 @@ namespace CoffeeGame.Input
             _special = AddButton(_battleMap, "Special", "<Keyboard>/q", "<Gamepad>/buttonWest", "<Keyboard>/pageUp");
             _magic = AddButton(_battleMap, "Magic", "<Keyboard>/e", "<Gamepad>/buttonNorth", "<Keyboard>/pageDown");
             _dodge = AddButton(_battleMap, "Dodge", "<Keyboard>/leftShift", "<Gamepad>/leftShoulder", "<Keyboard>/leftShift");
+            _switchCharacter = AddButton(_battleMap, "SwitchCharacter", "<Keyboard>/t", "<Gamepad>/rightShoulder", "<Keyboard>/t");
             _pause = AddButton(_battleMap, "Pause", "<Keyboard>/escape", "<Gamepad>/start", "<Keyboard>/escape");
             _battleSettings = AddSettingsButton(_battleMap);
 
@@ -102,6 +103,7 @@ namespace CoffeeGame.Input
                 GameInputSemantic.Special => _special,
                 GameInputSemantic.Magic => _magic,
                 GameInputSemantic.Dodge => _dodge,
+                GameInputSemantic.SwitchCharacter => _switchCharacter,
                 GameInputSemantic.Pause => _pause,
                 GameInputSemantic.Navigate => _navigate,
                 GameInputSemantic.Confirm => _confirm,

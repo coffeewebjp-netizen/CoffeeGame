@@ -1,4 +1,5 @@
 using CoffeeGame.Actors;
+using CoffeeGame.Combat;
 using CoffeeGame.Domain;
 using CoffeeGame.Presentation;
 using CoffeeGame.World;
@@ -47,7 +48,13 @@ namespace CoffeeGame.Enemies
             health.Died += HandleDied;
         }
 
-        private void Update() => Tick(Time.deltaTime);
+        private void Update()
+        {
+            var next = PartyTargeting.NearestParty(transform.position);
+            if (next != null && (Phase == CombatPhase.Approach || targetHealth == null || !targetHealth.IsAlive || !targetHealth.gameObject.activeInHierarchy))
+            { targetHealth = next; target = next.transform; }
+            Tick(CombatClock.DeltaTime(gameObject));
+        }
 
         // Explicit clock permits deterministic combat checks without animation events.
         public void Tick(float deltaTime)
@@ -94,7 +101,15 @@ namespace CoffeeGame.Enemies
                     if (!impacted && elapsed >= ImpactSeconds)
                     {
                         impacted = true;
-                        if (Threatens(target.position))
+                        if (PartyTargeting.Actors.Count > 0)
+                        {
+                            foreach (var actor in new System.Collections.Generic.List<PartyActor>(PartyTargeting.Actors))
+                            {
+                                if (actor != null && actor.Targetable && Threatens(actor.transform.position))
+                                    HitTarget(actor.Health);
+                            }
+                        }
+                        else if (Threatens(target.position))
                         {
                             if (targetHealth.ApplyDamage(new DamageInfo(damage, gameObject,
                                 target.position, attackDirection * 0.8f)))
@@ -119,6 +134,12 @@ namespace CoffeeGame.Enemies
             return Mathf.Abs(position.y - transform.position.y) <= 0.72f &&
                 offset.magnitude <= AttackRange * rangeMultiplier &&
                 (offset.sqrMagnitude < 0.001f || Vector3.Dot(offset.normalized, attackDirection) >= 0.64f);
+        }
+
+        private void HitTarget(Health victim)
+        {
+            if (victim.ApplyDamage(new DamageInfo(damage, gameObject, victim.transform.position, attackDirection * 0.8f)))
+                victim.GetComponent<PlayerMotor3D>()?.AddKnockback(attackDirection * 1.4f);
         }
 
         private void ChangePhase(CombatPhase phase) { Phase = phase; elapsed = 0f; }

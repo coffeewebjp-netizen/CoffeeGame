@@ -85,6 +85,7 @@ namespace CoffeeGame.Actors
             }
 
             TimeStopController timeStop = TimeStopController.Instance;
+            if (timeStop != null && timeStop.IsActive && damage.Source != null && timeStop.IsFrozen(damage.Source)) return false;
             bool deferredHit = timeStop != null && timeStop.IsActive && timeStop.IsFrozen(gameObject);
             if (deferredHit)
             {

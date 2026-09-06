@@ -1,5 +1,6 @@
 using System;
 using CoffeeGame.Domain;
+using CoffeeGame.Combat;
 using CoffeeGame.Input;
 using CoffeeGame.Presentation;
 using UnityEngine;
@@ -41,6 +42,16 @@ namespace CoffeeGame.Actors
         public float SpeedMultiplier { get; set; } = 1f;
         public float VerticalSpeed => verticalSpeed;
         public bool CanAct => CanMove && landingLockRemaining <= 0f && !IsPlunging && !IsDodging;
+        public bool UseCommands { get; set; }
+        public ActorCommandFrame Commands { get; set; }
+
+        public void FaceTowards(Vector3 position)
+        {
+            Vector3 direction = Vector3.ProjectOnPlane(position - transform.position, Vector3.up);
+            if (direction.sqrMagnitude < 0.001f || IsDodging) return;
+            Facing = direction.normalized;
+            visual?.SetFacing(Facing);
+        }
 
         public void Initialize(GameInputReader inputReader, CombatTuning combatTuning, Camera cameraForMovement, ICharacterVisual characterVisual)
         {
@@ -94,8 +105,9 @@ namespace CoffeeGame.Actors
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
-            Vector2 moveInput = input.Move;
+            float deltaTime = CombatClock.DeltaTime(gameObject);
+            if (deltaTime <= 0f || !CanMove) return;
+            Vector2 moveInput = UseCommands ? Commands.Move : input.Move;
             bool plungeInputHeld = moveInput.y <= -0.72f;
             bool plungeInputPressed = plungeInputHeld && !plungeInputWasHeld;
             landingLockRemaining = Mathf.Max(0f, landingLockRemaining - deltaTime);
@@ -108,11 +120,11 @@ namespace CoffeeGame.Actors
                 verticalSpeed = -1.5f;
             }
 
-            if (CanMove && landingLockRemaining <= 0f && IsGrounded && !IsDodging && MovementScale >= 0.9f && input.DodgePressed)
+            if (CanMove && landingLockRemaining <= 0f && IsGrounded && !IsDodging && MovementScale >= 0.9f && (UseCommands ? Commands.Dodge : input.DodgePressed))
             {
                 StartDodge(moveInput);
             }
-            else if (CanMove && landingLockRemaining <= 0f && IsGrounded && !IsDodging && input.JumpPressed)
+            else if (CanMove && landingLockRemaining <= 0f && IsGrounded && !IsDodging && (UseCommands ? Commands.Jump : input.JumpPressed))
             {
                 verticalSpeed = tuning.JumpVelocity;
                 IsGrounded = false;
@@ -250,6 +262,7 @@ namespace CoffeeGame.Actors
 
         private Vector3 GetCameraRelativeDirection(Vector2 move)
         {
+            if (UseCommands && Commands.WorldSpace) return Vector3.ClampMagnitude(new Vector3(move.x, 0f, move.y), 1f);
             Vector3 forward = movementCamera != null ? movementCamera.transform.forward : Vector3.forward;
             Vector3 right = movementCamera != null ? movementCamera.transform.right : Vector3.right;
             forward.y = 0f;

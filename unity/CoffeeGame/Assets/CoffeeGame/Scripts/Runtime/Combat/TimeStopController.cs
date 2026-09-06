@@ -138,6 +138,8 @@ namespace CoffeeGame.Combat
                 return false;
             }
 
+            if (Instance != null && Instance != this) return false;
+            Instance = this;
             independentClockOwners.Add(caster);
             remaining = durationSeconds;
             activeStartUnityTime = UnityEngine.Time.time;
@@ -421,7 +423,7 @@ namespace CoffeeGame.Combat
         {
             foreach (AudioSource source in FindObjectsByType<AudioSource>(FindObjectsInactive.Exclude))
             {
-                if (!ShouldFreeze(source) || audioSources.ContainsKey(source))
+                if (!ShouldFreeze(source) || audioSources.ContainsKey(source) || !source.isPlaying)
                 {
                     continue;
                 }
