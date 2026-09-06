@@ -21,7 +21,7 @@ namespace CoffeeGame.Editor
         public const string NormalMapPath = Root + "Models/Characters/SilverCat/silver-cat-normal.png";
         public const string ControllerPath = Root + "Animations/Characters/SilverCat/SilverCatRuntime.controller";
         private const string MaterialFolder = Root + "Materials/SilverCat";
-        private const float ImportScale = 0.75f;
+        private const float ImportScale = 1f;
 
         private static readonly CharacterAction[] RequiredMotions =
         {

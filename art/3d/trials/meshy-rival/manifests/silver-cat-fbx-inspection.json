@@ -1,0 +1,233 @@
+{
+  "source": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-girl.fbx",
+  "scene_fps": 24,
+  "animated_bounds": {
+    "min": [
+      -0.29832687973976135,
+      -0.5979307889938354,
+      -0.010674035176634789
+    ],
+    "max": [
+      0.3522515594959259,
+      0.357939749956131,
+      1.2862422466278076
+    ],
+    "dimensions": [
+      0.6505784392356873,
+      0.9558705389499664,
+      1.2969162818044424
+    ]
+  },
+  "rest_bounds": {
+    "min": [
+      -0.5369316339492798,
+      -0.15630072355270386,
+      -1.6180335649096378e-07
+    ],
+    "max": [
+      0.5369318723678589,
+      0.15630097687244415,
+      1.299999713897705
+    ],
+    "dimensions": [
+      1.0738635063171387,
+      0.312601700425148,
+      1.2999998757010616
+    ]
+  },
+  "skinned_rest_bounds": {
+    "min": [
+      -0.5369316339492798,
+      -0.15630072355270386,
+      -1.6180335649096378e-07
+    ],
+    "max": [
+      0.5369318723678589,
+      0.15630097687244415,
+      1.299999713897705
+    ],
+    "dimensions": [
+      1.0738635063171387,
+      0.312601700425148,
+      1.2999998757010616
+    ]
+  },
+  "meshes": [
+    {
+      "object": "char1",
+      "mesh": "char1",
+      "vertices": 112055,
+      "triangles": 100550,
+      "materials": [
+        "Material_1"
+      ],
+      "armature_modifiers": [
+        "Armature"
+      ],
+      "vertex_groups": 22
+    }
+  ],
+  "mesh_totals": {
+    "objects": 1,
+    "vertices": 112055,
+    "triangles": 100550
+  },
+  "armatures": [
+    {
+      "object": "Armature",
+      "bones": 24,
+      "bone_names": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "Armature|Armature|Defeated",
+      "frame_range": [
+        1.0,
+        48.0
+      ],
+      "frame_count": 48.0,
+      "slots": [
+        "OBArmature|Armature|Defeated"
+      ]
+    },
+    {
+      "name": "Armature|Armature|Dodge",
+      "frame_range": [
+        1.0,
+        35.0
+      ],
+      "frame_count": 35.0,
+      "slots": [
+        "OBArmature|Armature|Dodge"
+      ]
+    },
+    {
+      "name": "Armature|Armature|Hurt",
+      "frame_range": [
+        1.0,
+        22.0
+      ],
+      "frame_count": 22.0,
+      "slots": [
+        "OBArmature|Armature|Hurt"
+      ]
+    },
+    {
+      "name": "Armature|Armature|Idle",
+      "frame_range": [
+        1.0,
+        48.0
+      ],
+      "frame_count": 48.0,
+      "slots": [
+        "OBArmature|Armature|Idle"
+      ]
+    },
+    {
+      "name": "Armature|Armature|Jump",
+      "frame_range": [
+        1.0,
+        22.0
+      ],
+      "frame_count": 22.0,
+      "slots": [
+        "OBArmature|Armature|Jump"
+      ]
+    },
+    {
+      "name": "Armature|Armature|MagicCharge",
+      "frame_range": [
+        1.0,
+        55.0
+      ],
+      "frame_count": 55.0,
+      "slots": [
+        "OBArmature|Armature|MagicCharge"
+      ]
+    },
+    {
+      "name": "Armature|Armature|MagicRelease",
+      "frame_range": [
+        1.0,
+        55.0
+      ],
+      "frame_count": 55.0,
+      "slots": [
+        "OBArmature|Armature|MagicRelease"
+      ]
+    },
+    {
+      "name": "Armature|Armature|Run",
+      "frame_range": [
+        1.0,
+        16.0
+      ],
+      "frame_count": 16.0,
+      "slots": [
+        "OBArmature|Armature|Run"
+      ]
+    },
+    {
+      "name": "Armature|Armature|Walk",
+      "frame_range": [
+        1.0,
+        32.0
+      ],
+      "frame_count": 32.0,
+      "slots": [
+        "OBArmature|Armature|Walk"
+      ]
+    }
+  ],
+  "materials": [
+    "Material_1"
+  ],
+  "images": [
+    {
+      "name": "texture_0",
+      "kind": "basecolor",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB",
+      "output": "art/3d/trials/meshy-rival/drop/final-inspection/texture_0.png"
+    },
+    {
+      "name": "texture_0.001",
+      "kind": "basecolor",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color",
+      "output": "art/3d/trials/meshy-rival/drop/final-inspection/texture_0.001.png"
+    }
+  ]
+}

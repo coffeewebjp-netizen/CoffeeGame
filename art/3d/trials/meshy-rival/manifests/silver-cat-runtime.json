@@ -1,0 +1,317 @@
+{
+  "output_fbx": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-girl.fbx",
+  "target_height_metres": 1.3,
+  "rest_bounds": {
+    "min": [
+      -0.7021414637565613,
+      -0.20439326763153076,
+      -3.171223852405092e-07
+    ],
+    "max": [
+      0.7021415829658508,
+      0.20439334213733673,
+      1.6999996900558472
+    ],
+    "dimensions": [
+      1.404283046722412,
+      0.4087866097688675,
+      1.7000000071782324
+    ]
+  },
+  "export_global_scale": 0.7647058791239786,
+  "mesh": {
+    "objects": 1,
+    "vertices": 112055,
+    "triangles": 100550
+  },
+  "armature": {
+    "object": "Armature",
+    "bones": 24
+  },
+  "motions": [
+    {
+      "file": "cat-running.glb",
+      "bytes": 14082248,
+      "sha256": "1E648C96D3C8D63CD0A5F24EE3F691037D5DAD65871884EA59FAD78B02FAB86E",
+      "motion": "Run",
+      "source_action": "Armature|running|baselayer",
+      "frame_range": [
+        0.8000000715255737,
+        16.0
+      ],
+      "transfer": "direct-compatible-rig"
+    },
+    {
+      "file": "cat-cast.glb",
+      "bytes": 14102176,
+      "sha256": "59D34716D37089583EB47EFE32064E79D0264ED342A5EFFD51C1D2DEF5C5DB7B",
+      "motion": "MagicRelease",
+      "source_action": "Armature|mage_soell_cast|baselayer",
+      "frame_range": [
+        0.8000000715255737,
+        55.19999694824219
+      ],
+      "transfer": "direct-compatible-rig"
+    },
+    {
+      "file": "cat-dodge.glb",
+      "bytes": 14090832,
+      "sha256": "27D8BC47AF00735912B294C5BC523846CCDE3BF6E98B0AC6D2FC4F090F767BFC",
+      "motion": "Dodge",
+      "source_action": "Armature|Stand_Dodge|baselayer",
+      "frame_range": [
+        0.8000000715255737,
+        35.20000076293945
+      ],
+      "transfer": "direct-compatible-rig"
+    },
+    {
+      "file": "art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx",
+      "bytes": 15492172,
+      "sha256": "677B3594477E7A07599BF1A217BA92EA8DD9AB61E15A132BDB1A543291FD9C27",
+      "motion": "Defeated",
+      "source_action": "MeshySnowKimonoRig|MeshySnowKimonoRig|Defeated",
+      "frame_range": [
+        1.0,
+        48.0
+      ],
+      "transfer": "armature-space-retarget"
+    },
+    {
+      "file": "art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx",
+      "bytes": 15492172,
+      "sha256": "677B3594477E7A07599BF1A217BA92EA8DD9AB61E15A132BDB1A543291FD9C27",
+      "motion": "Hurt",
+      "source_action": "MeshySnowKimonoRig|MeshySnowKimonoRig|Hurt",
+      "frame_range": [
+        1.0,
+        22.0
+      ],
+      "transfer": "armature-space-retarget"
+    },
+    {
+      "file": "art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx",
+      "bytes": 15492172,
+      "sha256": "677B3594477E7A07599BF1A217BA92EA8DD9AB61E15A132BDB1A543291FD9C27",
+      "motion": "Idle",
+      "source_action": "MeshySnowKimonoRig|MeshySnowKimonoRig|Idle",
+      "frame_range": [
+        1.0,
+        48.0
+      ],
+      "transfer": "armature-space-retarget"
+    },
+    {
+      "file": "art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx",
+      "bytes": 15492172,
+      "sha256": "677B3594477E7A07599BF1A217BA92EA8DD9AB61E15A132BDB1A543291FD9C27",
+      "motion": "Jump",
+      "source_action": "MeshySnowKimonoRig|MeshySnowKimonoRig|Jump",
+      "frame_range": [
+        1.0,
+        22.0
+      ],
+      "transfer": "armature-space-retarget"
+    },
+    {
+      "file": "art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx",
+      "bytes": 15492172,
+      "sha256": "677B3594477E7A07599BF1A217BA92EA8DD9AB61E15A132BDB1A543291FD9C27",
+      "motion": "Walk",
+      "source_action": "MeshySnowKimonoRig|MeshySnowKimonoRig|Walk",
+      "frame_range": [
+        1.0,
+        32.0
+      ],
+      "transfer": "armature-space-retarget"
+    }
+  ],
+  "exported_action_names": [
+    "Defeated",
+    "Dodge",
+    "Hurt",
+    "Idle",
+    "Jump",
+    "MagicCharge",
+    "MagicRelease",
+    "Run",
+    "Walk"
+  ],
+  "motion_validation": {
+    "Defeated": {
+      "frame_range": [
+        1.0,
+        48.0
+      ],
+      "sample_frames": [
+        1,
+        13,
+        24,
+        36,
+        48
+      ],
+      "moved_bones": 24,
+      "max_head_displacement_metres": 0.4698136718777759,
+      "max_rotation_degrees": 74.72217753975679
+    },
+    "Dodge": {
+      "frame_range": [
+        0.8000000715255737,
+        35.20000076293945
+      ],
+      "sample_frames": [
+        1,
+        9,
+        18,
+        27,
+        35
+      ],
+      "moved_bones": 24,
+      "max_head_displacement_metres": 0.3911231643342459,
+      "max_rotation_degrees": 101.62336935947225
+    },
+    "Hurt": {
+      "frame_range": [
+        1.0,
+        22.0
+      ],
+      "sample_frames": [
+        1,
+        6,
+        12,
+        17,
+        22
+      ],
+      "moved_bones": 14,
+      "max_head_displacement_metres": 0.2399564546578994,
+      "max_rotation_degrees": 31.53431403941021
+    },
+    "Idle": {
+      "frame_range": [
+        1.0,
+        48.0
+      ],
+      "sample_frames": [
+        1,
+        13,
+        24,
+        36,
+        48
+      ],
+      "moved_bones": 3,
+      "max_head_displacement_metres": 0.00568204624448891,
+      "max_rotation_degrees": 1.4144117950255193
+    },
+    "Jump": {
+      "frame_range": [
+        1.0,
+        22.0
+      ],
+      "sample_frames": [
+        1,
+        6,
+        12,
+        17,
+        22
+      ],
+      "moved_bones": 8,
+      "max_head_displacement_metres": 0.4765678428913679,
+      "max_rotation_degrees": 35.00005106201765
+    },
+    "MagicCharge": {
+      "frame_range": [
+        0.8000000715255737,
+        55.19999694824219
+      ],
+      "sample_frames": [
+        1,
+        14,
+        28,
+        42,
+        55
+      ],
+      "moved_bones": 24,
+      "max_head_displacement_metres": 0.3788211328031573,
+      "max_rotation_degrees": 109.50821122695017
+    },
+    "MagicRelease": {
+      "frame_range": [
+        0.8000000715255737,
+        55.19999694824219
+      ],
+      "sample_frames": [
+        1,
+        14,
+        28,
+        42,
+        55
+      ],
+      "moved_bones": 24,
+      "max_head_displacement_metres": 0.3788211328031573,
+      "max_rotation_degrees": 109.50821122695017
+    },
+    "Run": {
+      "frame_range": [
+        0.8000000715255737,
+        16.0
+      ],
+      "sample_frames": [
+        1,
+        5,
+        8,
+        12,
+        16
+      ],
+      "moved_bones": 24,
+      "max_head_displacement_metres": 0.8200418896826992,
+      "max_rotation_degrees": 132.25298386217924
+    },
+    "Walk": {
+      "frame_range": [
+        1.0,
+        32.0
+      ],
+      "sample_frames": [
+        1,
+        9,
+        16,
+        24,
+        32
+      ],
+      "moved_bones": 14,
+      "max_head_displacement_metres": 0.7607737909248994,
+      "max_rotation_degrees": 51.41601116607685
+    }
+  },
+  "texture": {
+    "source_name": "texture_0",
+    "size": [
+      2048,
+      2048
+    ],
+    "colorspace": "sRGB"
+  },
+  "previews": [
+    "art/3d/trials/meshy-rival/previews/silver-cat-idle-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-walk-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-run-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-jump-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-dodge-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-magicrelease-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-hurt-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-defeated-front.png",
+    "art/3d/trials/meshy-rival/previews/silver-cat-idle-back.png"
+  ],
+  "artifacts": {
+    "fbx": {
+      "file": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-girl.fbx",
+      "bytes": 7969116,
+      "sha256": "0E8D5D556EAC3E4387AA75E1A3AEBA5D41808CF711A5D6599A9214879B4F1DEB"
+    },
+    "basecolor": {
+      "file": "unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-basecolor.png",
+      "bytes": 7013839,
+      "sha256": "0D08936703D8572EE8365FEDE67E0EAB20DF9C1512C513B3E1C7F13F628121C9"
+    }
+  }
+}

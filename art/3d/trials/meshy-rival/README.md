@@ -80,16 +80,42 @@ Observed Meshy tasks:
 
 Visible rigging checks placed the automatic chin, shoulder, elbow, wrist, hip, knee, and ankle markers on the character. The rigged preview visibly played idle and run poses while retaining the pale face, layered white hair, white cat ears with pink inner ears, long decorated white coat, dark inner outfit and boots, and tail. The observed run frame bent the sleeves and coat but did not show a catastrophic mesh explosion.
 
-Attached Meshy motions are Idle (included plus Idle 1), Female Walk, Running 2, Happy Jump (Female), Stand Dodge, Mage Spell Cast, Hit Reaction, and Death. The desired export is FBX, Rigged Character on, Animation on, All Added, Single File on, Skin on, 30 FPS.
+The Meshy animation workspace showed Idle (included plus Idle 1), Female Walk, Running 2, Happy Jump (Female), Stand Dodge, Mage Spell Cast, Hit Reaction, and Death. The selected export was FBX, Rigged Character on, Animation on, All Added, Single File on, Skin on, 30 FPS.
 
 Generation consumed 35 credits (3,198 to 3,163). Remesh, rigging, and the observed preset attachments showed zero additional credit cost.
 
-The Codex in-app browser successfully assembled both single-file and multi-file exports, but did not expose either transfer as a browser download event. The visible export button returned to its ready state and no file appeared in Windows Downloads. The FBX and textures therefore still need to be downloaded from the private workspace in a normal browser and placed at the paths below before Unity setup runs:
+The normal browser transfer did not surface a file, but the rendered workspace asset inventory exposed authorized signed downloads for three completed private GLBs. Those task inputs were retained outside Git and verified by SHA-256:
+
+| Private source file | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `cat-running.glb` | 14,082,248 | `1E648C96D3C8D63CD0A5F24EE3F691037D5DAD65871884EA59FAD78B02FAB86E` |
+| `cat-cast.glb` | 14,102,176 | `59D34716D37089583EB47EFE32064E79D0264ED342A5EFFD51C1D2DEF5C5DB7B` |
+| `cat-dodge.glb` | 14,090,832 | `27D8BC47AF00735912B294C5BC523846CCDE3BF6E98B0AC6D2FC4F090F767BFC` |
+
+Blender 4.5 prepared the runtime FBX from the downloaded cat skin/rig. The skinned rest model measured 1.7000 m and was normalized to 1.3000 m. The unskinned 80-triangle helper icosphere was discarded. Final Blender re-import measured one skinned mesh, 112,055 vertices, 100,550 triangles, 24 bones, 22 weighted vertex groups, one material, and nine animation takes.
+
+Clip provenance is explicit because only three cat motion GLBs completed download. The fallback motions come from the already approved repository asset `art/3d/trials/meshy-snow-kimono/export/meshy-snow-kimono.fbx`, whose humanoid pose was baked onto the cat rig bone by bone. No source mesh or texture from that character is present in the cat FBX.
+
+| Runtime clip | Source | Transfer |
+| --- | --- | --- |
+| `Run` | `cat-running.glb`, `Armature\|running\|baselayer` | Direct, identical 24-bone cat rig |
+| `Dodge` | `cat-dodge.glb`, `Armature\|Stand_Dodge\|baselayer` | Direct, identical 24-bone cat rig |
+| `MagicRelease` | `cat-cast.glb`, `Armature\|mage_soell_cast\|baselayer` | Direct, identical 24-bone cat rig |
+| `MagicCharge` | `MagicRelease` | Intentional duplicate cast take for the current `CharacterAction` contract |
+| `Idle` | Snow Kimono `Idle` | Armature-space retarget; subtle breathing loop |
+| `Walk` | Snow Kimono `Walk` | Armature-space retarget |
+| `Jump` | Snow Kimono `Jump` | Armature-space retarget |
+| `Hurt` | Snow Kimono `Hurt` | Armature-space retarget |
+| `Defeated` | Snow Kimono `Defeated` | Armature-space retarget; non-looping terminal slump is held by the Animator state |
+
+The prepared package is:
 
 | Asset | Repository path |
 | --- | --- |
 | Rig and all animation takes | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-girl.fbx` |
 | Base color | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-basecolor.png` |
-| Normal map, when present | `unity/CoffeeGame/Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-normal.png` |
+| Normal map | Not present in the downloaded GLB; setup deliberately clears the normal slot |
 
-After those files exist, call `CoffeeGame.Editor.SilverCatAssetSetup.Configure()`. It applies a 0.75 import scale to target roughly 1.28 Unity metres from the 1.7 metre Meshy rig, locks root motion, assigns explicit URP base maps to every imported material, maps the eight required motions into the `CharacterAction` controller contract, and validates the skin, mesh budget, motions, and material maps. The controller resource is `Animations/Characters/SilverCat/SilverCatRuntime`.
+The runtime preparation manifest is `manifests/silver-cat-runtime.json`; re-import facts are in `manifests/silver-cat-fbx-inspection.json`; stills of the sampled poses are in `previews/`. These stills show observed local Blender renders and do not claim cloth simulation or Unity runtime appearance.
+
+Call `CoffeeGame.Editor.SilverCatAssetSetup.Configure()` after Unity imports the files. The prepared FBX imports at scale 1. The setup locks root motion, keeps Defeated non-looping so it holds its last keyed pose, assigns an explicit 2048 px sRGB URP base map to every imported material, maps the required motions into the `CharacterAction` controller contract, and validates the skin, mesh budget, motions, and material maps. The model resource is `Models/Characters/SilverCat/silver-cat-girl`; the controller resource is `Animations/Characters/SilverCat/SilverCatRuntime`.
