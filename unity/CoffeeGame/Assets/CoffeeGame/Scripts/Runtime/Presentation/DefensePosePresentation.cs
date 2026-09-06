@@ -10,7 +10,7 @@ namespace CoffeeGame.Presentation
     }
 
     /// <summary>
-    /// Adds a small late-frame humanoid pose over the active animation without
+    /// Adds a small late-frame humanoid or named-bone pose over the active animation without
     /// replacing its controller or changing gameplay state.
     /// </summary>
     [DisallowMultipleComponent]
@@ -28,8 +28,19 @@ namespace CoffeeGame.Presentation
 
         private readonly BonePose[] poses = new BonePose[8];
         private Transform visualRoot;
+        private Transform facingRoot;
         private GameObject clockOwner;
         private Animator animator;
+        private Transform leftUpperArm;
+        private Transform leftLowerArm;
+        private Transform leftHand;
+        private Transform rightUpperArm;
+        private Transform rightLowerArm;
+        private Transform rightHand;
+        private Vector3 swordAxisInRightHand;
+        private bool hasSwordAxis;
+        private Vector3 requestedFacing;
+        private bool hasRequestedFacing;
         private DefensePoseStyle style;
         private bool guarding;
         private bool plunging;
@@ -46,6 +57,8 @@ namespace CoffeeGame.Presentation
         public bool IsGuarding => guarding;
         public bool IsPlunging => plunging;
         public bool HasHumanoidRig => animator != null && animator.isHuman;
+        public bool HasPoseRig => animator != null && rightUpperArm != null && rightLowerArm != null && rightHand != null;
+        public bool HasSwordAxis => hasSwordAxis;
         public DefensePoseStyle Style => style;
 
         public void Initialize(
@@ -65,7 +78,20 @@ namespace CoffeeGame.Presentation
         public void RefreshRig()
         {
             RestorePose();
-            animator = FindHumanoidAnimator(visualRoot != null ? visualRoot : transform);
+            animator = FindPoseAnimator(visualRoot != null ? visualRoot : transform);
+            ModelCharacterVisual modelVisual = visualRoot != null
+                ? visualRoot.GetComponentInChildren<ModelCharacterVisual>(true)
+                : null;
+            facingRoot = modelVisual != null ? modelVisual.transform :
+                visualRoot != null ? visualRoot : transform;
+            leftUpperArm = null;
+            leftLowerArm = null;
+            leftHand = null;
+            rightUpperArm = null;
+            rightLowerArm = null;
+            rightHand = null;
+            swordAxisInRightHand = Vector3.zero;
+            hasSwordAxis = false;
             for (int i = 0; i < poses.Length; i++)
             {
                 poses[i] = null;
@@ -80,23 +106,25 @@ namespace CoffeeGame.Presentation
             {
                 AddPose(0, HumanBodyBones.Spine, new Vector3(4f, 0f, 0f), Vector3.zero);
                 AddPose(1, HumanBodyBones.Chest, new Vector3(-5f, 0f, 0f), Vector3.zero);
-                AddPose(2, HumanBodyBones.LeftUpperArm, new Vector3(-18f, 18f, 50f), Vector3.zero);
-                AddPose(3, HumanBodyBones.LeftLowerArm, new Vector3(2f, -48f, 4f), Vector3.zero);
-                AddPose(4, HumanBodyBones.LeftHand, new Vector3(-8f, -10f, 12f), Vector3.zero);
-                AddPose(5, HumanBodyBones.RightUpperArm, new Vector3(-18f, -18f, -50f), Vector3.zero);
-                AddPose(6, HumanBodyBones.RightLowerArm, new Vector3(2f, 48f, -4f), Vector3.zero);
-                AddPose(7, HumanBodyBones.RightHand, new Vector3(-8f, 10f, -12f), Vector3.zero);
+                leftUpperArm = AddPose(2, HumanBodyBones.LeftUpperArm, new Vector3(-8f, 4f, 10f), Vector3.zero);
+                leftLowerArm = AddPose(3, HumanBodyBones.LeftLowerArm, new Vector3(0f, -8f, 2f), Vector3.zero);
+                leftHand = AddPose(4, HumanBodyBones.LeftHand, new Vector3(-8f, -10f, 12f), Vector3.zero);
+                rightUpperArm = AddPose(5, HumanBodyBones.RightUpperArm, new Vector3(-8f, -4f, -10f), Vector3.zero);
+                rightLowerArm = AddPose(6, HumanBodyBones.RightLowerArm, new Vector3(0f, 8f, -2f), Vector3.zero);
+                rightHand = AddPose(7, HumanBodyBones.RightHand, new Vector3(-8f, 10f, -12f), Vector3.zero);
                 return;
             }
 
             AddPose(0, HumanBodyBones.Spine, new Vector3(7f, -6f, 0f), new Vector3(14f, 0f, 0f));
             AddPose(1, HumanBodyBones.Chest, new Vector3(-3f, -9f, 0f), new Vector3(10f, 0f, 0f));
-            AddPose(2, HumanBodyBones.LeftUpperArm, new Vector3(-14f, 22f, 40f), new Vector3(8f, 5f, 18f));
-            AddPose(3, HumanBodyBones.LeftLowerArm, new Vector3(0f, -34f, 8f), new Vector3(0f, -12f, 0f));
-            AddPose(4, HumanBodyBones.RightUpperArm, new Vector3(-24f, -28f, -62f), new Vector3(66f, -8f, -24f));
-            AddPose(5, HumanBodyBones.RightLowerArm, new Vector3(2f, 48f, -12f), new Vector3(4f, 8f, -8f));
-            AddPose(6, HumanBodyBones.RightHand, new Vector3(8f, 12f, -22f), new Vector3(78f, 0f, 0f));
+            leftUpperArm = AddPose(2, HumanBodyBones.LeftUpperArm, new Vector3(-6f, 4f, 8f), new Vector3(3f, 0f, 5f));
+            leftLowerArm = AddPose(3, HumanBodyBones.LeftLowerArm, new Vector3(0f, -8f, 3f), new Vector3(0f, -3f, 0f));
+            rightUpperArm = AddPose(4, HumanBodyBones.RightUpperArm, new Vector3(-8f, -6f, -12f), new Vector3(8f, -3f, -6f));
+            rightLowerArm = AddPose(5, HumanBodyBones.RightLowerArm, new Vector3(0f, 9f, -3f), new Vector3(2f, 3f, -2f));
+            rightHand = AddPose(6, HumanBodyBones.RightHand, new Vector3(4f, 5f, -8f), Vector3.zero);
             AddPose(7, HumanBodyBones.Head, new Vector3(-2f, 5f, 0f), new Vector3(-10f, 0f, 0f));
+            leftHand = ResolveBone(HumanBodyBones.LeftHand);
+            CacheSwordAxis();
         }
 
         public void SetGuarding(bool value)
@@ -117,6 +145,17 @@ namespace CoffeeGame.Presentation
             }
         }
 
+        public void SetFacing(Vector3 worldFacing)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(worldFacing, Vector3.up);
+            if (planar.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+            requestedFacing = planar.normalized;
+            hasRequestedFacing = true;
+        }
+
         private void LateUpdate()
         {
             float deltaTime = CombatClock.DeltaTime(clockOwner != null ? clockOwner : gameObject);
@@ -127,6 +166,7 @@ namespace CoffeeGame.Presentation
             }
 
             ApplyPose();
+            ApplyDirectionalPose();
             UpdatePersistentVisuals();
         }
 
@@ -170,12 +210,143 @@ namespace CoffeeGame.Presentation
             }
         }
 
-        private void AddPose(int index, HumanBodyBones bone, Vector3 guardEuler, Vector3 plungeEuler)
+        private void ApplyDirectionalPose()
         {
-            Transform target = animator.GetBoneTransform(bone);
-            if (target == null)
+            if (!HasPoseRig)
             {
                 return;
+            }
+
+            Vector3 up = Vector3.up;
+            Vector3 forward = GetVisualForward();
+            Vector3 right = Vector3.Cross(up, forward).normalized;
+            if (guardBlend > 0.001f)
+            {
+                if (style == DefensePoseStyle.CatBarrier)
+                {
+                    AlignBone(leftUpperArm, leftLowerArm,
+                        forward * 0.72f + right * 0.22f - up * 0.12f, guardBlend);
+                    AlignBone(leftLowerArm, leftHand,
+                        forward * 0.84f + right * 0.12f + up * 0.18f, guardBlend);
+                    AlignBone(rightUpperArm, rightLowerArm,
+                        forward * 0.72f - right * 0.22f - up * 0.12f, guardBlend);
+                    AlignBone(rightLowerArm, rightHand,
+                        forward * 0.84f - right * 0.12f + up * 0.18f, guardBlend);
+                }
+                else
+                {
+                    AlignBone(leftUpperArm, leftLowerArm,
+                        right * 0.52f + forward * 0.28f - up * 0.34f, guardBlend);
+                    AlignBone(leftLowerArm, leftHand,
+                        right * 0.48f + forward * 0.3f + up * 0.2f, guardBlend);
+                    AlignBone(rightUpperArm, rightLowerArm,
+                        -right * 0.7f + forward * 0.28f - up * 0.34f, guardBlend);
+                    AlignBone(rightLowerArm, rightHand,
+                        -right * 0.52f + forward * 0.34f + up * 0.22f, guardBlend);
+                    AlignSwordAxis((-right + up * 0.38f).normalized, guardBlend);
+                }
+            }
+
+            if (plungeBlend > 0.001f && style == DefensePoseStyle.HeroineBlade)
+            {
+                AlignBone(rightUpperArm, rightLowerArm,
+                    -up * 0.84f + forward * 0.28f - right * 0.12f, plungeBlend);
+                AlignBone(rightLowerArm, rightHand,
+                    -up * 0.92f + forward * 0.2f, plungeBlend);
+                AlignSwordAxis(Vector3.down, plungeBlend);
+            }
+        }
+
+        private void AlignBone(Transform bone, Transform child, Vector3 desiredDirection, float weight)
+        {
+            if (bone == null || child == null || desiredDirection.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+            Vector3 currentDirection = child.position - bone.position;
+            if (currentDirection.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+            Quaternion correction = Quaternion.FromToRotation(currentDirection.normalized, desiredDirection.normalized);
+            bone.rotation = Quaternion.SlerpUnclamped(
+                bone.rotation,
+                correction * bone.rotation,
+                Mathf.Clamp01(weight));
+            RecordAppliedRotation(bone);
+        }
+
+        private void AlignSwordAxis(Vector3 desiredDirection, float weight)
+        {
+            if (!hasSwordAxis || rightHand == null || desiredDirection.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+            Vector3 currentAxis = rightHand.rotation * swordAxisInRightHand;
+            Quaternion correction = Quaternion.FromToRotation(currentAxis, desiredDirection.normalized);
+            rightHand.rotation = Quaternion.SlerpUnclamped(
+                rightHand.rotation,
+                correction * rightHand.rotation,
+                Mathf.Clamp01(weight));
+            RecordAppliedRotation(rightHand);
+        }
+
+        private void RecordAppliedRotation(Transform bone)
+        {
+            for (int i = 0; i < poses.Length; i++)
+            {
+                if (poses[i] != null && poses[i].Bone == bone)
+                {
+                    poses[i].AppliedRotation = bone.localRotation;
+                    poses[i].WasApplied = true;
+                    return;
+                }
+            }
+        }
+
+        private void CacheSwordAxis()
+        {
+            if (rightHand == null || animator == null)
+            {
+                return;
+            }
+            Renderer[] renderers = animator.GetComponentsInChildren<Renderer>(true);
+            float bestDistance = 0f;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                string name = NormalizeName(renderers[i].name);
+                if (!name.Contains("katana") && !name.Contains("sword") && !name.Contains("blade"))
+                {
+                    continue;
+                }
+                Vector3 direction = renderers[i].bounds.center - rightHand.position;
+                if (direction.sqrMagnitude <= bestDistance * bestDistance || direction.sqrMagnitude < 0.0025f)
+                {
+                    continue;
+                }
+                bestDistance = direction.magnitude;
+                swordAxisInRightHand = Quaternion.Inverse(rightHand.rotation) * direction.normalized;
+                hasSwordAxis = true;
+            }
+        }
+
+        private Vector3 GetVisualForward()
+        {
+            if (hasRequestedFacing)
+            {
+                return requestedFacing;
+            }
+            Transform basis = facingRoot != null ? facingRoot : transform;
+            Vector3 forward = Vector3.ProjectOnPlane(basis.forward, Vector3.up);
+            return forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+        }
+
+        private Transform AddPose(int index, HumanBodyBones bone, Vector3 guardEuler, Vector3 plungeEuler)
+        {
+            Transform target = ResolveBone(bone);
+            if (target == null)
+            {
+                return null;
             }
 
             poses[index] = new BonePose
@@ -185,9 +356,10 @@ namespace CoffeeGame.Presentation
                 PlungeEuler = plungeEuler,
                 AuthoredRotation = target.localRotation
             };
+            return target;
         }
 
-        private static Animator FindHumanoidAnimator(Transform root)
+        private static Animator FindPoseAnimator(Transform root)
         {
             if (root == null)
             {
@@ -199,7 +371,8 @@ namespace CoffeeGame.Presentation
             for (int i = 0; i < candidates.Length; i++)
             {
                 Animator candidate = candidates[i];
-                if (candidate == null || !candidate.isHuman || candidate.avatar == null || !candidate.avatar.isValid)
+                if (candidate == null || (!candidate.isHuman &&
+                    FindNamedTransform(candidate.transform, "righthand") == null))
                 {
                     continue;
                 }
@@ -211,6 +384,76 @@ namespace CoffeeGame.Presentation
                 inactiveFallback = inactiveFallback != null ? inactiveFallback : candidate;
             }
             return inactiveFallback;
+        }
+
+        private Transform ResolveBone(HumanBodyBones bone)
+        {
+            if (animator == null)
+            {
+                return null;
+            }
+            if (animator.isHuman && animator.avatar != null && animator.avatar.isValid)
+            {
+                Transform humanoid = animator.GetBoneTransform(bone);
+                if (humanoid != null)
+                {
+                    return humanoid;
+                }
+            }
+
+            switch (bone)
+            {
+                case HumanBodyBones.Spine: return FindNamedTransform(animator.transform, "spine");
+                case HumanBodyBones.Chest: return FindNamedTransform(animator.transform, "spine01", "chest", "spine02");
+                case HumanBodyBones.Head: return FindNamedTransform(animator.transform, "head");
+                case HumanBodyBones.LeftUpperArm: return FindNamedTransform(animator.transform, "leftarm", "upperarml");
+                case HumanBodyBones.LeftLowerArm: return FindNamedTransform(animator.transform, "leftforearm", "forearml", "leftlowerarm");
+                case HumanBodyBones.LeftHand: return FindNamedTransform(animator.transform, "lefthand", "handl");
+                case HumanBodyBones.RightUpperArm: return FindNamedTransform(animator.transform, "rightarm", "upperarmr");
+                case HumanBodyBones.RightLowerArm: return FindNamedTransform(animator.transform, "rightforearm", "forearmr", "rightlowerarm");
+                case HumanBodyBones.RightHand: return FindNamedTransform(animator.transform, "righthand", "handr");
+                default: return null;
+            }
+        }
+
+        private static Transform FindNamedTransform(Transform root, params string[] aliases)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                string candidate = NormalizeName(transforms[i].name);
+                for (int alias = 0; alias < aliases.Length; alias++)
+                {
+                    if (candidate == NormalizeName(aliases[alias]))
+                    {
+                        return transforms[i];
+                    }
+                }
+            }
+            return null;
+        }
+
+        private static string NormalizeName(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+            var characters = new char[value.Length];
+            int count = 0;
+            for (int i = 0; i < value.Length; i++)
+            {
+                char character = char.ToLowerInvariant(value[i]);
+                if (char.IsLetterOrDigit(character))
+                {
+                    characters[count++] = character;
+                }
+            }
+            return new string(characters, 0, count);
         }
 
         private void CreatePersistentVisuals()
@@ -270,8 +513,11 @@ namespace CoffeeGame.Presentation
                 if (visible)
                 {
                     float pulse = 1f + Mathf.Sin(clock * 8f) * 0.035f;
+                    Vector3 forward = GetVisualForward();
+                    barrierRoot.transform.position = transform.position + Vector3.up * 0.82f + forward * 0.48f;
+                    barrierRoot.transform.rotation = Quaternion.LookRotation(forward, Vector3.up) *
+                        Quaternion.Euler(0f, 0f, clock * 18f);
                     barrierRoot.transform.localScale = Vector3.one * guardBlend * pulse;
-                    barrierRoot.transform.localRotation = Quaternion.Euler(0f, 0f, clock * 18f);
                     for (int i = 0; i < barrierLines.Length; i++)
                     {
                         SetAlpha(barrierLines[i], guardBlend * (0.72f - i * 0.12f));
@@ -279,15 +525,14 @@ namespace CoffeeGame.Presentation
                 }
             }
 
-            Transform rightHand = animator != null ? animator.GetBoneTransform(HumanBodyBones.RightHand) : null;
             if (bladeGuardLine != null)
             {
                 bool visible = guardBlend > 0.01f && rightHand != null;
                 bladeGuardLine.gameObject.SetActive(visible);
                 if (visible)
                 {
-                    Vector3 right = transform.right;
-                    Vector3 up = transform.up;
+                    Vector3 right = Vector3.Cross(Vector3.up, GetVisualForward()).normalized;
+                    Vector3 up = Vector3.up;
                     Vector3 center = rightHand.position + up * 0.12f;
                     bladeGuardLine.SetPosition(0, center - right * 0.42f + up * 0.26f);
                     bladeGuardLine.SetPosition(1, center);
@@ -310,10 +555,11 @@ namespace CoffeeGame.Presentation
                     continue;
                 }
 
-                Vector3 side = transform.right * ((i - 1) * 0.055f);
-                Vector3 tip = rightHand.position + side - transform.up * 0.34f;
-                plungeLines[i].SetPosition(0, tip + transform.up * (0.95f + i * 0.12f));
-                plungeLines[i].SetPosition(1, tip + transform.up * 0.34f);
+                Vector3 right = Vector3.Cross(Vector3.up, GetVisualForward()).normalized;
+                Vector3 side = right * ((i - 1) * 0.055f);
+                Vector3 tip = rightHand.position + side - Vector3.up * 0.34f;
+                plungeLines[i].SetPosition(0, tip + Vector3.up * (0.95f + i * 0.12f));
+                plungeLines[i].SetPosition(1, tip + Vector3.up * 0.34f);
                 plungeLines[i].SetPosition(2, tip);
                 SetAlpha(plungeLines[i], plungeBlend * (0.65f - i * 0.1f));
             }
