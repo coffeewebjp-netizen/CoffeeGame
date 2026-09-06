@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using CoffeeGame.Domain;
 using UnityEngine;
 
 namespace CoffeeGame.Persistence
@@ -193,10 +194,43 @@ namespace CoffeeGame.Persistence
                 return false;
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(store.ProfilePath) ?? ".");
-            File.WriteAllText(store.ProfilePath, json);
-            message = "Driveフォルダから読みました: " + AndroidCloudFolder.Label;
-            return true;
+            string importPath = store.ProfilePath + ".cloud-import";
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(store.ProfilePath) ?? ".");
+                File.WriteAllText(importPath, json);
+                var importedStore = new PlayerProfileStore(importPath);
+                PlayerProgression imported = importedStore.LoadOrCreate(out string loadMessage);
+                if (importedStore.HasUnsupportedVersion || loadMessage.Contains("初期化"))
+                {
+                    message = "Driveフォルダのセーブをこの版では取り込めません。現在のセーブは変更していません: "
+                        + loadMessage;
+                    return false;
+                }
+
+                if (!store.TrySave(imported, out string saveMessage))
+                {
+                    message = saveMessage;
+                    return false;
+                }
+
+                message = "Driveフォルダから読みました: " + AndroidCloudFolder.Label;
+                return true;
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(importPath))
+                    {
+                        File.Delete(importPath);
+                    }
+                }
+                catch
+                {
+                    // Import outcome is more useful than temporary cleanup failure.
+                }
+            }
         }
 
         public static string[] ManualShareCandidates()

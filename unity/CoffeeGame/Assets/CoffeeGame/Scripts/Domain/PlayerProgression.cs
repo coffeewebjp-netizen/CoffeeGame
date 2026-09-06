@@ -77,7 +77,8 @@ namespace CoffeeGame.Domain
             Func<string, TalentGrowthProfile> talentGrowthProfileResolver = null,
             int talentPoints = 0,
             IEnumerable<RivalAffinityEntry> rivalAffinities = null,
-            IEnumerable<string> previouslyRecruitedRivalIds = null)
+            IEnumerable<string> previouslyRecruitedRivalIds = null,
+            PlayerParty party = null)
         {
             if (level < 1)
             {
@@ -106,14 +107,14 @@ namespace CoffeeGame.Domain
                 throw new ArgumentOutOfRangeException(nameof(talentPoints), "Talent points cannot be negative.");
             }
 
-            Level = level;
-            Experience = experience;
             Gold = gold;
             SlimeJelly = slimeJelly;
             TalentPoints = talentPoints;
-            Status = status ?? new PlayerStatus();
             growthProfileResolver = talentGrowthProfileResolver ?? TalentGrowthCatalog.Resolve;
             rewardLedger = new RewardLedger(previouslyClaimedRewardIds);
+            PlayerStatus heroStatus = status
+                ?? party?.Find(PartyMemberIds.Hero)?.Status
+                ?? new PlayerStatus();
 
             if (rivalAffinities != null)
             {
@@ -136,14 +137,48 @@ namespace CoffeeGame.Domain
                     recruitedRivalIds.Add(RequireRivalId(rivalId));
                 }
             }
+
+            if (GetRivalAffinity(RivalCharacterIds.WeaknessChallenger)
+                >= LearningRewardPolicyV1.RecruitmentThreshold)
+            {
+                recruitedRivalIds.Add(RivalCharacterIds.WeaknessChallenger);
+            }
+
+            Party = party ?? new PlayerParty(
+                new[]
+                {
+                    new PartyMember(
+                        PartyMemberIds.Hero,
+                        level,
+                        experience,
+                        heroStatus,
+                        recoveryState: PartyRecoveryState.Deployed,
+                        talentGrowthProfileResolver: growthProfileResolver)
+                });
+            PartyMember hero = Party.Find(PartyMemberIds.Hero);
+            if (hero == null)
+            {
+                throw new ArgumentException("The party must contain the stable hero member.", nameof(party));
+            }
+            if (party != null
+                && (hero.Level != level || hero.Experience != experience))
+            {
+                throw new ArgumentException("Legacy hero progression must match the party hero.", nameof(party));
+            }
+            if (recruitedRivalIds.Contains(RivalCharacterIds.WeaknessChallenger))
+            {
+                Party.EnsureCatMemberFrom(hero);
+            }
         }
 
-        public int Level { get; private set; }
+        public PlayerParty Party { get; }
+
+        public int Level => Party.Find(PartyMemberIds.Hero).Level;
 
         /// <summary>
         /// Experience accumulated within the current level.
         /// </summary>
-        public int Experience { get; private set; }
+        public int Experience => Party.Find(PartyMemberIds.Hero).Experience;
 
         public int ExperienceRequiredForNextLevel => GetExperienceRequiredForNextLevel(Level);
 
@@ -153,7 +188,7 @@ namespace CoffeeGame.Domain
 
         public int TalentPoints { get; private set; }
 
-        public PlayerStatus Status { get; private set; }
+        public PlayerStatus Status => Party.Find(PartyMemberIds.Hero).Status;
 
         public void ReplaceFrom(PlayerProgression other)
         {
@@ -167,12 +202,10 @@ namespace CoffeeGame.Domain
                 return;
             }
 
-            Level = other.Level;
-            Experience = other.Experience;
             Gold = other.Gold;
             SlimeJelly = other.SlimeJelly;
             TalentPoints = other.TalentPoints;
-            Status = other.Status;
+            Party.ReplaceFrom(other.Party);
             rewardLedger = new RewardLedger(other.CreateClaimedRewardSnapshot());
             rivalAffinityById.Clear();
             foreach (RivalAffinityEntry entry in other.CreateRivalAffinitySnapshot())
@@ -231,19 +264,7 @@ namespace CoffeeGame.Domain
 
             var nextGold = checked(Gold + reward.Gold);
             var nextSlimeJelly = checked(SlimeJelly + reward.SlimeJelly);
-            var nextLevel = Level;
-            var nextExperience = checked(Experience + reward.Experience);
-
-            while (nextExperience >= GetExperienceRequiredForNextLevel(nextLevel))
-            {
-                nextExperience -= GetExperienceRequiredForNextLevel(nextLevel);
-                nextLevel = checked(nextLevel + 1);
-            }
-
-            int levelsGained = nextLevel - Level;
-            PlayerStatus nextStatus = levelsGained > 0
-                ? Status.ApplyLevelGrowth(levelsGained, growthProfileResolver(Status.TalentId))
-                : Status;
+            Party.ValidateExperienceReward(reward.Experience);
 
             // TryClaim remains the commit gate if callers ever race on the same ledger.
             if (!rewardLedger.TryClaim(claimId))
@@ -253,9 +274,7 @@ namespace CoffeeGame.Domain
 
             Gold = nextGold;
             SlimeJelly = nextSlimeJelly;
-            Level = nextLevel;
-            Experience = nextExperience;
-            Status = nextStatus;
+            Party.AddExperienceToAll(reward.Experience);
             Changed?.Invoke();
             return true;
         }
@@ -304,18 +323,8 @@ namespace CoffeeGame.Domain
                 throw new OverflowException("Rival affinity exceeded its supported bound.");
             }
 
-            int nextLevel = Level;
-            int nextExperience = checked(Experience + reward.Experience);
-            while (nextExperience >= GetExperienceRequiredForNextLevel(nextLevel))
-            {
-                nextExperience -= GetExperienceRequiredForNextLevel(nextLevel);
-                nextLevel = checked(nextLevel + 1);
-            }
+            Party.ValidateExperienceReward(reward.Experience);
 
-            int levelsGained = nextLevel - Level;
-            PlayerStatus nextStatus = levelsGained > 0
-                ? Status.ApplyLevelGrowth(levelsGained, growthProfileResolver(Status.TalentId))
-                : Status;
             bool recruitsRival = currentAffinity < threshold
                 && nextAffinity >= threshold
                 && !recruitedRivalIds.Contains(id);
@@ -333,13 +342,16 @@ namespace CoffeeGame.Domain
             Gold = nextGold;
             TalentPoints = nextTalentPoints;
             rivalAffinityById[id] = nextAffinity;
-            Level = nextLevel;
-            Experience = nextExperience;
-            Status = nextStatus;
             if (recruitsRival)
             {
                 recruitedRivalIds.Add(id);
+                if (id == RivalCharacterIds.WeaknessChallenger)
+                {
+                    Party.EnsureCatMemberFrom(Party.Find(PartyMemberIds.Hero));
+                }
             }
+
+            Party.AddExperienceToAll(reward.Experience);
 
             Changed?.Invoke();
             return new PlayerLearningRewardApplication(

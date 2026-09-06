@@ -95,7 +95,7 @@ namespace CoffeeGame.Persistence.Tests
         }
 
         [Test]
-        public void LoadVersionOne_DefaultsLearningFieldsAndNextSaveMigratesToVersionTwo()
+        public void LoadVersionOne_DefaultsLearningFieldsAndNextSaveMigratesToVersionThree()
         {
             Directory.CreateDirectory(temporaryDirectory);
             File.WriteAllText(
@@ -112,7 +112,8 @@ namespace CoffeeGame.Persistence.Tests
             Assert.That(restored.GetRivalAffinity("rival-silver-001"), Is.Zero);
             Assert.That(restored.IsRivalRecruited("rival-silver-001"), Is.False);
             Assert.That(store.TrySave(restored, out string saveMessage), Is.True, saveMessage);
-            Assert.That(File.ReadAllText(profilePath), Does.Contain("\"version\": 2"));
+            Assert.That(File.ReadAllText(profilePath), Does.Contain("\"version\": 3"));
+            Assert.That(restored.Party.Find(PartyMemberIds.Hero).ResourcesInitialized, Is.False);
         }
 
         [Test]
@@ -134,7 +135,7 @@ namespace CoffeeGame.Persistence.Tests
         public void PortableExportAndClipboardImport_RoundTripsGold()
         {
             var source = new PlayerProfileStore(profilePath);
-            var progression = new PlayerProgression(3, 8, 12, 4);
+            var progression = new PlayerProgression(3, 6, 12, 4);
             Assert.That(source.TrySave(progression, out _), Is.True);
             string json = File.ReadAllText(profilePath);
             UnityEngine.GUIUtility.systemCopyBuffer = json;
@@ -147,6 +148,138 @@ namespace CoffeeGame.Persistence.Tests
                 message);
             Assert.That(imported.Gold, Is.EqualTo(12));
             Assert.That(imported.Level, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void VersionTwoMigration_RestoresRecruitedCatWithUninitializedRuntimeResources()
+        {
+            Directory.CreateDirectory(temporaryDirectory);
+            File.WriteAllText(
+                profilePath,
+                "{\"version\":2,\"level\":4,\"experience\":2,\"gold\":9,\"slimeJelly\":3,"
+                + "\"talentPoints\":5,\"claimedRewardIds\":[\"claim-a\"],"
+                + "\"rivalAffinities\":[{\"rivalId\":\"rival-silver-001\",\"affinity\":100}],"
+                + "\"recruitedRivalIds\":[\"rival-silver-001\"],"
+                + "\"status\":{\"archetypeId\":\"swordsman\",\"className\":\"名もなき剣士\","
+                + "\"talentId\":\"none\",\"talentName\":\"なし\",\"attributes\":[],\"growthRemainders\":[]}}",
+                System.Text.Encoding.UTF8);
+            var now = new DateTime(2026, 9, 6, 1, 0, 0, DateTimeKind.Utc);
+            var store = new PlayerProfileStore(profilePath, () => now);
+
+            PlayerProgression restored = store.LoadOrCreate(out string message);
+
+            Assert.That(message, Does.Contain("version 2"));
+            Assert.That(restored.Party.Members.Count, Is.EqualTo(2));
+            Assert.That(restored.Party.Find(PartyMemberIds.Hero).ResourcesInitialized, Is.False);
+            Assert.That(restored.Party.Find(PartyMemberIds.CatMage).ResourcesInitialized, Is.False);
+            Assert.That(restored.TryApplyReward("claim-a", new RewardBundle(99, 99, 99)), Is.False);
+        }
+
+        [Test]
+        public void VersionThree_RoundTripsIndependentMemberStateAndOfflineSettlementOnce()
+        {
+            var anchor = new DateTime(2030, 9, 6, 2, 0, 0, DateTimeKind.Utc);
+            var progression = RecruitedProgression();
+            PartyMember hero = progression.Party.Find(PartyMemberIds.Hero);
+            PartyMember cat = progression.Party.Find(PartyMemberIds.CatMage);
+            hero.SetMaximumResources(100d, 40d, 100d, anchor);
+            cat.SetMaximumResources(80d, 150d, 100d, anchor);
+            hero.SetResources(50d, 10d, 70d, anchor);
+            cat.SetResources(20d, 30d, 90d, anchor);
+            progression.Party.KnockOut(cat.Id, anchor);
+            progression.Party.RestAllLiving(anchor);
+            Assert.That(hero.RecoveryState, Is.EqualTo(PartyRecoveryState.Resting));
+
+            var saveStore = new PlayerProfileStore(profilePath, () => anchor);
+            Assert.That(saveStore.TrySave(progression, out string saveMessage), Is.True, saveMessage);
+
+            DateTime reloadAt = anchor.AddSeconds(600d);
+            var firstLoad = new PlayerProfileStore(profilePath, () => reloadAt);
+            PlayerProgression first = firstLoad.LoadOrCreate(out string firstMessage);
+            PartyMember firstHero = first.Party.Find(PartyMemberIds.Hero);
+            PartyMember firstCat = first.Party.Find(PartyMemberIds.CatMage);
+
+            Assert.That(firstMessage, Does.Contain("読み込み"));
+            Assert.That(firstHero.RecoveryState, Is.EqualTo(PartyRecoveryState.Resting));
+            Assert.That(firstHero.Resources.HitPoints, Is.EqualTo(100d));
+            Assert.That(firstHero.Resources.MagicPoints, Is.EqualTo(110d / 3d).Within(0.0000001d));
+            Assert.That(firstHero.Resources.Special, Is.EqualTo(70d));
+            Assert.That(firstCat.RecoveryState, Is.EqualTo(PartyRecoveryState.Resting));
+            Assert.That(firstCat.Resources.HitPoints, Is.EqualTo(1d));
+            Assert.That(firstCat.Resources.MagicPoints, Is.EqualTo(30d));
+            Assert.That(firstCat.Resources.Special, Is.Zero);
+
+            var secondLoad = new PlayerProfileStore(profilePath, () => reloadAt);
+            PlayerProgression second = secondLoad.LoadOrCreate(out _);
+            PartyMember secondCat = second.Party.Find(PartyMemberIds.CatMage);
+            Assert.That(secondCat.Resources.HitPoints, Is.EqualTo(1d));
+            Assert.That(secondCat.Resources.MagicPoints, Is.EqualTo(30d));
+        }
+
+        [Test]
+        public void UnknownVersion_RemainsByteForByteAndBlocksOverwrite()
+        {
+            Directory.CreateDirectory(temporaryDirectory);
+            const string futureJson = "{\"version\":99,\"gold\":123,\"future\":{\"opaque\":true}}";
+            File.WriteAllText(profilePath, futureJson, System.Text.Encoding.UTF8);
+            var store = new PlayerProfileStore(profilePath);
+
+            PlayerProgression fallback = store.LoadOrCreate(out string message);
+
+            Assert.That(fallback.Level, Is.EqualTo(1));
+            Assert.That(store.HasUnsupportedVersion, Is.True);
+            Assert.That(store.UnsupportedVersion, Is.EqualTo(99));
+            Assert.That(message, Does.Contain("変更せず保持"));
+            Assert.That(store.TrySave(fallback, out string saveMessage), Is.False);
+            Assert.That(saveMessage, Does.Contain("上書きしない"));
+            Assert.That(File.ReadAllText(profilePath), Is.EqualTo(futureJson));
+            Assert.That(Directory.GetFiles(temporaryDirectory, "profile.json.invalid-*"), Is.Empty);
+        }
+
+        [Test]
+        public void VersionTwoExport_PreservesSharedCanonicalProgressAndOmitsPartyFields()
+        {
+            var progression = RecruitedProgression();
+            progression.TryApplyReward("shared", new RewardBundle(2, 4, 3));
+            var store = new PlayerProfileStore(profilePath);
+
+            Assert.That(
+                store.TryExportVersion2Json(progression, out string json, out string message),
+                Is.True,
+                message);
+
+            Assert.That(json, Does.Contain("\"version\": 2"));
+            Assert.That(json, Does.Contain("\"gold\": 9"));
+            Assert.That(json, Does.Contain("\"claimedRewardIds\""));
+            Assert.That(json, Does.Not.Contain("\"members\""));
+            Assert.That(json, Does.Not.Contain("\"recoveryState\""));
+        }
+
+        [Test]
+        public void AtomicReplacement_KeepsPreviousProfileAsRecoverableBackup()
+        {
+            var store = new PlayerProfileStore(profilePath);
+            Assert.That(store.TrySave(new PlayerProgression(1, 0, 4, 0), out _), Is.True);
+            Assert.That(store.TrySave(new PlayerProgression(1, 0, 9, 0), out _), Is.True);
+            Assert.That(File.Exists(store.BackupPath), Is.True);
+
+            File.WriteAllText(profilePath, "{broken", System.Text.Encoding.UTF8);
+            PlayerProgression recovered = store.LoadOrCreate(out string message);
+
+            Assert.That(message, Does.Contain("バックアップ"));
+            Assert.That(recovered.Gold, Is.EqualTo(4));
+            Assert.That(File.Exists(profilePath), Is.True);
+        }
+
+        private static PlayerProgression RecruitedProgression()
+        {
+            return new PlayerProgression(
+                2,
+                1,
+                5,
+                0,
+                rivalAffinities: new[] { new RivalAffinityEntry(RivalCharacterIds.WeaknessChallenger, 100) },
+                previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
         }
     }
 }

@@ -55,6 +55,7 @@ namespace CoffeeGame.Persistence
             if (LooksLikeProfile(json))
             {
                 string clipboardPath = PortablePath + ".clipboard.json";
+                Directory.CreateDirectory(Path.GetDirectoryName(clipboardPath) ?? ".");
                 File.WriteAllText(clipboardPath, json, new UTF8Encoding(false));
                 return TryImportFromPath(store, clipboardPath, out progression, out message);
             }
@@ -82,6 +83,13 @@ namespace CoffeeGame.Persistence
         {
             var imported = new PlayerProfileStore(path);
             progression = imported.LoadOrCreate(out string loadMessage);
+            if (imported.HasUnsupportedVersion)
+            {
+                message = "この版では新しいセーブ形式を取り込めません。元ファイルは変更していません: " + loadMessage;
+                progression = null;
+                return false;
+            }
+
             if (loadMessage.Contains("初期化"))
             {
                 message = "セーブを読み込めませんでした: " + loadMessage;
