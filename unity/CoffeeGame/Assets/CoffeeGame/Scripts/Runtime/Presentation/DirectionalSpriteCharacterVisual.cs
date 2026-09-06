@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CoffeeGame.Combat;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -304,7 +305,7 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
+            float deltaTime = CombatClock.DeltaTime(gameObject);
             if (actionPlaying)
             {
                 if (actionCompletionPending)
@@ -1230,7 +1231,7 @@ namespace CoffeeGame.Presentation
             ApplyNeutralPose();
             if (activeState == CharacterAction.Idle)
             {
-                float breath = Mathf.Sin(Time.time * 2.4f) * 0.004f;
+                float breath = Mathf.Sin(CombatClock.Time(gameObject) * 2.4f) * 0.004f;
                 spriteTransform.localScale = new Vector3(1f - breath, 1f + breath, 1f);
                 return;
             }
@@ -1245,7 +1246,7 @@ namespace CoffeeGame.Presentation
             // The authored four-frame cycles now supply the leg motion. Keep
             // only a restrained vertical weight shift here so the procedural
             // pose does not fight the alternating contact and passing frames.
-            float stride = 0.5f - 0.5f * Mathf.Cos(Time.time * frequency * Mathf.PI * 2f);
+            float stride = 0.5f - 0.5f * Mathf.Cos(CombatClock.Time(gameObject) * frequency * Mathf.PI * 2f);
             spriteTransform.localPosition = baseSpritePosition + Vector3.up * (stride * amplitude);
         }
 

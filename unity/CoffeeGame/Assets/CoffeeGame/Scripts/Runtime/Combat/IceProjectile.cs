@@ -13,8 +13,10 @@ namespace CoffeeGame.Combat
         private float remainingLifetime;
         private GameObject source;
         private Material visualMaterial;
+        private long attackId;
 
         public event Action<IceProjectile> Destroyed;
+        public event Action<Health> Hit;
 
         public void Initialize(Vector3 worldDirection, int damageAmount, float movementSpeed, GameObject damageSource)
         {
@@ -27,12 +29,18 @@ namespace CoffeeGame.Combat
             speed = Mathf.Max(0.1f, movementSpeed);
             remainingLifetime = 2.8f;
             source = damageSource;
+            attackId = new DamageInfo(0, damageSource, Vector3.zero, Vector3.zero).AttackId;
+            CombatOwnership.Assign(gameObject, damageSource);
             CreateVisual();
         }
 
         private void Update()
         {
-            float deltaTime = Time.deltaTime;
+            float deltaTime = CombatClock.DeltaTime(gameObject);
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
             transform.position += direction * (speed * deltaTime);
             transform.Rotate(0f, 0f, 55f * deltaTime, Space.Self);
             remainingLifetime -= deltaTime;
@@ -41,16 +49,17 @@ namespace CoffeeGame.Combat
             foreach (Collider overlap in overlaps)
             {
                 Health health = overlap.GetComponentInParent<Health>();
-                if (health == null || !health.IsAlive || health.gameObject == source)
+                if (health == null || !health.IsAlive || !DamageFaction.CanDamage(source, health))
                 {
                     continue;
                 }
 
-                var hit = new DamageInfo(damage, source, transform.position, direction * 0.45f);
+                var hit = new DamageInfo(damage, source, transform.position, direction * 0.45f, attackId);
                 if (health.ApplyDamage(hit))
                 {
-                    CombatVfxFactory.SpawnIceBurst(transform.position, direction, 0.38f, 0.24f);
-                    CombatVfxFactory.SpawnRing(transform.position, 0.28f, IceCrystalVisuals.Frost, 0.18f);
+                    Hit?.Invoke(health);
+                    CombatVfxFactory.SpawnIceBurst(transform.position, direction, 0.38f, 0.24f, source);
+                    CombatVfxFactory.SpawnRing(transform.position, 0.28f, IceCrystalVisuals.Frost, 0.18f, source);
                     Destroy(gameObject);
                     return;
                 }

@@ -74,7 +74,7 @@ namespace CoffeeGame.Combat
 
             private void Update()
             {
-                elapsed += Time.deltaTime;
+                elapsed += CombatClock.DeltaTime(gameObject);
                 float t = Mathf.Clamp01(elapsed / duration);
                 for (int i = 0; i < lines.Length; i++)
                 {

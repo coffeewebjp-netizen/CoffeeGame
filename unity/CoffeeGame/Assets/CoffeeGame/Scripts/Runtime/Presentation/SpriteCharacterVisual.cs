@@ -1,4 +1,5 @@
 using System.Collections;
+using CoffeeGame.Combat;
 using UnityEngine;
 
 namespace CoffeeGame.Presentation
@@ -91,7 +92,7 @@ namespace CoffeeGame.Presentation
             }
 
             float pulse = action == CharacterAction.Run ? 0.045f : action == CharacterAction.Walk ? 0.025f : 0f;
-            float phase = Time.time * (action == CharacterAction.Run ? 15f : 9f);
+            float phase = CombatClock.Time(gameObject) * (action == CharacterAction.Run ? 15f : 9f);
             transform.localScale = baseLocalScale * (1f + Mathf.Sin(phase) * pulse);
         }
 
@@ -122,7 +123,7 @@ namespace CoffeeGame.Presentation
             float elapsed = 0f;
             while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
+                elapsed += CombatClock.DeltaTime(gameObject);
                 float t = Mathf.Clamp01(elapsed / duration);
                 float scalePulse = Mathf.Sin(t * Mathf.PI) * 0.1f;
                 float angle = action == CharacterAction.SpinRelease ? t * 360f :

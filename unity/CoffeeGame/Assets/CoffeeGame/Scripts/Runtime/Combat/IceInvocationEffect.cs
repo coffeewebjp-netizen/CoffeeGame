@@ -19,6 +19,10 @@ namespace CoffeeGame.Combat
         public void Initialize(Transform followTarget, float duration)
         {
             anchor = followTarget;
+            if (followTarget != null)
+            {
+                CombatOwnership.Assign(gameObject, followTarget.gameObject);
+            }
             lifetime = Mathf.Max(0.12f, duration);
             glow = CombatGlowVisuals.CreateMaterial("Ice invocation glow", new Color(0.35f, 0.83f, 1f, 0.85f));
             for (int i = 0; i < rings.Length; i++)
@@ -46,7 +50,7 @@ namespace CoffeeGame.Combat
         private void Update()
         {
             if (anchor == null) { Destroy(gameObject); return; }
-            elapsed += Time.deltaTime;
+            elapsed += CombatClock.DeltaTime(gameObject);
             Apply(Mathf.Clamp01(elapsed / lifetime));
             if (elapsed >= lifetime) Destroy(gameObject);
         }

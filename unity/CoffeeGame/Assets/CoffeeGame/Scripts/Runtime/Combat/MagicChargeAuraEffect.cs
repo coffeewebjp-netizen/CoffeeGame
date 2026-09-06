@@ -15,6 +15,10 @@ namespace CoffeeGame.Combat
         public void Initialize(Transform followTarget, float duration)
         {
             anchor = followTarget;
+            if (followTarget != null)
+            {
+                CombatOwnership.Assign(gameObject, followTarget.gameObject);
+            }
             lifetime = Mathf.Max(0.12f, duration);
             for (int index = 0; index < shards.Length; index++)
             {
@@ -46,7 +50,7 @@ namespace CoffeeGame.Combat
                 return;
             }
 
-            elapsed += Time.deltaTime;
+            elapsed += CombatClock.DeltaTime(gameObject);
             float normalized = Mathf.Clamp01(elapsed / lifetime);
             transform.position = anchor.position + Vector3.up * 0.78f;
             float radius = Mathf.Lerp(0.32f, 0.11f, normalized * normalized);

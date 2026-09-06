@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using CoffeeGame.Combat;
 using UnityEngine;
 
 namespace CoffeeGame.Presentation
@@ -648,7 +649,7 @@ namespace CoffeeGame.Presentation
             float elapsed = 0f;
             while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
+                elapsed += CombatClock.DeltaTime(gameObject);
                 actionElapsed = elapsed;
                 yield return null;
             }

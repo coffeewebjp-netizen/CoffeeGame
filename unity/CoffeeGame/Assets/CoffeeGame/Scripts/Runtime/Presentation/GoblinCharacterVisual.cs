@@ -1,4 +1,5 @@
 using System;
+using CoffeeGame.Combat;
 using CoffeeGame.Enemies;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -113,8 +114,9 @@ namespace CoffeeGame.Presentation
         }
         private void Update()
         {
-            if (actionRemaining <= 0f || Time.deltaTime <= 0f) return;
-            actionRemaining -= Time.deltaTime;
+            float deltaTime = CombatClock.DeltaTime(gameObject);
+            if (actionRemaining <= 0f || deltaTime <= 0f) return;
+            actionRemaining -= deltaTime;
             if (actionRemaining > 0f) return;
             if (defeated) { if (animator != null) animator.speed = 0f; return; }
             if (warning != null) warning.enabled = false;

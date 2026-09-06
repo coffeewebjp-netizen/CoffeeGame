@@ -1,4 +1,5 @@
 using System;
+using CoffeeGame.Combat;
 using UnityEngine;
 
 namespace CoffeeGame.Actors
@@ -8,6 +9,7 @@ namespace CoffeeGame.Actors
     {
         [SerializeField, Min(1)] private int maxHealth = 1;
         [SerializeField, Min(0f)] private float invulnerabilitySeconds;
+        [SerializeField] private DamageTeam team;
 
         private float invulnerableUntil;
         private float dodgeInvulnerableUntil;
@@ -18,6 +20,7 @@ namespace CoffeeGame.Actors
 
         public int Current { get; private set; }
         public int Maximum => maxHealth;
+        public DamageTeam Team => team;
         public bool IsAlive => Current > 0;
         public float Normalized => maxHealth <= 0 ? 0f : (float)Current / maxHealth;
         public float IncomingDamageMultiplier { get; set; } = 1f;
@@ -39,11 +42,24 @@ namespace CoffeeGame.Actors
             dodgeInvulnerableUntil = 0f;
         }
 
-        public bool IsDodgeInvulnerable => Time.time < dodgeInvulnerableUntil;
+        public void SetTeam(DamageTeam value)
+        {
+            team = value;
+        }
+
+        // Hydration must restore the saved current value without granting the
+        // difference when a newer build derives a larger maximum.
+        public void SetCurrentAndMaximum(int current, int maximum)
+        {
+            maxHealth = Mathf.Max(1, maximum);
+            Current = Mathf.Clamp(current, 0, maxHealth);
+        }
+
+        public bool IsDodgeInvulnerable => CombatClock.Time(gameObject) < dodgeInvulnerableUntil;
 
         public void BeginDodgeInvulnerability(float seconds)
         {
-            float until = Time.time + Mathf.Max(0f, seconds);
+            float until = CombatClock.Time(gameObject) + Mathf.Max(0f, seconds);
             dodgeInvulnerableUntil = until;
             if (until > invulnerableUntil)
             {
@@ -55,7 +71,7 @@ namespace CoffeeGame.Actors
         {
             if (invulnerableUntil <= dodgeInvulnerableUntil)
             {
-                invulnerableUntil = Time.time;
+                invulnerableUntil = CombatClock.Time(gameObject);
             }
 
             dodgeInvulnerableUntil = 0f;
@@ -63,14 +79,26 @@ namespace CoffeeGame.Actors
 
         public bool ApplyDamage(DamageInfo damage)
         {
-            if (!IsAlive || damage.Amount <= 0)
+            if (!IsAlive || damage.Amount <= 0 || !DamageFaction.CanDamage(damage.Source, this))
             {
                 return false;
             }
 
-            if (Time.time < invulnerableUntil)
+            TimeStopController timeStop = TimeStopController.Instance;
+            bool deferredHit = timeStop != null && timeStop.IsActive && timeStop.IsFrozen(gameObject);
+            if (deferredHit)
             {
-                if (Time.time < dodgeInvulnerableUntil)
+                if (damage.Source == null || timeStop.IsFrozen(damage.Source) ||
+                    !timeStop.TryClaimDamage(this, damage.AttackId))
+                {
+                    return false;
+                }
+            }
+
+            float now = CombatClock.Time(gameObject);
+            if (now < invulnerableUntil)
+            {
+                if (now < dodgeInvulnerableUntil)
                 {
                     AttackAvoided?.Invoke();
                 }
@@ -86,9 +114,31 @@ namespace CoffeeGame.Actors
             int adjustedAmount = Mathf.Max(
                 1,
                 Mathf.RoundToInt(damage.Amount * Mathf.Clamp(IncomingDamageMultiplier, 0.05f, 10f)));
-            var appliedDamage = new DamageInfo(adjustedAmount, damage.Source, damage.HitPoint, damage.Knockback);
+            var appliedDamage = new DamageInfo(
+                adjustedAmount,
+                damage.Source,
+                damage.HitPoint,
+                damage.Knockback,
+                damage.AttackId);
+
+            if (deferredHit)
+            {
+                return timeStop.TryQueueDamage(this, appliedDamage);
+            }
+
+            return ApplyResolvedDamage(appliedDamage);
+        }
+
+        internal bool ApplyResolvedDamage(DamageInfo appliedDamage)
+        {
+            if (!IsAlive || appliedDamage.Amount <= 0)
+            {
+                return false;
+            }
+
+            int adjustedAmount = appliedDamage.Amount;
             Current = Mathf.Max(0, Current - adjustedAmount);
-            invulnerableUntil = Time.time + invulnerabilitySeconds;
+            invulnerableUntil = CombatClock.Time(gameObject) + invulnerabilitySeconds;
             Damaged?.Invoke(this, appliedDamage);
 
             if (Current == 0)

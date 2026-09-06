@@ -20,7 +20,7 @@ namespace CoffeeGame.Combat
             return effect;
         }
 
-        public static void SpawnMagicRelease(Vector3 center, Vector3 facing)
+        public static void SpawnMagicRelease(Vector3 center, Vector3 facing, GameObject owner = null)
         {
             Vector3 planarFacing = Vector3.ProjectOnPlane(facing, Vector3.up);
             if (planarFacing.sqrMagnitude < 0.001f)
@@ -30,8 +30,8 @@ namespace CoffeeGame.Combat
 
             planarFacing.Normalize();
             Vector3 origin = center + Vector3.up * 0.72f + planarFacing * 0.28f;
-            SpawnRing(center, 0.8f, IceCrystalVisuals.Frost, 0.24f);
-            SpawnIceBurst(origin, planarFacing, 0.7f, 0.32f);
+            SpawnRing(center, 0.8f, IceCrystalVisuals.Frost, 0.24f, owner);
+            SpawnIceBurst(origin, planarFacing, 0.7f, 0.32f, owner);
         }
 
         public static void SpawnPlungeImpact(Vector3 center, float radius)
@@ -65,17 +65,29 @@ namespace CoffeeGame.Combat
             SpawnIceBurst(center + Vector3.up * 0.12f, Vector3.up, radius * 0.7f, 0.28f);
         }
 
-        public static void SpawnIceBurst(Vector3 origin, Vector3 direction, float radius, float lifetime)
+        public static void SpawnIceBurst(
+            Vector3 origin,
+            Vector3 direction,
+            float radius,
+            float lifetime,
+            GameObject owner = null)
         {
             var effect = new GameObject("Ice burst VFX");
             effect.transform.position = origin;
+            CombatOwnership.Assign(effect, owner);
             effect.AddComponent<IceBurstEffect>().Initialize(direction, radius, lifetime);
         }
 
-        public static void SpawnRing(Vector3 center, float radius, Color color, float lifetime = 0.3f)
+        public static void SpawnRing(
+            Vector3 center,
+            float radius,
+            Color color,
+            float lifetime = 0.3f,
+            GameObject owner = null)
         {
             var effect = new GameObject("Combat ring VFX");
             effect.transform.position = center + Vector3.up * 0.035f;
+            CombatOwnership.Assign(effect, owner);
             var line = effect.AddComponent<LineRenderer>();
             line.loop = true;
             line.useWorldSpace = false;
@@ -104,7 +116,8 @@ namespace CoffeeGame.Combat
             Vector3 facing,
             float radius,
             Color color,
-            float lifetime = 0.3f)
+            float lifetime = 0.3f,
+            GameObject owner = null)
         {
             Vector3 planarFacing = Vector3.ProjectOnPlane(facing, Vector3.up);
             if (radius <= 0f || planarFacing.sqrMagnitude <= 0.001f)
@@ -120,6 +133,7 @@ namespace CoffeeGame.Combat
 
             var effect = new GameObject("Sword slash trail VFX");
             effect.transform.position = center + Vector3.up * 0.76f + planarFacing * (radius * 0.42f);
+            CombatOwnership.Assign(effect, owner);
             if (viewCamera != null)
             {
                 effect.transform.rotation = Quaternion.LookRotation(
@@ -226,7 +240,7 @@ namespace CoffeeGame.Combat
 
             private void Update()
             {
-                elapsed += Time.deltaTime;
+                elapsed += CombatClock.DeltaTime(gameObject);
                 float t = Mathf.Clamp01(elapsed / lifetime);
                 transform.localScale = Vector3.one * Mathf.Lerp(0.1f, 1f, t);
                 Color color = line.startColor;
@@ -286,7 +300,8 @@ namespace CoffeeGame.Combat
 
             private void Update()
             {
-                elapsed += Time.deltaTime;
+                float deltaTime = CombatClock.DeltaTime(gameObject);
+                elapsed += deltaTime;
                 float t = Mathf.Clamp01(elapsed / lifetime);
                 for (int index = 0; index < shards.Length; index++)
                 {
@@ -295,7 +310,7 @@ namespace CoffeeGame.Combat
                         continue;
                     }
 
-                    shards[index].position += velocities[index] * Time.deltaTime;
+                    shards[index].position += velocities[index] * deltaTime;
                     velocities[index] *= 0.88f;
                     shards[index].localScale = new Vector3(0.035f, 0.11f, 0.035f) * Mathf.Lerp(1f, 0.12f, t);
                 }
@@ -360,7 +375,7 @@ namespace CoffeeGame.Combat
 
             private void Update()
             {
-                elapsed += Time.deltaTime;
+                elapsed += CombatClock.DeltaTime(gameObject);
                 float t = Mathf.Clamp01(elapsed / lifetime);
                 float sweep = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.38f));
                 int head = Mathf.Clamp(

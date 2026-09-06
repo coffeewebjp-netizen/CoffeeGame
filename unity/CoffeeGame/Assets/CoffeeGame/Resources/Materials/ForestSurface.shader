@@ -18,6 +18,8 @@ Shader "CoffeeGame/ForestSurface"
             float _Ground;
         CBUFFER_END
         float4 _ForestFocus;
+        float _CoffeeGameWorldTime;
+        float _CoffeeGameCombatClockReady;
         struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; half4 color:COLOR; float4 occluder:TEXCOORD0; };
         struct Varyings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; half3 normalWS:TEXCOORD1; half4 color:COLOR; half fog:TEXCOORD2; float4 occluder:TEXCOORD3; };
         float Hash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
@@ -28,7 +30,8 @@ Shader "CoffeeGame/ForestSurface"
         }
         float3 Wind(float3 world,float amount)
         {
-            float sway=sin(_Time.y*1.4+world.x*0.8+world.z*0.5)*0.047+sin(_Time.y*2.1+world.z*1.7)*0.018;
+            float worldTime=lerp(_Time.y,_CoffeeGameWorldTime,saturate(_CoffeeGameCombatClockReady));
+            float sway=sin(worldTime*1.4+world.x*0.8+world.z*0.5)*0.047+sin(worldTime*2.1+world.z*1.7)*0.018;
             world.xz+=float2(sway,sway*0.45)*amount*(1-_Ground);
             return world;
         }
