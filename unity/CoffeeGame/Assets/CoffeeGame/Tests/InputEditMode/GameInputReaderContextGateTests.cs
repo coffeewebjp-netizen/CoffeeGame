@@ -250,6 +250,27 @@ namespace CoffeeGame.Input.Tests
             reader.RefreshContextSwitchReleaseGate();
         }
 
+        [Test] public void RightStickLockIsAnEdgeAndDoesNotLeakAcrossMenus()
+        {
+            var reader=readerObject.AddComponent<GameInputReader>();
+            reader.LoadBindingOverridesFromJson("{\"version\":2,\"bindings\":[]}");
+            SelectGamepad(reader);reader.EnableBattle();TickReader(reader);
+            Press(gamepad.rightStickButton);Assert.That(reader.LockOnPressed,Is.True);
+            InputSystem.Update();Assert.That(reader.LockOnPressed,Is.False,"holding R3 does not repeat");
+            reader.EnableUI();InputSystem.Update();Assert.That(reader.LockOnPressed,Is.False);
+            reader.EnableBattle();InputSystem.Update();TickReader(reader);Assert.That(reader.LockOnPressed,Is.False);
+            Release(gamepad.rightStickButton);TickReader(reader);Press(gamepad.rightStickButton);
+            Assert.That(reader.LockOnPressed,Is.True);
+        }
+
+        [Test] public void OldCustomRightStickBindingDoesNotFireLockAndOldActionTogether()
+        {
+            var reader=readerObject.AddComponent<GameInputReader>();
+            reader.LoadBindingOverridesFromJson("{\"version\":2,\"bindings\":[{\"semantic\":\"Jump\",\"path\":\"<Gamepad>/rightStickPress\"}]}");
+            SelectGamepad(reader);reader.EnableBattle();TickReader(reader);Press(gamepad.rightStickButton);
+            Assert.That(reader.JumpPressed,Is.True);Assert.That(reader.LockOnPressed,Is.False);
+        }
+
         private static void SelectGamepad(GameInputReader reader)
         {
             reader.BeginInputModeSelection();

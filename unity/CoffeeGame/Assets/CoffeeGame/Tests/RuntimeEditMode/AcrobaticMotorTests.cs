@@ -29,6 +29,50 @@ namespace CoffeeGame.Combat.Tests
         { Object.DestroyImmediate(actor);Object.DestroyImmediate(floor);Object.DestroyImmediate(tuning);Time.timeScale=1f; }
         private void Step(int frames) { for(int i=0;i<frames;i++) motor.Tick(.01f); }
 
+        [TestCase(0f)] [TestCase(35f)] [TestCase(130f)]
+        public void EveryRearHalfAngleHasExactlyOneGuardJumpSector(float yaw)
+        {
+            Vector3 facing = Quaternion.Euler(0,yaw,0) * Vector3.forward;
+            for (int degrees=90; degrees<=270; degrees++)
+            {
+                Vector3 direction = Quaternion.Euler(0,degrees,0) * facing;
+                bool side = PlayerMotor3D.IsSidewaysInput(facing,direction);
+                bool back = PlayerMotor3D.IsBackwardInput(facing,direction);
+                Assert.That(side ^ back, Is.True, "rear sector angle="+degrees+" yaw="+yaw);
+                if (degrees==135 || degrees==225) Assert.That(side,Is.True,"45 degrees belongs to cartwheel");
+            }
+        }
+
+        [TestCase(-1f, 1f, true)] [TestCase(1f, 1f, true)]
+        [TestCase(-.98f, 1f, false)] [TestCase(.98f, 1f, false)]
+        public void RearDiagonalExecutesRealGuardJump(float x,float y,bool cartwheel)
+        {
+            motor.IsGuarding=true;
+            motor.Commands=new ActorCommandFrame{Jump=true,Move=new Vector2(x,y).normalized,WorldSpace=true};
+            motor.Tick(.01f);
+            Assert.That(motor.IsGuardJumping,Is.True);
+            Assert.That(motor.IsCartwheeling,Is.EqualTo(cartwheel));
+            Assert.That(motor.IsBackflipping,Is.EqualTo(!cartwheel));
+        }
+
+        [Test] public void LockedFacingSurvivesStrafingAndGuardThenReturnsToMovementAfterRelease()
+        {
+            var enemy=new GameObject("facing target");
+            try
+            {
+                var health=enemy.AddComponent<Health>();health.Initialize(10);enemy.transform.position=new Vector3(0,0,8);
+                motor.LockedTarget=health;
+                motor.Commands=new ActorCommandFrame{Move=Vector2.right,WorldSpace=true};Step(10);
+                Vector3 toTarget=(enemy.transform.position-actor.transform.position);toTarget.y=0;
+                Assert.That(Vector3.Dot(motor.Facing,toTarget.normalized),Is.GreaterThan(.999f));
+                motor.IsGuarding=true;enemy.transform.position=new Vector3(-8,0,0);Step(5);
+                Assert.That(motor.Facing.x,Is.LessThan(-.99f));
+                motor.LockedTarget=null;motor.IsGuarding=false;Step(5);
+                Assert.That(motor.Facing.x,Is.GreaterThan(.99f));
+            }
+            finally {Object.DestroyImmediate(enemy);}
+        }
+
         [Test] public void RollStaysLowAndDoesNotEndOnEarlyFloorContact()
         {
             int landings=0; motor.Landed+=_=>landings++;

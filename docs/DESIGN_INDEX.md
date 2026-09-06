@@ -18,6 +18,7 @@ The live game is `unity/CoffeeGame`.
 | いまの実装範囲 | `docs/current-status.md` | `unity/CoffeeGame/Assets/CoffeeGame/Scripts/` |
 | Unity 起動と入力 | `unity/CoffeeGame/README.md` | `Scripts/Input/GameInputReader.cs` と `GameInputReader.{Keyboard,Gamepad,SteamDesktop,Touch}.cs` |
 | 戦闘スライス | `docs/first-combat-slice.md` | `Scripts/Runtime/Combat/`, `Scripts/Runtime/Bootstrap/` |
+| 敵固定・ジャストスロー・剣士音声 | `docs/target-lock-v12.md` | `TargetLockController`, `PerfectDefenseMoment`, `HeroineCombatVoice` |
 | 防御・回避・バク転・2体出現 | `docs/acrobatics-v11.md`, `docs/defense-v10.md` | `PlayerDefense`, `PlayerMotor3D`, `AcrobaticMotionPresentation`, `CombatRunController` |
 | HUD / ポーズ | `docs/player-profile-and-pause-ui.md` | `CombatSliceHud`（制御）と `CombatGameHudView`（表示）。設定行は `CombatHudSettingsRows` |
 | CoffeeLearning 連携 | `docs/coffeelearning-integration.md` | `Scripts/Integration/`。HUD 接続面は `CombatSliceHud.CoffeeLearning.cs` / `CombatGameHudView.Settings.cs`。ライバル出題は `*.Rival*.cs` |

@@ -470,6 +470,7 @@ namespace CoffeeGame.Input
                 GameInputSemantic.Magic => "氷魔法",
                 GameInputSemantic.Dodge => "回避",
                 GameInputSemantic.SwitchCharacter => "操作切替",
+                GameInputSemantic.LockOn => "ターゲット固定",
                 GameInputSemantic.Guard => "防御",
                 GameInputSemantic.Pause => "一時停止",
                 _ => "選択中のアクション"

@@ -68,6 +68,7 @@ namespace CoffeeGame.UI
             AddCommandButton(menuScrollContent, "CoffeeLearning Cancel", () => CoffeeLearningCancelRequested?.Invoke());
             AddControlButton(menuScrollContent, GameInputSemantic.SwitchCharacter, "操作切替");
             AddControlButton(menuScrollContent, GameInputSemantic.Guard, "防御");
+            AddControlButton(menuScrollContent, GameInputSemantic.LockOn, "ターゲット固定");
         }
 
 
@@ -136,6 +137,9 @@ namespace CoffeeGame.UI
             controlButtons[CombatHudSettingsRows.SwitchCharacter].GetComponentInChildren<Text>().text =
                 "操作切替　" + input.GetActiveControllerBindingDescription(GameInputSemantic.SwitchCharacter);
             controlButtons[CombatHudSettingsRows.SwitchCharacter].interactable = supportsRebind && !rebinding;
+            controlButtons[CombatHudSettingsRows.LockOn].GetComponentInChildren<Text>().text =
+                "ターゲット固定　" + input.GetActiveControllerBindingDescription(GameInputSemantic.LockOn);
+            controlButtons[CombatHudSettingsRows.LockOn].interactable = supportsRebind && !rebinding;
             for (int index = 0; index < semantics.Length; index++)
             {
                 int row = index == semantics.Length - 1 ? CombatHudSettingsRows.Guard : index;

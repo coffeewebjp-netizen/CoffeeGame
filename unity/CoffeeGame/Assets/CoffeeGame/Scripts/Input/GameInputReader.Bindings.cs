@@ -38,6 +38,7 @@ namespace CoffeeGame.Input
             _dodge = AddButton(_battleMap, "Dodge", "<Keyboard>/leftShift", "<Gamepad>/leftShoulder", "<Keyboard>/leftShift");
             _switchCharacter = AddButton(_battleMap, "SwitchCharacter", "<Keyboard>/t", "<Gamepad>/rightShoulder", "<Keyboard>/t");
             _guard = AddButton(_battleMap, "Guard", "<Keyboard>/g", "<Gamepad>/leftTrigger", "<Keyboard>/g");
+            _lockOn = AddButton(_battleMap, "LockOn", "<Keyboard>/r", "<Gamepad>/rightStickPress", "<Keyboard>/r");
             _pause = AddButton(_battleMap, "Pause", "<Keyboard>/escape", "<Gamepad>/start", "<Keyboard>/escape");
             _battleSettings = AddSettingsButton(_battleMap);
 
@@ -106,6 +107,7 @@ namespace CoffeeGame.Input
                 GameInputSemantic.Dodge => _dodge,
                 GameInputSemantic.SwitchCharacter => _switchCharacter,
                 GameInputSemantic.Guard => _guard,
+                GameInputSemantic.LockOn => _lockOn,
                 GameInputSemantic.Pause => _pause,
                 GameInputSemantic.Navigate => _navigate,
                 GameInputSemantic.Confirm => _confirm,
@@ -130,6 +132,7 @@ namespace CoffeeGame.Input
             _magic.performed += OnMagic;
             _dodge.performed += OnDodge;
             _guard.performed += OnGuard;
+            _lockOn.performed += OnLockOn;
             _pause.performed += OnPause;
             _uiPause.performed += OnUiPause;
             _confirm.performed += OnConfirm;
@@ -160,6 +163,7 @@ namespace CoffeeGame.Input
             _magic.performed -= OnMagic;
             _dodge.performed -= OnDodge;
             _guard.performed -= OnGuard;
+            _lockOn.performed -= OnLockOn;
             _pause.performed -= OnPause;
             _uiPause.performed -= OnUiPause;
             _confirm.performed -= OnConfirm;
@@ -173,6 +177,28 @@ namespace CoffeeGame.Input
         {
             RecordInput(context, "Battle/Move");
             MoveChanged?.Invoke(context.ReadValue<Vector2>());
+        }
+
+        private void OnLockOn(InputAction.CallbackContext context) => RecordInput(context, "Battle/LockOn");
+
+        private void ResolveNewLockBindingConflict(GameInputSemantic[] semantics, string group)
+        {
+            int lockIndex = GetBindingIndexForGroup(GameInputSemantic.LockOn, group);
+            string path = _lockOn.bindings[lockIndex].effectivePath;
+            foreach (var semantic in semantics)
+            {
+                if (semantic == GameInputSemantic.LockOn) continue;
+                int index = GetBindingIndexForGroup(semantic, group);
+                if (index < 0) continue;
+                string other = ResolveAction(semantic).bindings[index].effectivePath;
+                bool same = group == GamepadGroup ? GamepadBindingPolicy.AreSameControl(path, other) :
+                    string.Equals(path, other, StringComparison.OrdinalIgnoreCase);
+                if (!same) continue;
+                // Old custom bindings remain authoritative; do not fire two actions from R3.
+                _lockOn.ApplyBindingOverride(lockIndex, string.Empty);
+                LastRebindMessage = "ターゲット固定の初期ボタンは既存の割当に使用中です。設定から固定ボタンを割り当ててください。";
+                break;
+            }
         }
 
 

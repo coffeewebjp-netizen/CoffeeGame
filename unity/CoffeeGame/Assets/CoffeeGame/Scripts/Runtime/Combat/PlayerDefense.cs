@@ -87,6 +87,7 @@ namespace CoffeeGame.Combat
             resources?.GainStamina(resources.MaxStamina);
             feedback?.Emit(DefenseFeedbackEvent.PerfectDodge, transform.position, motor != null ? motor.Facing : Vector3.forward);
             PerfectDodge?.Invoke();
+            if (combat != null && combat.IsManual) PerfectDefenseMoment.Instance?.TryBegin();
         }
 
         public bool TryGuard(DamageInfo damage, int normalDamage, out DamageInfo guarded)
@@ -108,6 +109,7 @@ namespace CoffeeGame.Combat
                 guarded = new DamageInfo(0, damage.Source, damage.HitPoint, Vector3.zero, damage.AttackId, true);
                 feedback?.Emit(DefenseFeedbackEvent.Parry, damage.HitPoint, motor != null ? motor.Facing : Vector3.forward, 1f, damage.Source);
                 PerfectGuard?.Invoke();
+                if (combat != null && combat.IsManual) PerfectDefenseMoment.Instance?.TryBegin();
                 return true;
             }
             // HP is integral throughout the existing game; round the reduced hit up to one HP.

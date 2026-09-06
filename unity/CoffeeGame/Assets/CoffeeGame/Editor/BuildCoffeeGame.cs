@@ -73,6 +73,12 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-AcrobaticsV11", "CoffeeGAME-AcrobaticsV11.exe");
         }
 
+        public static void BuildTargetLockV12NoSetup()
+        {
+            PartyAudioSetup.Validate();
+            BuildDiagnosticNoSetup("Windows-TargetLockV12", "CoffeeGAME-TargetLockV12.exe");
+        }
+
         public static void BuildForestV7NoSetup()
         {
             BuildDiagnosticNoSetup("Windows-ForestV7", "CoffeeGAME-ForestV7.exe");

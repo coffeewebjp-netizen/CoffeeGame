@@ -65,6 +65,8 @@ namespace CoffeeGame.Run
             run.Progression.Changed += OnProgressionChanged;
             run.StateChanged += OnRunStateChanged;
             checkpointRemaining = 5f;
+            gameObject.AddComponent<TargetLockController>().Initialize(this, run, input, Camera.main);
+            gameObject.AddComponent<PerfectDefenseMoment>().Initialize(run);
         }
 
         private void AddActor(PartyActor actor)

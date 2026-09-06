@@ -65,6 +65,7 @@ namespace CoffeeGame.Input
         private InputAction _guard;
 
         private InputAction _switchCharacter;
+        private InputAction _lockOn;
 
         private InputAction _pause;
 
@@ -218,6 +219,9 @@ namespace CoffeeGame.Input
 
         public bool SwitchCharacterPressed => !_suppressActionsUntilRelease &&
             ((_touchSwitchPressed && UsesTouchOverlay) || (_switchCharacter != null && _switchCharacter.WasPressedThisFrame()));
+
+        public bool LockOnPressed => Context == GameInputContext.Battle && !_suppressActionsUntilRelease &&
+            ((UsesTouchOverlay && _touchLockOnPressed) || (_lockOn != null && _lockOn.WasPressedThisFrame()));
 
         public bool PausePressed =>
             !_suppressActionsUntilRelease &&

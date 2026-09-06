@@ -59,6 +59,18 @@ namespace CoffeeGame.Actors
         public bool CanAct => CanMove && landingLockRemaining <= 0f && !IsPlunging && !IsDodging && !IsGuardJumping;
         public bool UseCommands { get; set; }
         public ActorCommandFrame Commands { get; set; }
+        public Health LockedTarget { get; set; }
+        public bool HasLockedTarget => LockedTarget != null && LockedTarget.isActiveAndEnabled && LockedTarget.IsAlive;
+
+        private void FaceLockedTarget()
+        {
+            // Keep each acrobatic/plunge pose stable until its landing, then reacquire facing.
+            if (!HasLockedTarget || IsDodging || IsGuardJumping || IsPlunging || landingLockRemaining > 0f) return;
+            Vector3 direction = Vector3.ProjectOnPlane(LockedTarget.transform.position - transform.position, Vector3.up);
+            if (direction.sqrMagnitude < .001f) return;
+            Facing = direction.normalized;
+            visual?.SetFacing(Facing);
+        }
 
         public void FaceTowards(Vector3 position)
         {
@@ -111,6 +123,7 @@ namespace CoffeeGame.Actors
             IsGrounded = characterController.isGrounded;
             MovementScale = 1f;
             SpeedMultiplier = 1f;
+            LockedTarget = null;
             // Start toward the fixed camera so the character's face and ready
             // pose are readable. The first movement input immediately replaces it.
             Facing = Vector3.back;
@@ -139,6 +152,7 @@ namespace CoffeeGame.Actors
             var stop = TimeStopController.Instance;
             if (stop != null && stop.IsActive && stop.IsFrozen(gameObject)) return;
             if (!CanMove) { CancelAcrobatics(); return; }
+            FaceLockedTarget();
             Vector2 moveInput = UseCommands ? Commands.Move : input.Move;
             Vector3 desiredDirection = GetCameraRelativeDirection(moveInput);
             if (IsDodging || IsGuardJumping) acrobaticElapsed += deltaTime;
@@ -263,11 +277,12 @@ namespace CoffeeGame.Actors
 
             plungeInputWasHeld = plungeInputHeld;
 
-            if (!IsDodging && !IsGuardJumping && !IsGuarding && landingLockRemaining <= 0f && desiredDirection.sqrMagnitude > 0.01f)
+            if (!HasLockedTarget && !IsDodging && !IsGuardJumping && !IsGuarding && landingLockRemaining <= 0f && desiredDirection.sqrMagnitude > 0.01f)
             {
                 Facing = desiredDirection.normalized;
                 visual?.SetFacing(Facing);
             }
+            FaceLockedTarget();
 
             CharacterAction locomotion = inputMagnitude < 0.08f ? CharacterAction.Idle :
                 sustainedDirectionTime >= tuning.RunHoldSeconds ? CharacterAction.Run : CharacterAction.Walk;
@@ -324,14 +339,20 @@ namespace CoffeeGame.Actors
         public static bool IsBackwardInput(Vector3 facing, Vector3 direction)
         {
             direction = Vector3.ProjectOnPlane(direction, Vector3.up);
-            return direction.sqrMagnitude >= .04f && Vector3.Dot(facing.normalized, direction.normalized) <= -.5f;
+            facing = Vector3.ProjectOnPlane(facing, Vector3.up).normalized;
+            float forward = Vector3.Dot(facing, direction);
+            float side = Mathf.Abs(Vector3.Dot(Vector3.Cross(Vector3.up, facing), direction));
+            return direction.sqrMagnitude >= .04f && forward < -side - .00001f;
         }
 
         public static bool IsSidewaysInput(Vector3 facing, Vector3 direction)
         {
             direction = Vector3.ProjectOnPlane(direction, Vector3.up);
-            return direction.sqrMagnitude >= .04f &&
-                Mathf.Abs(Vector3.Dot(facing.normalized, direction.normalized)) < .5f;
+            facing = Vector3.ProjectOnPlane(facing, Vector3.up).normalized;
+            float forward = Vector3.Dot(facing, direction);
+            float side = Mathf.Abs(Vector3.Dot(Vector3.Cross(Vector3.up, facing), direction));
+            // The 45-degree diagonal belongs to the side sector on both sides.
+            return direction.sqrMagnitude >= .04f && side > .001f && Mathf.Abs(forward) <= side + .00001f;
         }
 
         private void StartGuardJump(Vector3 direction)

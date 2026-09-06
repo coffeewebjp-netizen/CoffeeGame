@@ -69,6 +69,9 @@ namespace CoffeeGame.UI
         {
             switch (selectedSettingsRow)
             {
+                case CombatHudSettingsRows.LockOn:
+                    BeginRebind(GameInputSemantic.LockOn);
+                    break;
                 case CombatHudSettingsRows.SwitchCharacter:
                     BeginRebind(GameInputSemantic.SwitchCharacter);
                     break;
@@ -296,6 +299,9 @@ namespace CoffeeGame.UI
         {
             switch (selectedSettingsRow)
             {
+                case CombatHudSettingsRows.LockOn:
+                    BeginRebind(GameInputSemantic.LockOn);
+                    break;
                 case CombatHudSettingsRows.Guard:
                     BeginRebind(GameInputSemantic.Guard);
                     break;

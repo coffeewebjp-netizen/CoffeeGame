@@ -18,7 +18,8 @@ namespace CoffeeGame.Input
             GameInputSemantic.Magic,
             GameInputSemantic.Dodge,
             GameInputSemantic.SwitchCharacter,
-            GameInputSemantic.Guard
+            GameInputSemantic.Guard,
+            GameInputSemantic.LockOn
         };
 
 
@@ -100,6 +101,7 @@ namespace CoffeeGame.Input
                     ResolveAction(semantic).ApplyBindingOverride(bindingIndex, entry.path);
                 }
             }
+            ResolveNewLockBindingConflict(PersistedSteamDesktopSemantics, SteamDesktopGroup);
             BindingsChanged?.Invoke();
         }
 

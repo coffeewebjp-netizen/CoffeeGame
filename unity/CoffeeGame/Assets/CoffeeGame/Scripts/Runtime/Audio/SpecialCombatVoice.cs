@@ -12,6 +12,7 @@ namespace CoffeeGame.Audio
         private bool paused;
         public string ResourcePath { get; private set; }
         public bool HasClip => clip != null;
+        public bool IsSpeaking => source != null && (source.isPlaying || paused);
 
         public void Initialize(bool cat)
         {

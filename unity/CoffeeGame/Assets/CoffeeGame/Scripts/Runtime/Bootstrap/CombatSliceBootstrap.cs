@@ -264,6 +264,10 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (TryGetCommandLineValue("-captureTargetLock", out string targetLockCapturePath))
+            {
+                TargetLockEvidenceCapture.Begin(gameObject, runController, targetLockCapturePath);
+            }
             if (TryGetCommandLineValue("-captureAcrobatics", out string acrobaticsCapturePath))
             {
                 AcrobaticsEvidenceCapture.Begin(gameObject, runController, acrobaticsCapturePath);
@@ -400,7 +404,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !HasCommandLineFlag("-captureAcrobatics")) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -424,7 +428,7 @@ namespace CoffeeGame.Bootstrap
         private void EnsurePlayerProfileLoaded()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || HasCommandLineFlag("-captureAcrobatics"))
+            if (HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 sessionProgression = new PlayerProgression(1, 0, 0, 0,
                     previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger });
@@ -476,7 +480,7 @@ namespace CoffeeGame.Bootstrap
         {
             runController?.Party?.Snapshot();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || HasCommandLineFlag("-captureAcrobatics"))
+            if (HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
                 message = "Goblin evidence: in-memory progression only.";
                 return true;
