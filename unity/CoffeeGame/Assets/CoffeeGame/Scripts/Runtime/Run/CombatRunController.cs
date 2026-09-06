@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using CoffeeGame.Actors;
 using CoffeeGame.Audio;
 using CoffeeGame.Combat;
@@ -35,7 +36,8 @@ namespace CoffeeGame.Run
         private Func<string, CombatEnemy> spawnEnemy;
         private Action resetEnemySequence;
         private CombatEnemy currentEnemy;
-        private Coroutine spawnRoutine;
+        private readonly List<CombatEnemy> activeEnemies = new List<CombatEnemy>();
+        private bool rivalEncounterPending;
         private string runId;
         private int spawnSequence;
         private CombatRunMode modeBeforeRebind;
@@ -64,6 +66,26 @@ namespace CoffeeGame.Run
         public PlayerCombatController PlayerCombat => Party != null && Party.Active != null ? Party.Active.Combat : playerCombat;
         public void AttachParty(PartyRuntime party) => Party = party;
         public CombatEnemy CurrentEnemy => currentEnemy;
+        public IReadOnlyList<CombatEnemy> ActiveEnemies => activeEnemies;
+        public int ActiveEnemyCount => activeEnemies.Count;
+        public int AliveEnemyCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (CombatEnemy enemy in activeEnemies)
+                {
+                    if (enemy != null && enemy.Health != null && enemy.Health.IsAlive)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public const int EnemiesPerEncounter = 2;
 
         public void Initialize(
             CombatTuning combatTuning,
@@ -139,12 +161,8 @@ namespace CoffeeGame.Run
                 StateChanged?.Invoke();
                 return;
             }
-            if (spawnRoutine != null)
-            {
-                StopCoroutine(spawnRoutine);
-                spawnRoutine = null;
-            }
-            RemoveCurrentEnemy();
+            StopLifecycleCoroutines();
+            ClearAllEnemies();
 
             runId = Guid.NewGuid().ToString("N");
             spawnSequence = 0;
@@ -400,17 +418,44 @@ namespace CoffeeGame.Run
                 return;
             }
 
+            while (activeEnemies.Count < EnemiesPerEncounter)
+            {
+                int before = activeEnemies.Count;
+                SpawnEnemySlot();
+                if (activeEnemies.Count == before)
+                {
+                    break;
+                }
+            }
+
+            currentEnemy = GetPrimaryEnemy();
+            LastEvent = currentEnemy != null
+                ? $"{currentEnemy.DisplayName} {Kills + 1}"
+                : "森の魔物を倒そう";
+            StateChanged?.Invoke();
+        }
+
+        private void SpawnEnemySlot()
+        {
             spawnSequence++;
             string claimId = $"enemy:{runId}:encounter:{spawnSequence}";
-            currentEnemy = spawnEnemy(claimId);
-            currentEnemy.Defeated += HandleEnemyDefeated;
-            LastEvent = $"{currentEnemy.DisplayName} {Kills + 1}";
-            StateChanged?.Invoke();
+            CombatEnemy enemy = spawnEnemy(claimId);
+            if (enemy == null)
+            {
+                return;
+            }
+
+            enemy.Defeated += HandleEnemyDefeated;
+            activeEnemies.Add(enemy);
+            if (currentEnemy == null)
+            {
+                currentEnemy = enemy;
+            }
         }
 
         private void HandleEnemyDefeated(CombatEnemy enemy)
         {
-            if (enemy == null || enemy != currentEnemy || Mode != CombatRunMode.Playing)
+            if (enemy == null || !activeEnemies.Contains(enemy) || Mode != CombatRunMode.Playing)
             {
                 return;
             }
@@ -436,10 +481,16 @@ namespace CoffeeGame.Run
                 LastEvent = $"LEVEL UP!  Lv.{Progression.Level}";
             }
 
-            currentEnemy.Defeated -= HandleEnemyDefeated;
-            spawnRoutine = IsRivalEncounterMilestone(Kills, RivalEncounterIntervalKills)
-                ? StartCoroutine(EnterRivalEncounterAfterDelay(enemy))
-                : StartCoroutine(RespawnAfterDelay(enemy));
+            enemy.Defeated -= HandleEnemyDefeated;
+            if (IsRivalEncounterMilestone(Kills, RivalEncounterIntervalKills) && !rivalEncounterPending)
+            {
+                rivalEncounterPending = true;
+                StartCoroutine(EnterRivalEncounterAfterDelay(enemy));
+            }
+            else if (!rivalEncounterPending)
+            {
+                StartCoroutine(RespawnAfterDelay(enemy));
+            }
             StateChanged?.Invoke();
         }
 
@@ -461,6 +512,7 @@ namespace CoffeeGame.Run
             playerMotor.CanMove = true;
             input.RestoreBattleAfterTextEntry();
             LastEvent = "ライバルは次の勝負を予告して去っていった";
+            rivalEncounterPending = false;
             SpawnNextEnemy();
             StateChanged?.Invoke();
         }
@@ -499,29 +551,22 @@ namespace CoffeeGame.Run
         private IEnumerator RespawnAfterDelay(CombatEnemy defeated)
         {
             yield return WaitForWorld(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
-            if (defeated != null)
+            RemoveEnemy(defeated);
+            if (Mode == CombatRunMode.Playing && !rivalEncounterPending)
             {
-                Destroy(defeated.gameObject);
+                SpawnNextEnemy();
             }
-            currentEnemy = null;
-            spawnRoutine = null;
-            SpawnNextEnemy();
         }
 
         private IEnumerator EnterRivalEncounterAfterDelay(CombatEnemy defeated)
         {
             yield return WaitForWorld(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
-            if (defeated != null)
-            {
-                Destroy(defeated.gameObject);
-            }
-            currentEnemy = null;
-            spawnRoutine = null;
-
             if (Mode != CombatRunMode.Playing)
             {
                 yield break;
             }
+
+            ClearAllEnemies();
 
             CurrentRivalId = rivalSelector.Select(
                 RivalCharacterIds.EncounterCandidates(Progression.IsRivalRecruited),
@@ -547,6 +592,8 @@ namespace CoffeeGame.Run
             playerMotor.CanMove = false;
             playerCombat.CancelPendingActions();
             input.EnableUI();
+            StopLifecycleCoroutines();
+            ClearAllEnemies();
             LastEvent = "GAME OVER — A / Enter / Startで再挑戦";
             StateChanged?.Invoke();
         }
@@ -569,17 +616,66 @@ namespace CoffeeGame.Run
             StateChanged?.Invoke();
         }
 
-        private void RemoveCurrentEnemy()
+        private CombatEnemy GetPrimaryEnemy()
         {
-            if (currentEnemy == null)
+            foreach (CombatEnemy enemy in activeEnemies)
+            {
+                if (enemy != null && enemy.Health != null && enemy.Health.IsAlive)
+                {
+                    return enemy;
+                }
+            }
+
+            foreach (CombatEnemy enemy in activeEnemies)
+            {
+                if (enemy != null)
+                {
+                    return enemy;
+                }
+            }
+
+            return null;
+        }
+
+        private void RemoveEnemy(CombatEnemy enemy)
+        {
+            if (enemy == null)
             {
                 return;
             }
 
-            currentEnemy.Defeated -= HandleEnemyDefeated;
-            if (Application.isPlaying) Destroy(currentEnemy.gameObject);
-            else DestroyImmediate(currentEnemy.gameObject);
+            enemy.Defeated -= HandleEnemyDefeated;
+            activeEnemies.Remove(enemy);
+            if (Application.isPlaying) Destroy(enemy.gameObject);
+            else DestroyImmediate(enemy.gameObject);
+            if (currentEnemy == enemy)
+            {
+                currentEnemy = GetPrimaryEnemy();
+            }
+        }
+
+        private void ClearAllEnemies()
+        {
+            CombatEnemy[] enemies = activeEnemies.ToArray();
+            activeEnemies.Clear();
             currentEnemy = null;
+            foreach (CombatEnemy enemy in enemies)
+            {
+                if (enemy == null)
+                {
+                    continue;
+                }
+
+                enemy.Defeated -= HandleEnemyDefeated;
+                if (Application.isPlaying) Destroy(enemy.gameObject);
+                else DestroyImmediate(enemy.gameObject);
+            }
+        }
+
+        private void StopLifecycleCoroutines()
+        {
+            StopAllCoroutines();
+            rivalEncounterPending = false;
         }
 
         private void OnDestroy()
@@ -594,7 +690,8 @@ namespace CoffeeGame.Run
             {
                 input.RebindFinished -= HandleRebindFinished;
             }
-            RemoveCurrentEnemy();
+            StopLifecycleCoroutines();
+            ClearAllEnemies();
         }
 
         public void EndRunForRest()
@@ -617,8 +714,8 @@ namespace CoffeeGame.Run
         private void StopRun()
         {
             TimeStopController.Instance?.Cancel();
-            if (spawnRoutine != null) { StopCoroutine(spawnRoutine); spawnRoutine = null; }
-            RemoveCurrentEnemy();
+            StopLifecycleCoroutines();
+            ClearAllEnemies();
         }
 
         private IEnumerator WaitForWorld(float seconds)
