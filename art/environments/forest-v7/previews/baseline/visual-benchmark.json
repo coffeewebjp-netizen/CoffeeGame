@@ -1,0 +1,82 @@
+{
+    "forest": false,
+    "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "note": "Explicit offscreen URP render plus synchronous one-pixel GPU readback, 12 warmup frames/view. Includes CPU submission/readback overhead; not normal-play FPS or a combat/mobile benchmark.",
+    "width": 1280,
+    "height": 720,
+    "framesPerView": 180,
+    "views": [
+        {
+            "name": "center-0",
+            "meanMs": 4.48695707321167,
+            "medianMs": 3.808500051498413,
+            "p95Ms": 8.215299606323243,
+            "yaw": 0.0,
+            "position": {
+                "x": -1.600000023841858,
+                "y": 0.05000000074505806,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "center-90",
+            "meanMs": 2.765305757522583,
+            "medianMs": 2.634000062942505,
+            "p95Ms": 3.6605000495910646,
+            "yaw": 90.0,
+            "position": {
+                "x": -1.600000023841858,
+                "y": 0.05000000074505806,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "center-180",
+            "meanMs": 3.1285502910614015,
+            "medianMs": 3.021899938583374,
+            "p95Ms": 4.123700141906738,
+            "yaw": 180.0,
+            "position": {
+                "x": -1.600000023841858,
+                "y": 0.05000000074505806,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "center-270",
+            "meanMs": 2.979552984237671,
+            "medianMs": 2.776599884033203,
+            "p95Ms": 4.313600063323975,
+            "yaw": 270.0,
+            "position": {
+                "x": -1.600000023841858,
+                "y": 0.05000000074505806,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "west",
+            "meanMs": 3.0895283222198488,
+            "medianMs": 2.960099935531616,
+            "p95Ms": 4.367000102996826,
+            "yaw": 0.0,
+            "position": {
+                "x": -10.0,
+                "y": 0.05000000074505806,
+                "z": 5.0
+            }
+        },
+        {
+            "name": "east",
+            "meanMs": 2.8039731979370119,
+            "medianMs": 2.7042999267578127,
+            "p95Ms": 3.574199914932251,
+            "yaw": 0.0,
+            "position": {
+                "x": 12.0,
+                "y": 0.05000000074505806,
+                "z": -4.0
+            }
+        }
+    ]
+}

@@ -43,6 +43,11 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-AzureMotionDiagnostic", "CoffeeGAME-AzureMotionDiagnostic.exe");
         }
 
+        public static void BuildForestV7NoSetup()
+        {
+            BuildDiagnosticNoSetup("Windows-ForestV7", "CoffeeGAME-ForestV7.exe");
+        }
+
         public static void BuildAzureCleanV3DiagnosticNoSetup()
         {
             BuildDiagnosticNoSetup("Windows-AzureCleanV3", "CoffeeGAME-AzureCleanV3.exe");

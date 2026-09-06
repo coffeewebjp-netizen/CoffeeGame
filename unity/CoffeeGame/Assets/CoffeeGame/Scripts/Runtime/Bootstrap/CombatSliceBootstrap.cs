@@ -81,6 +81,7 @@ namespace CoffeeGame.Bootstrap
         private CombatTuning tuning;
         private Transform runtimeRoot;
         private Camera sceneCamera;
+        private ForestArenaVisuals forestVisuals;
         private Health playerHealth;
         private int slimeSpawnIndex;
         private PlayerProgression sessionProgression;
@@ -263,7 +264,11 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (TryGetCommandLineValue(CaptureMeshyMotionArg, out string motionCapturePath))
+            if (TryGetCommandLineValue("-captureForest", out string forestCapturePath))
+            {
+                ForestEvidenceCapture.Begin(gameObject, sceneCamera, runtimeRoot.Find("Player"), forestCapturePath);
+            }
+            else if (TryGetCommandLineValue(CaptureMeshyMotionArg, out string motionCapturePath))
             {
                 Transform playerRoot = runtimeRoot.Find("Player");
                 ModelCharacterVisual modelVisual = playerRoot != null
@@ -350,6 +355,7 @@ namespace CoffeeGame.Bootstrap
             audioDirector.Initialize();
 
             PlayerParts player = CreatePlayer(input, audioDirector);
+            forestVisuals?.SetFocus(player.Root.transform);
             playerHealth = player.Health;
             EnsurePlayerProfileLoaded();
 
@@ -603,7 +609,8 @@ namespace CoffeeGame.Bootstrap
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 80f;
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.42f, 0.75f, 0.94f);
+            camera.backgroundColor = ForestArenaVisuals.UseForest
+                ? new Color(0.51f, 0.62f, 0.54f) : new Color(0.42f, 0.75f, 0.94f);
             // A lower three-quarter view keeps the face and clothing silhouette
             // readable while preserving enough floor for the 3D combat plane.
             cameraObject.transform.position = new Vector3(0f, 5.75f, -8.85f);
@@ -621,6 +628,18 @@ namespace CoffeeGame.Bootstrap
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.56f, 0.64f, 0.58f);
             RenderSettings.ambientIntensity = 1f;
+            RenderSettings.fog = ForestArenaVisuals.UseForest;
+            if (ForestArenaVisuals.UseForest)
+            {
+                RenderSettings.ambientMode = AmbientMode.Trilight;
+                RenderSettings.ambientSkyColor = new Color(0.61f, 0.69f, 0.67f);
+                RenderSettings.ambientEquatorColor = new Color(0.49f, 0.56f, 0.43f);
+                RenderSettings.ambientGroundColor = new Color(0.3f, 0.29f, 0.22f);
+                RenderSettings.fogMode = FogMode.Linear;
+                RenderSettings.fogColor = new Color(0.51f, 0.62f, 0.54f);
+                RenderSettings.fogStartDistance = 18f;
+                RenderSettings.fogEndDistance = 53f;
+            }
 
             CreateDirectionalLight(
                 "Warm key light",
@@ -655,14 +674,19 @@ namespace CoffeeGame.Bootstrap
 
         private void CreateGrasslandArena()
         {
-            Material floorMaterial = GrasslandArenaVisuals.CreateGroundMaterial();
+            if (ForestArenaVisuals.UseForest) forestVisuals = ForestArenaVisuals.Create(runtimeRoot);
+            Material floorMaterial = forestVisuals != null
+                ? forestVisuals.GroundMaterial : GrasslandArenaVisuals.CreateGroundMaterial();
             CreateCube(
                 "Grassland ground",
                 new Vector3(0f, -0.12f, 0f),
                 new Vector3(StageLayout.Width, 0.24f, StageLayout.Depth),
                 floorMaterial);
-            GrasslandArenaVisuals.CreateBackdrop(runtimeRoot);
-            GrasslandArenaVisuals.CreateDepthAccents(runtimeRoot);
+            if (forestVisuals == null)
+            {
+                GrasslandArenaVisuals.CreateBackdrop(runtimeRoot);
+                GrasslandArenaVisuals.CreateDepthAccents(runtimeRoot);
+            }
 
             CreateInvisibleBoundary(
                 "North jump boundary",
