@@ -20,7 +20,6 @@ namespace CoffeeGame.Presentation
         private sealed class BonePose
         {
             public Transform Bone;
-            public Vector3 TuckEuler;
             public Quaternion AuthoredRotation;
             public Quaternion AppliedRotation;
             public bool WasApplied;
@@ -106,18 +105,18 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            hips = AddPose(0, HumanBodyBones.Hips, Vector3.zero);
-            spine = AddPose(1, HumanBodyBones.Spine, new Vector3(44f, 0f, 0f));
-            chest = AddPose(2, HumanBodyBones.Chest, new Vector3(28f, 0f, 0f));
-            head = AddPose(3, HumanBodyBones.Head, new Vector3(-16f, 0f, 0f));
-            leftUpperArm = AddPose(4, HumanBodyBones.LeftUpperArm, new Vector3(30f, 12f, 24f));
-            leftLowerArm = AddPose(5, HumanBodyBones.LeftLowerArm, new Vector3(-62f, 0f, 0f));
-            rightUpperArm = AddPose(6, HumanBodyBones.RightUpperArm, new Vector3(30f, -12f, -24f));
-            rightLowerArm = AddPose(7, HumanBodyBones.RightLowerArm, new Vector3(-62f, 0f, 0f));
-            leftUpperLeg = AddPose(8, HumanBodyBones.LeftUpperLeg, new Vector3(68f, 0f, -5f));
-            leftLowerLeg = AddPose(9, HumanBodyBones.LeftLowerLeg, new Vector3(-112f, 0f, 0f));
-            rightUpperLeg = AddPose(10, HumanBodyBones.RightUpperLeg, new Vector3(68f, 0f, 5f));
-            rightLowerLeg = AddPose(11, HumanBodyBones.RightLowerLeg, new Vector3(-112f, 0f, 0f));
+            hips = AddPose(0, HumanBodyBones.Hips);
+            spine = AddPose(1, HumanBodyBones.Spine);
+            chest = AddPose(2, HumanBodyBones.Chest);
+            head = AddPose(3, HumanBodyBones.Head);
+            leftUpperArm = AddPose(4, HumanBodyBones.LeftUpperArm);
+            leftLowerArm = AddPose(5, HumanBodyBones.LeftLowerArm);
+            rightUpperArm = AddPose(6, HumanBodyBones.RightUpperArm);
+            rightLowerArm = AddPose(7, HumanBodyBones.RightLowerArm);
+            leftUpperLeg = AddPose(8, HumanBodyBones.LeftUpperLeg);
+            leftLowerLeg = AddPose(9, HumanBodyBones.LeftLowerLeg);
+            rightUpperLeg = AddPose(10, HumanBodyBones.RightUpperLeg);
+            rightLowerLeg = AddPose(11, HumanBodyBones.RightLowerLeg);
             rightFoot = ResolveBone(HumanBodyBones.RightFoot);
             leftFoot = ResolveBone(HumanBodyBones.LeftFoot);
             leftHand = ResolveBone(HumanBodyBones.LeftHand);
@@ -198,10 +197,7 @@ namespace CoffeeGame.Presentation
                     ? pose.AuthoredRotation
                     : current;
                 pose.AuthoredRotation = authored;
-                pose.AppliedRotation = authored * Quaternion.SlerpUnclamped(
-                    Quaternion.identity,
-                    Quaternion.Euler(pose.TuckEuler),
-                    tuck);
+                pose.AppliedRotation = authored;
                 pose.Bone.localRotation = pose.AppliedRotation;
                 pose.WasApplied = true;
             }
@@ -240,22 +236,29 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
+            // Curl the trunk in rig/world space. Imported Generic rigs do not
+            // share reliable local Euler axes, and local-only offsets left the
+            // rendered heroine arched like a handstand during the roll.
+            AlignBone(spine, chest != null ? chest : head,
+                forward * 0.94f + Vector3.up * 0.12f, weight);
+            AlignBone(chest, head,
+                forward * 0.7f - Vector3.up * 0.3f, weight);
             AlignBone(leftUpperLeg, leftLowerLeg,
-                forward * 0.77f + Vector3.up * 0.24f + right * 0.12f, weight);
+                forward * 0.72f + Vector3.up * 0.52f + right * 0.1f, weight);
             AlignBone(leftLowerLeg, leftFoot,
-                -forward * 0.58f - Vector3.up * 0.42f, weight);
+                -forward * 0.92f + Vector3.up * 0.03f, weight);
             AlignBone(rightUpperLeg, rightLowerLeg,
-                forward * 0.77f + Vector3.up * 0.24f - right * 0.12f, weight);
+                forward * 0.72f + Vector3.up * 0.52f - right * 0.1f, weight);
             AlignBone(rightLowerLeg, rightFoot,
-                -forward * 0.58f - Vector3.up * 0.42f, weight);
+                -forward * 0.92f + Vector3.up * 0.03f, weight);
             AlignBone(leftUpperArm, leftLowerArm,
-                forward * 0.45f + Vector3.up * 0.28f + right * 0.32f, weight);
+                -forward * 0.12f - Vector3.up * 0.86f + right * 0.16f, weight);
             AlignBone(leftLowerArm, leftHand,
-                -forward * 0.18f + Vector3.up * 0.82f - right * 0.18f, weight);
+                forward * 0.62f - Vector3.up * 0.26f - right * 0.12f, weight);
             AlignBone(rightUpperArm, rightLowerArm,
-                forward * 0.45f + Vector3.up * 0.28f - right * 0.32f, weight);
+                -forward * 0.12f - Vector3.up * 0.86f - right * 0.16f, weight);
             AlignBone(rightLowerArm, rightHand,
-                -forward * 0.18f + Vector3.up * 0.82f + right * 0.18f, weight);
+                forward * 0.62f - Vector3.up * 0.26f + right * 0.12f, weight);
         }
 
         private void KeepGroundRollLow(float tuck)
@@ -268,8 +271,12 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            float target = visualRoot.position.y + groundOffsetFromVisualRoot + 0.025f;
-            float verticalCorrection = Mathf.Clamp(target - minimum, -0.42f, 0.82f) * tuck;
+            // Bone joints sit inside hair, clothes, hands and geta. Keep an
+            // eight-centimetre mesh allowance above the authored foot plane.
+            float target = visualRoot.position.y + groundOffsetFromVisualRoot + 0.08f;
+            float rotating = Mathf.Sin(progress * Mathf.PI) * motionBlend;
+            float floorWeight = Mathf.Clamp01(Mathf.Max(tuck, rotating));
+            float verticalCorrection = Mathf.Clamp(target - minimum, -0.42f, 0.82f) * floorWeight;
             Vector3 correctedWorld = hips.parent != null
                 ? hips.parent.TransformPoint(hipsAuthoredPosition) + Vector3.up * verticalCorrection
                 : hipsAuthoredPosition + Vector3.up * verticalCorrection;
@@ -327,7 +334,7 @@ namespace CoffeeGame.Presentation
             }
         }
 
-        private Transform AddPose(int index, HumanBodyBones bone, Vector3 tuckEuler)
+        private Transform AddPose(int index, HumanBodyBones bone)
         {
             Transform target = ResolveBone(bone);
             if (target == null)
@@ -337,7 +344,6 @@ namespace CoffeeGame.Presentation
             poses[index] = new BonePose
             {
                 Bone = target,
-                TuckEuler = tuckEuler,
                 AuthoredRotation = target.localRotation
             };
             return target;

@@ -31,6 +31,9 @@ namespace CoffeeGame.Presentation
         private Transform facingRoot;
         private GameObject clockOwner;
         private Animator animator;
+        private Transform spine;
+        private Transform chest;
+        private Transform head;
         private Transform leftUpperArm;
         private Transform leftLowerArm;
         private Transform leftHand;
@@ -97,6 +100,9 @@ namespace CoffeeGame.Presentation
                 : null;
             facingRoot = modelVisual != null ? modelVisual.transform :
                 visualRoot != null ? visualRoot : transform;
+            spine = null;
+            chest = null;
+            head = null;
             leftUpperArm = null;
             leftLowerArm = null;
             leftHand = null;
@@ -136,19 +142,19 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            AddPose(0, HumanBodyBones.Spine, new Vector3(7f, -6f, 0f), new Vector3(14f, 0f, 0f));
-            AddPose(1, HumanBodyBones.Chest, new Vector3(-3f, -9f, 0f), new Vector3(10f, 0f, 0f));
+            spine = AddPose(0, HumanBodyBones.Spine, new Vector3(7f, -6f, 0f), new Vector3(14f, 0f, 0f));
+            chest = AddPose(1, HumanBodyBones.Chest, new Vector3(-3f, -9f, 0f), new Vector3(10f, 0f, 0f));
             leftUpperArm = AddPose(2, HumanBodyBones.LeftUpperArm, new Vector3(-6f, 4f, 8f), new Vector3(3f, 0f, 5f));
             leftLowerArm = AddPose(3, HumanBodyBones.LeftLowerArm, new Vector3(0f, -8f, 3f), new Vector3(0f, -3f, 0f));
             rightUpperArm = AddPose(4, HumanBodyBones.RightUpperArm, new Vector3(-8f, -6f, -12f), new Vector3(8f, -3f, -6f));
             rightLowerArm = AddPose(5, HumanBodyBones.RightLowerArm, new Vector3(0f, 9f, -3f), new Vector3(2f, 3f, -2f));
             rightHand = AddPose(6, HumanBodyBones.RightHand, new Vector3(4f, 5f, -8f), Vector3.zero);
-            AddPose(7, HumanBodyBones.Head, new Vector3(-2f, 5f, 0f), new Vector3(-10f, 0f, 0f));
-            hips = AddPose(8, HumanBodyBones.Hips, Vector3.zero, new Vector3(8f, 0f, 0f));
-            leftUpperLeg = AddPose(9, HumanBodyBones.LeftUpperLeg, Vector3.zero, new Vector3(38f, 0f, -4f));
-            leftLowerLeg = AddPose(10, HumanBodyBones.LeftLowerLeg, Vector3.zero, new Vector3(-72f, 0f, 0f));
-            rightUpperLeg = AddPose(11, HumanBodyBones.RightUpperLeg, Vector3.zero, new Vector3(38f, 0f, 4f));
-            rightLowerLeg = AddPose(12, HumanBodyBones.RightLowerLeg, Vector3.zero, new Vector3(-72f, 0f, 0f));
+            head = AddPose(7, HumanBodyBones.Head, new Vector3(-2f, 5f, 0f), new Vector3(-10f, 0f, 0f));
+            hips = AddPose(8, HumanBodyBones.Hips, Vector3.zero, Vector3.zero);
+            leftUpperLeg = AddPose(9, HumanBodyBones.LeftUpperLeg, Vector3.zero, Vector3.zero);
+            leftLowerLeg = AddPose(10, HumanBodyBones.LeftLowerLeg, Vector3.zero, Vector3.zero);
+            rightUpperLeg = AddPose(11, HumanBodyBones.RightUpperLeg, Vector3.zero, Vector3.zero);
+            rightLowerLeg = AddPose(12, HumanBodyBones.RightLowerLeg, Vector3.zero, Vector3.zero);
             leftFoot = ResolveBone(HumanBodyBones.LeftFoot);
             rightFoot = ResolveBone(HumanBodyBones.RightFoot);
             leftHand = ResolveBone(HumanBodyBones.LeftHand);
@@ -307,19 +313,30 @@ namespace CoffeeGame.Presentation
                 float crouch = RecoveryPoseWeight;
                 if (crouch > 0.001f)
                 {
+                    AlignBone(spine, chest,
+                        forward * 0.9f - up * 0.12f, crouch);
+                    AlignBone(chest, head,
+                        forward * 0.72f - up * 0.24f, crouch);
                     AlignBone(leftUpperLeg, leftLowerLeg,
-                        forward * 0.62f - up * 0.78f + right * 0.1f, crouch);
+                        forward * 0.9f - up * 0.22f + right * 0.08f, crouch);
                     AlignBone(leftLowerLeg, leftFoot,
-                        -forward * 0.5f - up * 0.86f, crouch);
+                        -forward * 0.34f - up * 0.94f, crouch);
                     AlignBone(rightUpperLeg, rightLowerLeg,
-                        forward * 0.62f - up * 0.78f - right * 0.1f, crouch);
+                        forward * 0.9f - up * 0.22f - right * 0.08f, crouch);
                     AlignBone(rightLowerLeg, rightFoot,
-                        -forward * 0.5f - up * 0.86f, crouch);
+                        -forward * 0.34f - up * 0.94f, crouch);
+                    // Curling the parent spine moves the sword arm too. Replant
+                    // the weapon after the torso and knees reach their final pose.
+                    AlignBone(rightUpperArm, rightLowerArm,
+                        -up * 0.84f + forward * 0.28f - right * 0.12f, effectivePlungeBlend);
+                    AlignBone(rightLowerArm, rightHand,
+                        -up * 0.92f + forward * 0.2f, effectivePlungeBlend);
+                    AlignSwordAxis(Vector3.down, effectivePlungeBlend);
                 }
             }
         }
 
-        private float RecoveryPoseWeight => Mathf.SmoothStep(0f, 1f, plungeRecovery);
+        private float RecoveryPoseWeight => 1f - Mathf.Pow(1f - plungeRecovery, 2f);
         private float EffectivePlungeBlend => Mathf.Max(plungeBlend, RecoveryPoseWeight);
 
         private void ApplyLandingCrouch()
@@ -345,7 +362,7 @@ namespace CoffeeGame.Presentation
                 return;
             }
 
-            Vector3 worldOffset = Vector3.down * (0.34f * weight);
+            Vector3 worldOffset = Vector3.down * (0.42f * weight);
             Vector3 localOffset = hips.parent != null
                 ? hips.parent.InverseTransformVector(worldOffset)
                 : worldOffset;

@@ -165,21 +165,27 @@ namespace CoffeeGame.Presentation.Tests
             visual.gameObject.AddComponent<Animator>();
             Transform hips = Child(visual, "Hips", new Vector3(0f, 1f, 0f));
             Transform spine = Child(hips, "Spine", new Vector3(0f, .24f, 0f));
-            Child(spine, "Spine01", new Vector3(0f, .2f, 0f));
-            Child(spine, "Head", new Vector3(0f, .45f, 0f));
-            AddArmChain(spine, "Left", -1f);
-            AddArmChain(spine, "Right", 1f);
+            Transform chest = Child(spine, "Spine01", new Vector3(0f, .2f, 0f));
+            Child(chest, "Head", new Vector3(0f, .25f, 0f));
+            AddArmChain(chest, "Left", -1f);
+            AddArmChain(chest, "Right", 1f);
             AddLegChain(hips, "Left", -1f);
             AddLegChain(hips, "Right", 1f);
+            Transform leftKnee = hips.Find("LeftUpLeg/LeftLeg");
             var pose = actor.AddComponent<DefensePosePresentation>();
             Vector3 authoredHips = hips.position;
+            float authoredKneeToChest = Vector3.Distance(leftKnee.position, chest.position);
             try
             {
                 pose.Initialize(visual, DefensePoseStyle.HeroineBlade, actor);
                 pose.SetPlungeRecovery(1f);
                 InvokePrivate(pose, "ApplyPose");
+                InvokePrivate(pose, "ApplyDirectionalPose");
 
-                Assert.That(authoredHips.y - hips.position.y, Is.EqualTo(.34f).Within(.001f));
+                Assert.That(authoredHips.y - hips.position.y, Is.EqualTo(.42f).Within(.001f));
+                Assert.That(Vector3.Distance(leftKnee.position, chest.position),
+                    Is.LessThan(authoredKneeToChest * .7f),
+                    "the recovery must bring the knee toward the deeply bowed torso");
                 Assert.That(pose.PlungeRecovery, Is.EqualTo(1f));
 
                 pose.SetPlungeRecovery(0f);
@@ -211,6 +217,9 @@ namespace CoffeeGame.Presentation.Tests
             Vector3 authoredPosition = hips.localPosition;
             float authoredFootDistance = Vector3.Distance(hips.position, leftFoot.position);
             float authoredGroundY = leftFoot.position.y;
+            Transform leftKnee = hips.Find("LeftUpLeg/LeftLeg");
+            float authoredKneeToChest = Vector3.Distance(leftKnee.position, chest.position);
+            float authoredHeight = VerticalSpan(hips, head, chest, leftKnee, leftFoot);
             try
             {
                 motion.Initialize(visual, actor);
@@ -224,6 +233,12 @@ namespace CoffeeGame.Presentation.Tests
                 Assert.That(Vector3.Distance(hips.position, leftFoot.position),
                     Is.LessThan(authoredFootDistance * .7f),
                     "the knees must fold the feet toward the hips instead of rotating an upright mannequin");
+                Assert.That(Vector3.Distance(leftKnee.position, chest.position),
+                    Is.LessThan(authoredKneeToChest * .55f),
+                    "the knees and curled chest must form a compact tumble");
+                Assert.That(VerticalSpan(hips, head, chest, leftKnee, leftFoot),
+                    Is.LessThan(authoredHeight * .78f),
+                    "the rolling body's upper silhouette must be materially lower than standing");
                 Assert.That(Mathf.Min(hips.position.y, head.position.y),
                     Is.GreaterThanOrEqualTo(authoredGroundY - .001f),
                     "the grounded roll must keep its pelvis and head above the original foot plane");
@@ -298,6 +313,18 @@ namespace CoffeeGame.Presentation.Tests
             const System.Reflection.BindingFlags flags =
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
             target.GetType().GetField(fieldName, flags).SetValue(target, value);
+        }
+
+        private static float VerticalSpan(params Transform[] points)
+        {
+            float minimum = float.PositiveInfinity;
+            float maximum = float.NegativeInfinity;
+            for (int i = 0; i < points.Length; i++)
+            {
+                minimum = Mathf.Min(minimum, points[i].position.y);
+                maximum = Mathf.Max(maximum, points[i].position.y);
+            }
+            return maximum - minimum;
         }
 
         private static Transform Child(Transform parent, string name, Vector3 localPosition)
