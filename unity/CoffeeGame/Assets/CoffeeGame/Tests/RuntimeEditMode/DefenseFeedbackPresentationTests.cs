@@ -201,14 +201,16 @@ namespace CoffeeGame.Presentation.Tests
             Transform hips = Child(visual, "Hips", new Vector3(0f, 1f, 0f));
             Transform spine = Child(hips, "Spine", new Vector3(0f, .25f, 0f));
             Transform chest = Child(spine, "Spine01", new Vector3(0f, .22f, 0f));
-            Child(chest, "Head", new Vector3(0f, .34f, 0f));
+            Transform head = Child(chest, "Head", new Vector3(0f, .34f, 0f));
             AddArmChain(chest, "Left", -1f);
             AddArmChain(chest, "Right", 1f);
-            AddLegChain(hips, "Left", -1f);
+            Transform leftFoot = AddLegChain(hips, "Left", -1f);
             AddLegChain(hips, "Right", 1f);
             var motion = actor.AddComponent<AcrobaticMotionPresentation>();
             Quaternion authoredRotation = hips.localRotation;
             Vector3 authoredPosition = hips.localPosition;
+            float authoredFootDistance = Vector3.Distance(hips.position, leftFoot.position);
+            float authoredGroundY = leftFoot.position.y;
             try
             {
                 motion.Initialize(visual, actor);
@@ -219,6 +221,12 @@ namespace CoffeeGame.Presentation.Tests
 
                 Assert.That(Vector3.Dot(hips.up, Vector3.up), Is.LessThan(-.98f),
                     "the body must be upside down halfway through a full forward roll");
+                Assert.That(Vector3.Distance(hips.position, leftFoot.position),
+                    Is.LessThan(authoredFootDistance * .7f),
+                    "the knees must fold the feet toward the hips instead of rotating an upright mannequin");
+                Assert.That(Mathf.Min(hips.position.y, head.position.y),
+                    Is.GreaterThanOrEqualTo(authoredGroundY - .001f),
+                    "the grounded roll must keep its pelvis and head above the original foot plane");
                 Assert.That(motion.CurrentKind, Is.EqualTo(AcrobaticMotionKind.GroundRoll));
                 Assert.That(motion.Progress, Is.EqualTo(.5f));
 
@@ -271,11 +279,11 @@ namespace CoffeeGame.Presentation.Tests
             Child(forearm, prefix + side + "Hand", new Vector3(.18f * sign, 0f, 0f));
         }
 
-        private static void AddLegChain(Transform hips, string side, float sign, string prefix = "")
+        private static Transform AddLegChain(Transform hips, string side, float sign, string prefix = "")
         {
             Transform thigh = Child(hips, prefix + side + "UpLeg", new Vector3(.14f * sign, -.08f, 0f));
             Transform leg = Child(thigh, prefix + side + "Leg", new Vector3(0f, -.38f, 0f));
-            Child(leg, prefix + side + "Foot", new Vector3(0f, -.38f, .06f));
+            return Child(leg, prefix + side + "Foot", new Vector3(0f, -.38f, .06f));
         }
 
         private static void InvokePrivate(object target, string methodName)
