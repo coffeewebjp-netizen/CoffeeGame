@@ -61,6 +61,9 @@ namespace CoffeeGame.Input
         private InputAction _magic;
 
         private InputAction _dodge;
+
+        private InputAction _guard;
+
         private InputAction _switchCharacter;
 
         private InputAction _pause;
@@ -78,6 +81,10 @@ namespace CoffeeGame.Input
         private InputAction _uiSettings;
 
         private bool _suppressActionsUntilRelease;
+
+        // Defense is a held action. Keep it gated until the physical control is
+        // released whenever focus, context, or the controlled actor changes.
+        private bool _guardBlockedUntilRelease;
 
         private InputControl _lastControl;
 
@@ -192,6 +199,22 @@ namespace CoffeeGame.Input
 
         public bool DodgePressed => !_suppressActionsUntilRelease &&
             ((UsesTouchOverlay && _touchDodgePressed) || (_dodge != null && _dodge.WasPressedThisFrame()));
+
+        public bool GuardHeld =>
+            Context == GameInputContext.Battle &&
+            !_suppressActionsUntilRelease &&
+            !_guardBlockedUntilRelease &&
+            (UsesTouchOverlay
+                ? _touchGuardHeld
+                : _guard != null && _guard.IsPressed());
+
+        public bool GuardPressed =>
+            Context == GameInputContext.Battle &&
+            !_suppressActionsUntilRelease &&
+            !_guardBlockedUntilRelease &&
+            (UsesTouchOverlay
+                ? _touchGuardPressed
+                : _guard != null && _guard.WasPressedThisFrame());
 
         public bool SwitchCharacterPressed => !_suppressActionsUntilRelease &&
             ((_touchSwitchPressed && UsesTouchOverlay) || (_switchCharacter != null && _switchCharacter.WasPressedThisFrame()));
@@ -351,6 +374,11 @@ namespace CoffeeGame.Input
 
         private void Update()
         {
+            if (_guardBlockedUntilRelease && !IsAnyContextSwitchControlActuated())
+            {
+                _guardBlockedUntilRelease = false;
+            }
+
             if (!IsRebinding)
             {
                 RefreshNativeGamepadProfileRecovery();
@@ -396,6 +424,42 @@ namespace CoffeeGame.Input
             {
                 _suppressActionsUntilRelease = false;
             }
+
+            if (_guardBlockedUntilRelease && !IsAnyContextSwitchControlActuated())
+            {
+                _guardBlockedUntilRelease = false;
+            }
+        }
+
+
+        /// <summary>
+        /// Invalidates the held defense action until its physical control is
+        /// released. Root calls this when the controlled actor changes; context
+        /// and focus transitions use the same gate automatically.
+        /// </summary>
+        public void ClearGuardState()
+        {
+            _guardBlockedUntilRelease = true;
+            _touchGuardHeld = false;
+            _touchGuardPressed = false;
+        }
+
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                ClearGuardState();
+            }
+        }
+
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+            {
+                ClearGuardState();
+            }
         }
 
 
@@ -426,6 +490,7 @@ namespace CoffeeGame.Input
         public void BeginInputModeSelection()
         {
             EnsureInitialized();
+            ClearGuardState();
             if (IsRebinding)
             {
                 CancelInteractiveRebind();
@@ -503,6 +568,7 @@ namespace CoffeeGame.Input
         public void EnableBattle()
         {
             EnsureInitialized();
+            ClearGuardState();
             _actions.bindingMask = string.IsNullOrWhiteSpace(_selectedBindingGroup)
                 ? null
                 : InputBinding.MaskByGroup(_selectedBindingGroup);
@@ -549,6 +615,7 @@ namespace CoffeeGame.Input
 
         public void DisableBattle()
         {
+            ClearGuardState();
             if (_battleMap == null)
             {
                 return;
@@ -565,6 +632,7 @@ namespace CoffeeGame.Input
         public void EnableUI()
         {
             EnsureInitialized();
+            ClearGuardState();
             _battleMap.Disable();
             // Menus accept both native keyboard and Gamepad so either device can
             // recover the settings flow. Steam Desktop's synthetic Space=Cancel
@@ -583,6 +651,7 @@ namespace CoffeeGame.Input
 
         public void DisableUI()
         {
+            ClearGuardState();
             if (_uiMap == null)
             {
                 return;
@@ -598,6 +667,7 @@ namespace CoffeeGame.Input
 
         public void DisableAll()
         {
+            ClearGuardState();
             _battleMap?.Disable();
             _uiMap?.Disable();
             Context = GameInputContext.None;
@@ -655,7 +725,8 @@ namespace CoffeeGame.Input
 
         private bool IsAnyContextSwitchControlActuated()
         {
-            if (IsCombatLeakControlHeld() || IsAnyNativeGamepadStickActuated())
+            if (_touchGuardHeld || _touchGuardPressed ||
+                IsCombatLeakControlHeld() || IsAnyNativeGamepadStickActuated())
             {
                 return true;
             }

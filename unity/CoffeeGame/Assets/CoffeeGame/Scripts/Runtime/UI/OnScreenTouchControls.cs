@@ -29,6 +29,7 @@ namespace CoffeeGame.UI
         private bool specialHeld;
         private bool magicHeld;
         private bool dodgeHeld;
+        private bool guardHeld;
         private GUIStyle labelStyle;
         private Texture2D circleTexture;
 
@@ -64,8 +65,7 @@ namespace CoffeeGame.UI
             Touchscreen touchscreen = Touchscreen.current;
             if (touchscreen == null)
             {
-                input.SetTouchMove(Vector2.zero);
-                input.SetTouchCamera(Vector2.zero);
+                ResetTouches();
                 return;
             }
 
@@ -77,6 +77,7 @@ namespace CoffeeGame.UI
             bool special = false;
             bool magic = false;
             bool dodge = false;
+            bool guard = false;
 
             foreach (TouchControl touch in touchscreen.touches)
             {
@@ -92,7 +93,8 @@ namespace CoffeeGame.UI
                 bool onSpecial = IsInside(position, SpecialRect);
                 bool onMagic = IsInside(position, MagicRect);
                 bool onDodge = IsInside(position, DodgeRect);
-                bool onAction = onJump || onSword || onSpecial || onMagic || onDodge;
+                bool onGuard = IsInside(position, GuardRect);
+                bool onAction = onJump || onSword || onSpecial || onMagic || onDodge || onGuard;
 
                 if (onJump)
                 {
@@ -103,6 +105,12 @@ namespace CoffeeGame.UI
                 if (onDodge)
                 {
                     dodge = true;
+                    continue;
+                }
+
+                if (onGuard)
+                {
+                    guard = true;
                     continue;
                 }
 
@@ -171,6 +179,8 @@ namespace CoffeeGame.UI
             QueueIfNewlyPressed(special, ref specialHeld, GameInputSemantic.Special);
             QueueIfNewlyPressed(magic, ref magicHeld, GameInputSemantic.Magic);
             QueueIfNewlyPressed(dodge, ref dodgeHeld, GameInputSemantic.Dodge);
+            QueueIfNewlyPressed(guard, ref guardHeld, GameInputSemantic.Guard);
+            input.SetTouchGuardHeld(guard);
         }
 
         private void OnGUI()
@@ -186,6 +196,7 @@ namespace CoffeeGame.UI
             DrawActionButton(SpecialRect, "居合");
             DrawActionButton(MagicRect, "氷");
             DrawActionButton(DodgeRect, "避");
+            DrawActionButton(GuardRect, "防");
 
             if (moveFingerId >= 0)
             {
@@ -212,10 +223,13 @@ namespace CoffeeGame.UI
             specialHeld = false;
             magicHeld = false;
             dodgeHeld = false;
+            guardHeld = false;
             if (input != null)
             {
                 input.SetTouchMove(Vector2.zero);
                 input.SetTouchCamera(Vector2.zero);
+                input.SetTouchGuardHeld(false);
+                input.ClearQueuedTouchPresses();
             }
         }
 
@@ -285,6 +299,12 @@ namespace CoffeeGame.UI
 
         private static Rect DodgeRect => new Rect(
             Screen.width - Scaled(28f) - ButtonSize * 3f - Scaled(36f),
+            Screen.height - Scaled(36f) - ButtonSize,
+            ButtonSize * 0.92f,
+            ButtonSize * 0.92f);
+
+        private static Rect GuardRect => new Rect(
+            Screen.width - Scaled(28f) - ButtonSize * 4f - Scaled(54f),
             Screen.height - Scaled(36f) - ButtonSize,
             ButtonSize * 0.92f,
             ButtonSize * 0.92f);

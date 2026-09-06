@@ -22,6 +22,7 @@ namespace CoffeeGame.UI
         public const int CoffeeLearningDisconnect = 17;
         public const int CoffeeLearningCancel = 18;
         public const int SwitchCharacter = 19;
-        public const int Count = 20;
+        public const int Guard = 20;
+        public const int Count = 21;
     }
 }

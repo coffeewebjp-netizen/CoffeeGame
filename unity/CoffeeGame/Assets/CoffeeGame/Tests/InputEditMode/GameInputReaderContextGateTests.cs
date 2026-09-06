@@ -102,6 +102,36 @@ namespace CoffeeGame.Input.Tests
                 "A fresh stick movement after neutral must navigate settings.");
         }
 
+
+        [Test]
+        public void HeldGuard_DoesNotLeakAcrossModalOrActorContextUntilRelease()
+        {
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            SelectGamepad(reader);
+            reader.EnableBattle();
+            TickReader(reader);
+
+            Press(gamepad.leftStickButton);
+            Assert.That(reader.GuardPressed, Is.True);
+            Assert.That(reader.GuardHeld, Is.True);
+
+            reader.EnableUI();
+            InputSystem.Update();
+            Assert.That(reader.GuardHeld, Is.False);
+
+            reader.EnableBattle();
+            reader.ClearGuardState();
+            InputSystem.Update();
+            Assert.That(reader.GuardHeld, Is.False,
+                "A held defense control must not resume after a modal or actor context change.");
+
+            Release(gamepad.leftStickButton);
+            TickReader(reader);
+            Press(gamepad.leftStickButton);
+            Assert.That(reader.GuardPressed, Is.True,
+                "A fresh defense press after release must still be accepted.");
+        }
+
         [Test]
         public void ControllerBattle_IgnoresLeftoverKeyboardAfterRivalTextEntry()
         {

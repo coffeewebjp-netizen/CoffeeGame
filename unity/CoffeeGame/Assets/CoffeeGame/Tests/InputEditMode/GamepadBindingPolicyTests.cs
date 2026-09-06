@@ -11,6 +11,7 @@ namespace CoffeeGame.Input.Tests
         [TestCase("<Gamepad>/buttonNorth")]
         [TestCase("<Gamepad>/rightTrigger")]
         [TestCase("<XInputControllerWindows>/leftShoulder")]
+        [TestCase("<Gamepad>/leftStickPress")]
         public void BindableButtons_AreAccepted(string path)
         {
             Assert.That(GamepadBindingPolicy.IsBindableGamepadPath(path), Is.True);

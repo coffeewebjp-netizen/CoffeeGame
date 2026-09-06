@@ -67,6 +67,7 @@ namespace CoffeeGame.UI
             AddCommandButton(menuScrollContent, "CoffeeLearning Disconnect", () => CoffeeLearningDisconnectRequested?.Invoke());
             AddCommandButton(menuScrollContent, "CoffeeLearning Cancel", () => CoffeeLearningCancelRequested?.Invoke());
             AddControlButton(menuScrollContent, GameInputSemantic.SwitchCharacter, "操作切替");
+            AddControlButton(menuScrollContent, GameInputSemantic.Guard, "防御");
         }
 
 
@@ -126,9 +127,10 @@ namespace CoffeeGame.UI
                 GameInputSemantic.Sword,
                 GameInputSemantic.Special,
                 GameInputSemantic.Magic,
-                GameInputSemantic.Dodge
+                GameInputSemantic.Dodge,
+                GameInputSemantic.Guard
             };
-            string[] labels = { "ジャンプ", "刀攻撃", "居合斬り", "氷魔法", "回避" };
+            string[] labels = { "ジャンプ", "刀攻撃", "居合斬り", "氷魔法", "回避", "防御" };
             bool supportsRebind = input.SelectedInputMode == InputMode.ControllerGamepad ||
                                   input.SelectedInputMode == InputMode.SteamDesktopCompatibility;
             controlButtons[CombatHudSettingsRows.SwitchCharacter].GetComponentInChildren<Text>().text =
@@ -136,9 +138,10 @@ namespace CoffeeGame.UI
             controlButtons[CombatHudSettingsRows.SwitchCharacter].interactable = supportsRebind && !rebinding;
             for (int index = 0; index < semantics.Length; index++)
             {
-                controlButtons[index].GetComponentInChildren<Text>().text =
+                int row = index == semantics.Length - 1 ? CombatHudSettingsRows.Guard : index;
+                controlButtons[row].GetComponentInChildren<Text>().text =
                     $"{labels[index]}　　{input.GetActiveControllerBindingDescription(semantics[index])}";
-                controlButtons[index].interactable = supportsRebind && !rebinding;
+                controlButtons[row].interactable = supportsRebind && !rebinding;
             }
             controlButtons[CombatHudSettingsRows.InputMode].GetComponentInChildren<Text>().text =
                 $"入力方式を選び直す　（現在: {input.ActiveControllerProfileName}）";

@@ -22,6 +22,11 @@ namespace CoffeeGame.Input
         private bool _touchMagicPressed;
 
         private bool _touchDodgePressed;
+
+        private bool _touchGuardHeld;
+
+        private bool _touchGuardPressed;
+
         private bool _touchSwitchPressed;
 
         private bool _touchPausePressed;
@@ -43,6 +48,12 @@ namespace CoffeeGame.Input
         }
 
 
+        public void SetTouchGuardHeld(bool held)
+        {
+            _touchGuardHeld = held;
+        }
+
+
         public void QueueTouchPress(GameInputSemantic semantic)
         {
             switch (semantic)
@@ -61,6 +72,9 @@ namespace CoffeeGame.Input
                     break;
                 case GameInputSemantic.Dodge:
                     _touchDodgePressed = true;
+                    break;
+                case GameInputSemantic.Guard:
+                    _touchGuardPressed = true;
                     break;
                 case GameInputSemantic.SwitchCharacter:
                     _touchSwitchPressed = true;
@@ -90,6 +104,7 @@ namespace CoffeeGame.Input
             _touchSpecialPressed = false;
             _touchMagicPressed = false;
             _touchDodgePressed = false;
+            _touchGuardPressed = false;
             _touchSwitchPressed = false;
             _touchPausePressed = false;
             _touchConfirmPressed = false;

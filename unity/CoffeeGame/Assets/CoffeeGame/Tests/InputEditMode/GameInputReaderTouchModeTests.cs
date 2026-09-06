@@ -74,6 +74,75 @@ namespace CoffeeGame.Input.Tests
             Assert.That(reader.DodgePressed, Is.False);
         }
 
+
+        [Test]
+        public void GuardSemantic_IsAppendedAfterExistingSavedValues()
+        {
+            Assert.That((int)GameInputSemantic.Move, Is.EqualTo(0));
+            Assert.That((int)GameInputSemantic.Jump, Is.EqualTo(1));
+            Assert.That((int)GameInputSemantic.Sword, Is.EqualTo(2));
+            Assert.That((int)GameInputSemantic.Special, Is.EqualTo(3));
+            Assert.That((int)GameInputSemantic.Magic, Is.EqualTo(4));
+            Assert.That((int)GameInputSemantic.Pause, Is.EqualTo(5));
+            Assert.That((int)GameInputSemantic.Navigate, Is.EqualTo(6));
+            Assert.That((int)GameInputSemantic.Confirm, Is.EqualTo(7));
+            Assert.That((int)GameInputSemantic.Dodge, Is.EqualTo(8));
+            Assert.That((int)GameInputSemantic.SwitchCharacter, Is.EqualTo(9));
+            Assert.That((int)GameInputSemantic.Guard, Is.EqualTo(10));
+        }
+
+
+        [Test]
+        public void GuardDefaults_UseFreeControlsAndPersistBySemanticName()
+        {
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            reader.Actions.RemoveAllBindingOverrides();
+
+            int keyboardIndex = reader.GetBindingIndexForGroup(GameInputSemantic.Guard, "Keyboard");
+            int gamepadIndex = reader.GetBindingIndexForGroup(GameInputSemantic.Guard, GameInputReader.GamepadBindingGroup);
+            int desktopIndex = reader.GetBindingIndexForGroup(GameInputSemantic.Guard, GameInputReader.SteamDesktopBindingGroup);
+
+            Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, keyboardIndex), Is.EqualTo("<Keyboard>/g"));
+            Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, gamepadIndex), Is.EqualTo("<Gamepad>/leftStickPress"));
+            Assert.That(reader.GetBindingEffectivePathAtIndex(GameInputSemantic.Guard, desktopIndex), Is.EqualTo("<Keyboard>/g"));
+            StringAssert.Contains("\"semantic\":\"Guard\"", reader.SaveBindingOverridesAsJson());
+            StringAssert.Contains("\"semantic\":\"Guard\"", reader.SaveSteamDesktopBindingOverridesAsJson());
+        }
+
+
+        [Test]
+        public void TouchGuard_HasHoldAndPressSemanticsAndActorClearRequiresRelease()
+        {
+            GameInputReader reader = readerObject.AddComponent<GameInputReader>();
+            reader.BeginInputModeSelection();
+            Assert.That(reader.TrySelectInputMode(InputMode.TouchOnScreen, out string message), Is.True, message);
+            reader.EnableBattle();
+            reader.RefreshContextSwitchReleaseGate();
+
+            reader.SetTouchGuardHeld(true);
+            reader.QueueTouchPress(GameInputSemantic.Guard);
+            Assert.That(reader.GuardHeld, Is.True);
+            Assert.That(reader.GuardPressed, Is.True);
+
+            reader.ClearQueuedTouchPresses();
+            Assert.That(reader.GuardHeld, Is.True);
+            Assert.That(reader.GuardPressed, Is.False);
+
+            reader.ClearGuardState();
+            Assert.That(reader.GuardHeld, Is.False);
+            reader.SetTouchGuardHeld(true);
+            Assert.That(reader.GuardHeld, Is.False);
+
+            reader.SetTouchGuardHeld(false);
+            reader.RefreshContextSwitchReleaseGate();
+            reader.SetTouchGuardHeld(true);
+            Assert.That(reader.GuardHeld, Is.True);
+
+            reader.EnableUI();
+            reader.SetTouchGuardHeld(true);
+            Assert.That(reader.GuardHeld, Is.False);
+        }
+
         [Test]
         public void SwipeAndHold_KeepsMoveAfterAShortDrag()
         {

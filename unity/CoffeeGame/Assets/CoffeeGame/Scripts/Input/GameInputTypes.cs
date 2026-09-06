@@ -15,7 +15,8 @@ namespace CoffeeGame.Input
         Navigate,
         Confirm,
         Dodge,
-        SwitchCharacter
+        SwitchCharacter,
+        Guard
     }
 
     public enum GameInputContext

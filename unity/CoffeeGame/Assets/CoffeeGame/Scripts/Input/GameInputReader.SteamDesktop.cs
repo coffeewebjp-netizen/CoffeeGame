@@ -17,7 +17,8 @@ namespace CoffeeGame.Input
             GameInputSemantic.Special,
             GameInputSemantic.Magic,
             GameInputSemantic.Dodge,
-            GameInputSemantic.SwitchCharacter
+            GameInputSemantic.SwitchCharacter,
+            GameInputSemantic.Guard
         };
 
 

@@ -9,6 +9,7 @@ namespace CoffeeGame.Input.Tests
         [TestCase("<Keyboard>/pageUp")]
         [TestCase("<Keyboard>/pageDown")]
         [TestCase("<Keyboard>/home")]
+        [TestCase("<Keyboard>/g")]
         [TestCase("<Mouse>/leftButton")]
         [TestCase("<Mouse>/rightButton")]
         public void DesktopButtons_AreAccepted(string path)

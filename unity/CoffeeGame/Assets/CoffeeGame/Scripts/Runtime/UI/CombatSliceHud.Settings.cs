@@ -72,6 +72,9 @@ namespace CoffeeGame.UI
                 case CombatHudSettingsRows.SwitchCharacter:
                     BeginRebind(GameInputSemantic.SwitchCharacter);
                     break;
+                case CombatHudSettingsRows.Guard:
+                    BeginRebind(GameInputSemantic.Guard);
+                    break;
                 case CombatHudSettingsRows.Jump:
                     BeginRebind(GameInputSemantic.Jump);
                     break;
@@ -165,26 +168,27 @@ namespace CoffeeGame.UI
             DrawRebindRow(panel, 164f, CombatHudSettingsRows.Special, "居合斬り", GameInputSemantic.Special);
             DrawRebindRow(panel, 204f, CombatHudSettingsRows.Magic, "氷魔法", GameInputSemantic.Magic);
             DrawRebindRow(panel, 244f, CombatHudSettingsRows.Dodge, "回避", GameInputSemantic.Dodge);
+            DrawRebindRow(panel, 284f, CombatHudSettingsRows.Guard, "防御", GameInputSemantic.Guard);
 
             DrawSettingsCommandButton(
                 panel,
-                290f,
+                330f,
                 CombatHudSettingsRows.InputMode,
                 $"入力方式を選び直す（現在: {input.ActiveControllerProfileName}）",
                 BeginInputModeSelectionFromSettings);
-            DrawSettingsCommandButton(panel, 330f, CombatHudSettingsRows.Save, "プロフィールとボタン設定を保存", HandleManualSave);
-            DrawSettingsCommandButton(panel, 370f, CombatHudSettingsRows.ResetBindings, "初期配置へ戻す", () => input.ResetBindingOverrides(), SupportsButtonRebind);
-            DrawSettingsCommandButton(panel, 410f, CombatHudSettingsRows.Resume, "設定を保存して閉じる", CloseInputSettings);
+            DrawSettingsCommandButton(panel, 370f, CombatHudSettingsRows.Save, "プロフィールとボタン設定を保存", HandleManualSave);
+            DrawSettingsCommandButton(panel, 410f, CombatHudSettingsRows.ResetBindings, "初期配置へ戻す", () => input.ResetBindingOverrides(), SupportsButtonRebind);
+            DrawSettingsCommandButton(panel, 450f, CombatHudSettingsRows.Resume, "設定を保存して閉じる", CloseInputSettings);
 
             DrawSettingsCommandButton(
                 panel,
-                450f,
+                490f,
                 CombatHudSettingsRows.Performance,
                 $"描画プリセット: {GamePerformanceSettings.CurrentPresetLabel}",
                 HandlePerformancePreset);
             DrawSettingsCommandButton(
                 panel,
-                490f,
+                530f,
                 CombatHudSettingsRows.FrameStats,
                 $"FPS表示: {(GamePerformanceSettings.ShowFrameStats ? "ON" : "OFF")}",
                 HandleFrameStatsToggle);
@@ -192,7 +196,7 @@ namespace CoffeeGame.UI
             bool previousEnabled = GUI.enabled;
             GUI.enabled = input.IsRebinding;
             if (AcceptPointerCommand(GUI.Button(
-                    new Rect(panel.x + 14f, panel.y + 530f, panel.width - 28f, 27f),
+                    new Rect(panel.x + 14f, panel.y + 570f, panel.width - 28f, 27f),
                     "再割当を取り消す（Start/View・Esc）",
                     buttonStyle)))
             {
@@ -209,10 +213,10 @@ namespace CoffeeGame.UI
                 _ =>
                     "キーボード／マウスの基本配置は現在固定です。変更したい場合は『入力方式を選び直す』からGamepadまたはSteam Desktop互換を選択してください。"
             };
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 566f, panel.width - 28f, 48f),
+            GUI.Label(new Rect(panel.x + 14f, panel.y + 606f, panel.width - 28f, 48f),
                 operationHelp,
                 smallStyle);
-            GUI.Label(new Rect(panel.x + 14f, panel.y + 618f, panel.width - 28f, Mathf.Max(40f, panel.height - 630f)),
+            GUI.Label(new Rect(panel.x + 14f, panel.y + 654f, panel.width - 28f, Mathf.Max(40f, panel.height - 666f)),
                 input.ControllerCompatibilityHint,
                 smallStyle);
         }

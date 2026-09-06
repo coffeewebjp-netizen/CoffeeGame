@@ -37,6 +37,7 @@ namespace CoffeeGame.Input
             _magic = AddButton(_battleMap, "Magic", "<Keyboard>/e", "<Gamepad>/buttonNorth", "<Keyboard>/pageDown");
             _dodge = AddButton(_battleMap, "Dodge", "<Keyboard>/leftShift", "<Gamepad>/leftShoulder", "<Keyboard>/leftShift");
             _switchCharacter = AddButton(_battleMap, "SwitchCharacter", "<Keyboard>/t", "<Gamepad>/rightShoulder", "<Keyboard>/t");
+            _guard = AddButton(_battleMap, "Guard", "<Keyboard>/g", "<Gamepad>/leftStickPress", "<Keyboard>/g");
             _pause = AddButton(_battleMap, "Pause", "<Keyboard>/escape", "<Gamepad>/start", "<Keyboard>/escape");
             _battleSettings = AddSettingsButton(_battleMap);
 
@@ -104,6 +105,7 @@ namespace CoffeeGame.Input
                 GameInputSemantic.Magic => _magic,
                 GameInputSemantic.Dodge => _dodge,
                 GameInputSemantic.SwitchCharacter => _switchCharacter,
+                GameInputSemantic.Guard => _guard,
                 GameInputSemantic.Pause => _pause,
                 GameInputSemantic.Navigate => _navigate,
                 GameInputSemantic.Confirm => _confirm,
@@ -127,6 +129,7 @@ namespace CoffeeGame.Input
             _special.performed += OnSpecial;
             _magic.performed += OnMagic;
             _dodge.performed += OnDodge;
+            _guard.performed += OnGuard;
             _pause.performed += OnPause;
             _uiPause.performed += OnUiPause;
             _confirm.performed += OnConfirm;
@@ -156,6 +159,7 @@ namespace CoffeeGame.Input
             _special.performed -= OnSpecial;
             _magic.performed -= OnMagic;
             _dodge.performed -= OnDodge;
+            _guard.performed -= OnGuard;
             _pause.performed -= OnPause;
             _uiPause.performed -= OnUiPause;
             _confirm.performed -= OnConfirm;
@@ -222,6 +226,12 @@ namespace CoffeeGame.Input
         {
             RecordInput(context, "Battle/Dodge");
             DodgeTriggered?.Invoke();
+        }
+
+
+        private void OnGuard(InputAction.CallbackContext context)
+        {
+            RecordInput(context, "Battle/Guard");
         }
 
 

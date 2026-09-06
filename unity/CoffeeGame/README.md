@@ -47,6 +47,7 @@ Default controls:
 | Rotate camera vertically | V / R or hold right mouse and drag vertically | Right stick Y | V / R |
 | Jump | Space | South face button | A -> Enter |
 | Sword | F | Right trigger | RT -> Mouse Left |
+| Guard | G | Left stick press | G |
 | Iai slash | Q | West face button | X -> PageUp |
 | Ice magic | E | North face button | Y -> PageDown |
 | Pause / confirm | Escape / Enter | Start / South face button | Steam/Back -> Escape / A -> Enter |
@@ -66,7 +67,7 @@ positions the initial cursor; it is never activated automatically. Choose one of
   selected merely because no Gamepad was found.
 - **タッチ（画面操作）**: Landscape Android overlay. The left half is a
   swipe-and-hold move stick that appears under the finger; the right half
-  orbits the camera; Jump / Sword / Iai / Ice sit in the lower-right cluster.
+  orbits the camera; Jump / Sword / Guard / Iai / Ice sit in the lower-right cluster.
   This is the default chooser cursor on mobile.
 
 The selection press is release-gated, so the Enter/South press used to choose a
