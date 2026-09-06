@@ -102,7 +102,7 @@ namespace CoffeeGame.UI
             switch (session.State)
             {
                 case RivalLearningQuestionState.Loading:
-                    rivalMessageText.text = "スライムを5体倒したね。\n\n直近14日の苦手問題を読み込んでいます…";
+                    rivalMessageText.text = "魔物を5体倒したね。\n\n直近14日の苦手問題を読み込んでいます…";
                     rivalNoteText.text = "読み込み中でも「戦闘へ戻る」で中断できます。";
                     SetRivalButton(rivalPrimaryButton, "読み込み中…", false, false);
                     SetRivalButton(rivalSecondaryButton, string.Empty, false, false);
@@ -345,7 +345,7 @@ namespace CoffeeGame.UI
             rivalMessageText.horizontalOverflow = HorizontalWrapMode.Wrap;
             rivalMessageText.verticalOverflow = VerticalWrapMode.Truncate;
             Anchor(rivalMessageText.rectTransform, new Vector2(0.535f, 0.49f), new Vector2(0.955f, 0.68f));
-            rivalMessageText.text = "スライムを5体倒したね。\n\n直近14日の苦手問題を読み込んでいます…";
+            rivalMessageText.text = "魔物を5体倒したね。\n\n直近14日の苦手問題を読み込んでいます…";
 
             Image answerBackground = CreateImage(
                 "Rival Answer Background",

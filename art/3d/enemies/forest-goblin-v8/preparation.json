@@ -1,0 +1,82 @@
+{
+  "rigTask": "01a0749d-0706-763e-b6f9-a494f6f9c256",
+  "source": "Meshy private asset, same-rig motions",
+  "donors": [
+    {
+      "file": "goblin-orc-walk.glb",
+      "sha256": "ef95c13b94de78c83109a04f07db84318464cda639c15439caed5b0da49760e2",
+      "bindError": 0,
+      "frames": [
+        1,
+        166
+      ]
+    },
+    {
+      "file": "goblin-axe-chop.glb",
+      "sha256": "c84b0ef5ba10e1679c874133b5cda4acba2dedc85c4819c7abc5a5c2a592c643",
+      "bindError": 0,
+      "frames": [
+        1,
+        231
+      ]
+    },
+    {
+      "file": "goblin-idle.glb",
+      "sha256": "6ac48358f8e23fee7e04df0df4547bc67b55c36cca38e9a26c85458b2e528aca",
+      "bindError": 0,
+      "frames": [
+        0,
+        339
+      ]
+    },
+    {
+      "file": "goblin-dead.glb",
+      "sha256": "9b6ff38f9d67df4bb61243765d1461bd381d8a9a4ba28384b93438098e2ee6b5",
+      "bindError": 0,
+      "frames": [
+        1,
+        90
+      ]
+    }
+  ],
+  "actions": {
+    "Idle": [
+      0,
+      339
+    ],
+    "Walk": [
+      0,
+      82
+    ],
+    "AttackWindup": [
+      0,
+      22
+    ],
+    "Attack": [
+      0,
+      11
+    ],
+    "Hurt": [
+      0,
+      10
+    ],
+    "Defeated": [
+      0,
+      27
+    ]
+  },
+  "bodyTriangles": 30054,
+  "removedOpenHandVertices": 1149,
+  "clubTriangles": 220,
+  "gloveTriangles": 256,
+  "notes": [
+    "Root X/Y planted; game owns translation.",
+    "AttackWindup and Attack retimed from Meshy Charged Axe Chop.",
+    "Hurt is a local Blender additive recoil.",
+    "Open right fingers replaced with a closed leather glove; club skinned to RightHand."
+  ],
+  "baseSource": {
+    "file": "goblin-running.glb",
+    "sha256": "da1e6c152a5e2589a708e3c755523f8bd5d275337b7f3142b7b9c775b71af557"
+  }
+}

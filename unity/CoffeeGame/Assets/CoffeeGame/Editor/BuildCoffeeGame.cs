@@ -43,6 +43,12 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-AzureMotionDiagnostic", "CoffeeGAME-AzureMotionDiagnostic.exe");
         }
 
+        public static void BuildGoblinV8NoSetup()
+        {
+            GoblinAssetSetup.Validate();
+            BuildDiagnosticNoSetup("Windows-GoblinV8", "CoffeeGAME-GoblinV8.exe");
+        }
+
         public static void BuildForestV7NoSetup()
         {
             BuildDiagnosticNoSetup("Windows-ForestV7", "CoffeeGAME-ForestV7.exe");

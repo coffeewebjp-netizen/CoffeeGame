@@ -1,0 +1,93 @@
+{
+  "taskId": "ORC-20260905-001",
+  "inputId": "IN18",
+  "workPackage": "WP22",
+  "recordedAt": "2026-09-06T03:44:12.253Z",
+  "asset": {
+    "meshTask": "01a0749d-0706-763e-b6f9-a494f6f9c256",
+    "source": "Private contracted Meshy workspace and local Blender authoring",
+    "meshGenerationCreditsShown": 20,
+    "textureCreditsShown": 10,
+    "newSubscriptionOrPurchase": false,
+    "unityTriangles": 30498,
+    "skinnedMeshes": 3,
+    "sourceJoints": 24,
+    "clips": 6
+  },
+  "tests": {
+    "passed": 11,
+    "total": 11,
+    "report": "C:/work/task-backups/ORC-20260905-001-WP22/goblin-tests-delivery.xml"
+  },
+  "integration": {
+    "passed": [
+      "input selected",
+      "first encounter is goblin",
+      "goblin approaches and winds up",
+      "windup does no damage",
+      "committed strike hits target",
+      "run enters pause",
+      "pause freezes enemy and animation",
+      "encounter roster 1",
+      "single reward for repeated lethal hit 1",
+      "pause holds defeat/respawn timer",
+      "defeated enemy removed 1",
+      "encounter roster 2",
+      "single reward for repeated lethal hit 2",
+      "defeated enemy removed 2",
+      "encounter roster 3",
+      "single reward for repeated lethal hit 3",
+      "defeated enemy removed 3",
+      "encounter roster 4",
+      "single reward for repeated lethal hit 4",
+      "defeated enemy removed 4",
+      "encounter roster 5",
+      "single reward for repeated lethal hit 5",
+      "defeated enemy removed 5",
+      "fifth kill enters rival encounter",
+      "mixed rewards: five gold, two slime jelly",
+      "sixth encounter continues roster after rival",
+      "retry restarts at goblin with fresh claim",
+      "retry preserves in-memory progression"
+    ],
+    "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "note": "Actual runtime enemy factory, animator, AI, death/respawn and run controller; in-memory progression, no player-profile writes."
+  },
+  "protectedSourceFiles": {
+    "count": 1734,
+    "allMatched": true
+  },
+  "profileUnchanged": true,
+  "profileSha256": "737b2fe0c308d987316284871dcc8e4fe4d9fbf265c0b2e31e9e780e0744cea0",
+  "normal": {
+    "path": "C:/work/CoffeeGAME/unity/CoffeeGame/Builds/Windows/CoffeeGAME.exe",
+    "runtimeDllSha256": "cacb6d2e7541d4872054add9edadb4987ed655cdf5d0a95b3487aa27e349cd5b",
+    "verifiedFiles": 297,
+    "installedBytes": 584793853,
+    "backupFiles": 348,
+    "backupBytes": 588817181
+  },
+  "steam": {
+    "launchTimeJst": "2026-09-06T12:40:07+09:00",
+    "pid": 116716,
+    "gameId": "11848876491142070272",
+    "launchVia": "Native Steam Library Play button",
+    "gameArguments": [],
+    "shortcutSettingsUnchanged": true,
+    "lastPlayTimeChanged": true,
+    "visualReview": "Keyboard/mouse selected in native game UI, run started, Forest Goblin 1 and accepted red-haori heroine visible, paused for Owner review; zero manual kills."
+  },
+  "rollback": {
+    "helper": "tools/restore-pre-goblin-v8-player.cmd",
+    "returnsTo": "Forest V7",
+    "verified": true,
+    "actualRestorePerformed": false,
+    "progressAndSelectionPreserved": true
+  },
+  "limitations": [
+    "One goblin melee attack family; static glove and skinned cloth.",
+    "Runtime lifecycle check uses in-memory progression and direct damage; not a full manual input/combat regression.",
+    "No sustained combat/mobile performance qualification.",
+    "Public working-branch push remains held at the prior explicit Owner approval gate."
+  ]
+}

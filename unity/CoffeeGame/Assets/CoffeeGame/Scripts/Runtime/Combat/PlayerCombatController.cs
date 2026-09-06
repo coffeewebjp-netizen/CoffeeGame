@@ -381,6 +381,17 @@ namespace CoffeeGame.Combat
                     return;
                 }
             }
+            GoblinController[] goblins = FindObjectsByType<GoblinController>(FindObjectsInactive.Exclude);
+            for (int index = 0; index < goblins.Length; index++)
+            {
+                GoblinController goblin = goblins[index];
+                if (goblin != null && goblin.IsWindingUp &&
+                    goblin.Threatens(transform.position, tuning.PerfectDodgeRangeMultiplier))
+                {
+                    GrantPerfectDodge();
+                    return;
+                }
+            }
         }
 
         private void GrantPerfectDodge()

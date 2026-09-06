@@ -66,7 +66,7 @@ namespace CoffeeGame.Bootstrap
         private const string SlimeControllerResource = "Animations/Slime/SlimeRuntime";
         private const string SlimeHd2dManifestResource = "Art/HD2D/slime-hd2d";
 
-        private static readonly Vector3[] SlimeSpawnPoints =
+        private static readonly Vector3[] EnemySpawnPoints =
         {
             new Vector3(1.7f, 0.05f, 0.1f),
             new Vector3(1.25f, 0.05f, 1.45f),
@@ -83,7 +83,7 @@ namespace CoffeeGame.Bootstrap
         private Camera sceneCamera;
         private ForestArenaVisuals forestVisuals;
         private Health playerHealth;
-        private int slimeSpawnIndex;
+        private int enemySpawnIndex;
         private PlayerProgression sessionProgression;
         private PlayerProfileStore profileStore;
         private CombatRunController runController;
@@ -264,7 +264,11 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (TryGetCommandLineValue("-captureForest", out string forestCapturePath))
+            if (TryGetCommandLineValue("-captureGoblin", out string goblinCapturePath))
+            {
+                GoblinEvidenceCapture.Begin(gameObject, sceneCamera, runtimeRoot.Find("Player"), runController, goblinCapturePath);
+            }
+            else if (TryGetCommandLineValue("-captureForest", out string forestCapturePath))
             {
                 ForestEvidenceCapture.Begin(gameObject, sceneCamera, runtimeRoot.Find("Player"), forestCapturePath);
             }
@@ -369,8 +373,8 @@ namespace CoffeeGame.Bootstrap
                 player.Resources,
                 player.Motor,
                 player.Combat,
-                claimId => CreateSlime(claimId, player.Root.transform, player.Health),
-                () => slimeSpawnIndex = 0);
+                claimId => CreateEnemy(claimId, player.Root.transform, player.Health),
+                () => enemySpawnIndex = 0);
 
             CombatSliceHud hud = gameObject.AddComponent<CombatSliceHud>();
             hud.Initialize(
@@ -398,6 +402,14 @@ namespace CoffeeGame.Bootstrap
 
         private void EnsurePlayerProfileLoaded()
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (HasCommandLineFlag("-captureGoblin"))
+            {
+                sessionProgression = new PlayerProgression();
+                Debug.Log("CoffeeGAME goblin evidence uses in-memory progression; profile/cloud writes disabled.");
+                return;
+            }
+#endif
             if (sessionProgression != null)
             {
                 return;
@@ -434,6 +446,13 @@ namespace CoffeeGame.Bootstrap
 
         private bool TrySavePlayerProfile(out string message)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (HasCommandLineFlag("-captureGoblin"))
+            {
+                message = "Goblin evidence: in-memory progression only.";
+                return true;
+            }
+#endif
             if (profileStore == null || sessionProgression == null)
             {
                 message = "プロフィール保存がまだ初期化されていません。";
@@ -830,12 +849,44 @@ namespace CoffeeGame.Bootstrap
         }
 #endif
 
-        private SlimeController CreateSlime(string claimId, Transform target, Health targetHealth)
+        private CombatEnemy CreateEnemy(string claimId, Transform target, Health targetHealth)
+        {
+            return EnemyEncounterRoster.At(enemySpawnIndex) == EnemyKind.Goblin
+                ? CreateGoblin(claimId, target, targetHealth)
+                : CreateSlime(claimId, target, targetHealth);
+        }
+
+        private CombatEnemy CreateGoblin(string claimId, Transform target, Health targetHealth)
+        {
+            var root = new GameObject("Forest Goblin");
+            root.transform.SetParent(runtimeRoot, false);
+            int index = enemySpawnIndex++;
+            root.transform.position = EnemySpawnPoints[index % EnemySpawnPoints.Length];
+            var collider = root.AddComponent<CapsuleCollider>();
+            collider.isTrigger = true;
+            collider.radius = 0.3f;
+            collider.height = 1.15f;
+            collider.center = new Vector3(0f, 0.575f, 0f);
+            var health = root.AddComponent<Health>();
+            health.Initialize(GoblinController.MaximumHealth);
+            var slot = new GameObject("Goblin VisualSlot");
+            slot.transform.SetParent(root.transform, false);
+            var visual = slot.AddComponent<GoblinCharacterVisual>();
+            visual.Initialize();
+            root.AddComponent<GoblinController>().Initialize(tuning, target, targetHealth,
+                health, collider, visual, index);
+            var enemy = root.AddComponent<CombatEnemy>();
+            enemy.Initialize(claimId, EnemyKind.Goblin, health, GoblinController.Reward);
+            Debug.Log("CoffeeGAME goblin-v8 spawned: Meshy forest goblin, club, animated combat.");
+            return enemy;
+        }
+
+        private CombatEnemy CreateSlime(string claimId, Transform target, Health targetHealth)
         {
             var slime = new GameObject("Slime");
             slime.transform.SetParent(runtimeRoot, false);
-            slime.transform.position = SlimeSpawnPoints[slimeSpawnIndex % SlimeSpawnPoints.Length];
-            slimeSpawnIndex++;
+            slime.transform.position = EnemySpawnPoints[enemySpawnIndex % EnemySpawnPoints.Length];
+            enemySpawnIndex++;
 
             CapsuleCollider collider = slime.AddComponent<CapsuleCollider>();
             collider.isTrigger = true;
@@ -862,7 +913,9 @@ namespace CoffeeGame.Bootstrap
 
             SlimeController controller = slime.AddComponent<SlimeController>();
             controller.Initialize(claimId, tuning, target, targetHealth, health, collider, visual);
-            return controller;
+            var enemy = slime.AddComponent<CombatEnemy>();
+            enemy.Initialize(claimId, EnemyKind.Slime, health, tuning.SlimeReward);
+            return enemy;
         }
 
         private static void AttachTrialHeldSwordSet(ICharacterVisual visual)

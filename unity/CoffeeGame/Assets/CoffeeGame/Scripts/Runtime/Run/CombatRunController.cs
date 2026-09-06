@@ -32,9 +32,9 @@ namespace CoffeeGame.Run
         private PlayerResources playerResources;
         private PlayerMotor3D playerMotor;
         private PlayerCombatController playerCombat;
-        private Func<string, SlimeController> spawnSlime;
-        private Action resetSlimeSequence;
-        private SlimeController currentSlime;
+        private Func<string, CombatEnemy> spawnEnemy;
+        private Action resetEnemySequence;
+        private CombatEnemy currentEnemy;
         private Coroutine spawnRoutine;
         private string runId;
         private int spawnSequence;
@@ -61,6 +61,7 @@ namespace CoffeeGame.Run
         public Health PlayerHealth => playerHealth;
         public PlayerResources PlayerResources => playerResources;
         public PlayerCombatController PlayerCombat => playerCombat;
+        public CombatEnemy CurrentEnemy => currentEnemy;
 
         public void Initialize(
             CombatTuning combatTuning,
@@ -71,8 +72,8 @@ namespace CoffeeGame.Run
             PlayerResources resources,
             PlayerMotor3D motor,
             PlayerCombatController combat,
-            Func<string, SlimeController> slimeFactory,
-            Action resetSlimeSpawnSequence)
+            Func<string, CombatEnemy> enemyFactory,
+            Action resetEnemySpawnSequence)
         {
             tuning = combatTuning;
             Progression = playerProgression ?? throw new ArgumentNullException(nameof(playerProgression));
@@ -82,8 +83,8 @@ namespace CoffeeGame.Run
             playerResources = resources;
             playerMotor = motor;
             playerCombat = combat;
-            spawnSlime = slimeFactory;
-            resetSlimeSequence = resetSlimeSpawnSequence;
+            spawnEnemy = enemyFactory;
+            resetEnemySequence = resetEnemySpawnSequence;
             playerHealth.Died += HandlePlayerDied;
             input.RebindFinished += HandleRebindFinished;
             EnterReadyMode();
@@ -135,11 +136,11 @@ namespace CoffeeGame.Run
                 StopCoroutine(spawnRoutine);
                 spawnRoutine = null;
             }
-            RemoveCurrentSlime();
+            RemoveCurrentEnemy();
 
             runId = Guid.NewGuid().ToString("N");
             spawnSequence = 0;
-            resetSlimeSequence?.Invoke();
+            resetEnemySequence?.Invoke();
             Kills = 0;
             playerMotor.ResetMotor(new Vector3(-1.6f, 0.05f, 0f));
             playerMotor.CanMove = true;
@@ -148,9 +149,9 @@ namespace CoffeeGame.Run
 
             Mode = CombatRunMode.Playing;
             input.EnableBattle();
-            LastEvent = "スライムを倒そう";
+            LastEvent = "森の魔物を倒そう";
             audioDirector.StartMusic();
-            SpawnNextSlime();
+            SpawnNextEnemy();
             StateChanged?.Invoke();
         }
 
@@ -381,7 +382,7 @@ namespace CoffeeGame.Run
             StateChanged?.Invoke();
         }
 
-        private void SpawnNextSlime()
+        private void SpawnNextEnemy()
         {
             if (Mode != CombatRunMode.Playing)
             {
@@ -389,23 +390,23 @@ namespace CoffeeGame.Run
             }
 
             spawnSequence++;
-            string claimId = $"enemy:{runId}:slime:{spawnSequence}";
-            currentSlime = spawnSlime(claimId);
-            currentSlime.Defeated += HandleSlimeDefeated;
-            LastEvent = $"スライム {Kills + 1}";
+            string claimId = $"enemy:{runId}:encounter:{spawnSequence}";
+            currentEnemy = spawnEnemy(claimId);
+            currentEnemy.Defeated += HandleEnemyDefeated;
+            LastEvent = $"{currentEnemy.DisplayName} {Kills + 1}";
             StateChanged?.Invoke();
         }
 
-        private void HandleSlimeDefeated(SlimeController slime)
+        private void HandleEnemyDefeated(CombatEnemy enemy)
         {
-            if (slime == null || slime != currentSlime || Mode != CombatRunMode.Playing)
+            if (enemy == null || enemy != currentEnemy || Mode != CombatRunMode.Playing)
             {
                 return;
             }
 
             int previousLevel = Progression.Level;
-            RewardBundle reward = tuning.SlimeReward;
-            bool applied = Progression.TryApplyReward(slime.ClaimId, reward);
+            RewardBundle reward = enemy.Reward;
+            bool applied = Progression.TryApplyReward(enemy.ClaimId, reward);
             if (!applied)
             {
                 return;
@@ -413,7 +414,8 @@ namespace CoffeeGame.Run
 
             Kills++;
             audioDirector.Play(CombatSound.Reward, 0.62f);
-            LastEvent = $"+EXP {reward.Experience}  +Gold {reward.Gold}  +スライムゼリー {reward.SlimeJelly}";
+            LastEvent = $"+EXP {reward.Experience}  +Gold {reward.Gold}" +
+                (reward.SlimeJelly > 0 ? $"  +スライムゼリー {reward.SlimeJelly}" : string.Empty);
 
             int gainedLevels = Progression.Level - previousLevel;
             if (gainedLevels > 0)
@@ -423,10 +425,10 @@ namespace CoffeeGame.Run
                 LastEvent = $"LEVEL UP!  Lv.{Progression.Level}";
             }
 
-            currentSlime.Defeated -= HandleSlimeDefeated;
+            currentEnemy.Defeated -= HandleEnemyDefeated;
             spawnRoutine = IsRivalEncounterMilestone(Kills, RivalEncounterIntervalKills)
-                ? StartCoroutine(EnterRivalEncounterAfterDelay(slime))
-                : StartCoroutine(RespawnAfterDelay(slime));
+                ? StartCoroutine(EnterRivalEncounterAfterDelay(enemy))
+                : StartCoroutine(RespawnAfterDelay(enemy));
             StateChanged?.Invoke();
         }
 
@@ -448,7 +450,7 @@ namespace CoffeeGame.Run
             playerMotor.CanMove = true;
             input.RestoreBattleAfterTextEntry();
             LastEvent = "ライバルは次の勝負を予告して去っていった";
-            SpawnNextSlime();
+            SpawnNextEnemy();
             StateChanged?.Invoke();
         }
 
@@ -482,26 +484,26 @@ namespace CoffeeGame.Run
             playerCombat.SpecialChargeSpeedMultiplier = derived.SpecialChargeSpeedMultiplier;
         }
 
-        private IEnumerator RespawnAfterDelay(SlimeController defeated)
+        private IEnumerator RespawnAfterDelay(CombatEnemy defeated)
         {
-            yield return new WaitForSeconds(0.58f);
+            yield return new WaitForSeconds(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
             if (defeated != null)
             {
                 Destroy(defeated.gameObject);
             }
-            currentSlime = null;
+            currentEnemy = null;
             spawnRoutine = null;
-            SpawnNextSlime();
+            SpawnNextEnemy();
         }
 
-        private IEnumerator EnterRivalEncounterAfterDelay(SlimeController defeated)
+        private IEnumerator EnterRivalEncounterAfterDelay(CombatEnemy defeated)
         {
-            yield return new WaitForSeconds(0.58f);
+            yield return new WaitForSeconds(defeated != null ? defeated.DefeatDisplaySeconds : 0.58f);
             if (defeated != null)
             {
                 Destroy(defeated.gameObject);
             }
-            currentSlime = null;
+            currentEnemy = null;
             spawnRoutine = null;
 
             if (Mode != CombatRunMode.Playing)
@@ -554,16 +556,16 @@ namespace CoffeeGame.Run
             StateChanged?.Invoke();
         }
 
-        private void RemoveCurrentSlime()
+        private void RemoveCurrentEnemy()
         {
-            if (currentSlime == null)
+            if (currentEnemy == null)
             {
                 return;
             }
 
-            currentSlime.Defeated -= HandleSlimeDefeated;
-            Destroy(currentSlime.gameObject);
-            currentSlime = null;
+            currentEnemy.Defeated -= HandleEnemyDefeated;
+            Destroy(currentEnemy.gameObject);
+            currentEnemy = null;
         }
 
         private void OnDestroy()
@@ -577,7 +579,7 @@ namespace CoffeeGame.Run
             {
                 input.RebindFinished -= HandleRebindFinished;
             }
-            RemoveCurrentSlime();
+            RemoveCurrentEnemy();
         }
     }
 }
