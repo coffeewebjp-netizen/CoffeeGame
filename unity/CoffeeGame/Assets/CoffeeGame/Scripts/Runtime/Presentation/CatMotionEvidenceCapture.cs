@@ -51,6 +51,7 @@ namespace CoffeeGame.Presentation
             var camera = Camera.main;
             Vector3 center = cat.transform.position + Vector3.up * .65f;
             Vector3 view = side ? Vector3.Cross(Vector3.up, cat.Motor.Facing) : cat.Motor.Facing;
+            if(name.Contains("strike-detail")||name=="20-earth-crouch-detail") view=-view;
             camera.transform.position = center + view * 2.7f + Vector3.up * .28f;
             camera.transform.LookAt(center); camera.fieldOfView = 34; camera.orthographicSize = .92f;
             if (name.Contains("thunder") || name == "20-earth-wave")
@@ -75,6 +76,15 @@ namespace CoffeeGame.Presentation
                 File.WriteAllBytes(Path.Combine(output, name + ".png"), pixels.EncodeToPNG());
             }
             finally { RenderTexture.active = previous; Destroy(target); Destroy(pixels); }
+        }
+        // Supplement the unmodified battle view with pose details. Hide only
+        // enemy renderers for this single render; simulation and damage stay live.
+        private void CapturePoseDetail(string name)
+        {
+            var renderers=FindObjectsByType<Health>().Where(h=>h.Team==DamageTeam.Enemy)
+                .SelectMany(h=>h.GetComponentsInChildren<Renderer>()).Where(r=>r.enabled).Distinct().ToArray();
+            try { foreach(var r in renderers) r.enabled=false; Capture(name,true); }
+            finally { foreach(var r in renderers) if(r!=null) r.enabled=true; }
         }
         private IEnumerator Run()
         {
@@ -121,6 +131,8 @@ namespace CoffeeGame.Presentation
             cat.Motor.Commands = new ActorCommandFrame { Move = Vector2.down, WorldSpace = true };
             while (!cat.Motor.IsRunning) yield return null;
             yield return new WaitForSeconds(.1f); Capture("03-run", true); Check(State("Run"), "run accepted by actual motor");
+            for(int phase=1;phase<=3;phase++)
+            { yield return new WaitForSeconds(.135f); Capture("03-run-phase-"+phase,true); }
             cat.Motor.Commands = default; cat.Motor.ResetMotor(new Vector3(0, .05f, 0)); yield return new WaitForSeconds(.3f);
             cat.Motor.Commands = new ActorCommandFrame { Jump = true }; yield return null; yield return null; cat.Motor.Commands = default;
             yield return new WaitForSeconds(.16f); Capture("04-jump", true); Check(!cat.Motor.IsGrounded && State("Jump"), "ascending jump pose");
@@ -252,9 +264,22 @@ namespace CoffeeGame.Presentation
             cat.Motor.Commands = new ActorCommandFrame { Move = Vector2.down, WorldSpace = true };
             yield return null; yield return null;
             Check(cat.Motor.IsPlunging, "jump plus down starts cat earth drop");
+            // Coroutine Update precedes Animator evaluation. Inspect the pose
+            // rendered this frame, not the outgoing jump from the previous frame.
+            yield return new WaitForEndOfFrame();
+            while(cat.Motor.IsPlunging && visual.Animator.GetCurrentAnimatorStateInfo(0).normalizedTime<.12f)
+                yield return new WaitForEndOfFrame();
+            var punchBones=visual.ModelRoot.GetComponentsInChildren<Transform>();
+            var punch=punchBones.First(b=>b.name=="RightHand").position-punchBones.First(b=>b.name=="RightArm").position;
+            Debug.Log("CAT_IMPACT direction="+punch.normalized+" clipTime="+visual.Animator.GetCurrentAnimatorStateInfo(0).normalizedTime+" speed="+visual.Animator.speed+" grounded="+cat.Motor.IsGrounded);
+            CapturePoseDetail("19-earth-contact-check");
+            Check(!cat.Motor.IsGrounded&&Vector3.Dot(punch.normalized,Vector3.down)>.85f,"right arm strikes downward before low-jump ground contact");
             Capture("19-earth-drop", true); cat.Motor.Commands = default;
+            for(int frame=0;frame<3;frame++)
+            { yield return null; if(cat.Motor.IsPlunging) CapturePoseDetail("19-earth-strike-detail-"+frame); }
             while (!cat.Motor.IsGrounded) yield return null;
             yield return new WaitForSeconds(.14f); Capture("20-earth-crouch", true);
+            CapturePoseDetail("20-earth-crouch-detail");
             Check(State("CatEarthLand") && !cat.Motor.CanAct, "earth impact uses deep crouch and recovery lock");
             Check(enemies.All(e => e.Current < 500), "earth ripple damages enemies on both sides");
             Check(FindObjectsByType<CatElementVfx>().Any(f => f.Kind == CatElementEffect.EarthWave && f.Radius == 2.6f), "earth wave contains expanding rock fragments");

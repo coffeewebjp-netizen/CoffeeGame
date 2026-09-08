@@ -451,7 +451,8 @@ namespace CoffeeGame.Presentation
             {
                 animator.speed = 1f;
             }
-            float playCrossFade = action == CharacterAction.Dodge
+            float playCrossFade = action == CharacterAction.Dodge ||
+                (modelStyle == CharacterModelStyle.SilverCat && action == CharacterAction.Plunge)
                 ? 0f
                 : currentState == CharacterAction.Dodge &&
                   (action == CharacterAction.Idle || action == CharacterAction.Land)

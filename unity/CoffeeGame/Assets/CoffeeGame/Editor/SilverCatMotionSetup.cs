@@ -23,6 +23,24 @@ namespace CoffeeGame.Editor
         [MenuItem("CoffeeGAME/Assets/Author Cat Motion V14", priority = 71)]
         public static void Configure() => Configure(false);
         public static void ConfigureElements() => Configure(true);
+        public static void ConfigureImpactV19()
+        {
+            CatMeshyLocomotionSetup.ConfigureSprintOnly();
+            var model=UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(SilverCatAssetSetup.ModelPath));
+            try
+            {
+                foreach(var animator in model.GetComponentsInChildren<Animator>()) animator.enabled=false;
+                var skin=model.GetComponentInChildren<SkinnedMeshRenderer>();
+                foreach(var pair in skin.bones.Select((b,i)=>new {bone=b,m=skin.transform.localToWorldMatrix*skin.sharedMesh.bindposes[i].inverse})
+                    .OrderBy(p=>AnimationUtility.CalculateTransformPath(p.bone,model.transform).Count(c=>c=='/')))
+                    pair.bone.SetPositionAndRotation(pair.m.GetColumn(3),pair.m.rotation);
+                var rig=new Rig(model);
+                CatMeshyLocomotionSetup.Author(model,"Plunge",.32f,false,p=>{rig.Reset();rig.EarthDrop(p);});
+                CatMeshyLocomotionSetup.Author(model,"CatEarthLand",1f,false,p=>{rig.Reset();rig.EarthLand(p);});
+                AssetDatabase.SaveAssets();
+            }
+            finally { UnityEngine.Object.DestroyImmediate(model); }
+        }
         private static void Configure(bool elements)
         {
             string folder = elements ? ElementFolder : Folder;
@@ -165,9 +183,11 @@ namespace CoffeeGame.Editor
                     throw new InvalidOperationException("Missing or empty cat motion " + stateName);
             }
         }
-        public static void RenderGallery()
+        public static void RenderGallery() => RenderGallery(false);
+        public static void RenderImpactV19() => RenderGallery(true);
+        private static void RenderGallery(bool impact)
         {
-            Validate();
+            if(impact) ValidateElements(); else Validate();
             var host = new GameObject("Cat V14 preview");
             var model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(SilverCatAssetSetup.ModelPath), host.transform);
             var camera = new GameObject("Cat preview camera").AddComponent<Camera>();
@@ -176,26 +196,28 @@ namespace CoffeeGame.Editor
             var light = new GameObject("Cat preview light").AddComponent<Light>();
             light.type = LightType.Directional; light.intensity = 1.5f; light.transform.rotation = Quaternion.Euler(35, -35, 0);
             var visual = host.AddComponent<ModelCharacterVisual>();
-            visual.Initialize(model.transform, AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath), CharacterModelStyle.SilverCat, camera);
+            visual.Initialize(model.transform, AssetDatabase.LoadAssetAtPath<AnimatorController>(impact?ElementControllerPath:ControllerPath), CharacterModelStyle.SilverCat, camera);
             visual.Animator.enabled = false;
             var skin = model.GetComponentInChildren<SkinnedMeshRenderer>();
             var proxy = new GameObject("Baked preview"); proxy.transform.SetParent(skin.transform, false);
             var mesh = new Mesh(); proxy.AddComponent<MeshFilter>().sharedMesh = mesh;
             proxy.AddComponent<MeshRenderer>().sharedMaterials = skin.sharedMaterials; skin.enabled = false;
-            string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../../art/3d/trials/meshy-rival/motion-v14/gallery"));
+            string output = Path.GetFullPath(Path.Combine(Application.dataPath, impact?"../../../art/3d/trials/meshy-rival/motion-v19/gallery":"../../../art/3d/trials/meshy-rival/motion-v14/gallery"));
             Directory.CreateDirectory(output);
             var target = new RenderTexture(384, 512, 24); target.Create(); var previous = RenderTexture.active;
             try
             {
-                foreach (var clip in AssetDatabase.FindAssets("t:AnimationClip", new[] { Folder }).Select(g => AssetDatabase.LoadAssetAtPath<AnimationClip>(AssetDatabase.GUIDToAssetPath(g))))
+                foreach (var clip in AssetDatabase.FindAssets("t:AnimationClip", new[] { impact?ElementFolder:Folder }).Select(g => AssetDatabase.LoadAssetAtPath<AnimationClip>(AssetDatabase.GUIDToAssetPath(g)))
+                    .Where(c=>!impact||c.name=="Run"||c.name=="Plunge"||c.name=="CatEarthLand"))
                 {
                     var sheet = new Texture2D(1536, 512, TextureFormat.RGB24, false);
                     for (int frame = 0; frame < 4; frame++)
                     {
-                        clip.SampleAnimation(model, clip.length * (frame == 0 ? .05f : frame == 2 ? .92f : .50f));
+                        clip.SampleAnimation(model, impact? .20f : clip.length * (frame == 0 ? .05f : frame == 2 ? .92f : .50f));
                         skin.BakeMesh(mesh, true);
                         Debug.Log($"CATPOSE {clip.name} {frame} hand={model.GetComponentsInChildren<Transform>().First(t => t.name == "RightHand").position} mesh={mesh.bounds} scale={skin.transform.lossyScale}");
                         camera.transform.position = frame == 3 ? new Vector3(2.5f, .73f, -.4f) : new Vector3(.3f, .73f, -2.5f);
+                        if(impact) camera.transform.position=new Vector3(frame==0?2.5f:frame==1?-2.5f:0,.73f,frame==2?-2.5f:frame==3?2.5f:0);
                         camera.transform.LookAt(new Vector3(0, .65f, 0));
                         RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
                         RenderTexture.active = target;
@@ -333,16 +355,27 @@ namespace CoffeeGame.Editor
             }
             public void EarthDrop(float p)
             {
-                float fold=S(p); Body(.06f,28,0); Legs(.06f,-.04f,.18f,.13f,.14f);
-                Hand("Left",new Vector3(-.18f,.44f-.13f*fold,.27f));
-                Hand("Right",new Vector3(.18f,.44f-.13f*fold,.27f));
+                // Down input immediately starts fast descent; finish the strike in
+                // the first 25ms so a low jump does not land during the wind-up.
+                float strike=S(p/.08f);
+                Body(.06f,Mathf.Lerp(20,48,strike),Mathf.Lerp(-18,8,strike));
+                Legs(.04f,-.10f,.24f,.16f,.16f);
+                this["Head"].rotation=Quaternion.AngleAxis(24*strike,Vector3.right)*this["Head"].rotation;
+                Hand("Left",new Vector3(-.23f,.58f,.13f));
+                Vector3 shoulder=this["RightArm"].position;
+                float reach=Vector3.Distance(shoulder,this["RightForeArm"].position)+Vector3.Distance(this["RightForeArm"].position,this["RightHand"].position);
+                Vector3 windup=shoulder+new Vector3(.05f,.12f,-.16f);
+                Vector3 impact=shoulder+Vector3.down*(reach*.96f);
+                Hand("Right",Vector3.Lerp(windup,impact,strike)/H);
             }
             public void EarthLand(float p)
             {
                 float weight=1-S((p-.65f)/.35f);
-                Body(.025f+.25f*weight,48*weight); Legs(.09f,-.04f,0,0,.155f);
-                Hand("Left",new Vector3(-.22f,Mathf.Lerp(.43f,.12f,weight),.27f));
-                Hand("Right",new Vector3(.22f,Mathf.Lerp(.43f,.12f,weight),.27f));
+                Body(.025f+.29f*weight,55*weight); Legs(.10f,-.075f,0,0,.17f);
+                this["Head"].rotation=Quaternion.AngleAxis(24*weight,Vector3.right)*this["Head"].rotation;
+                Hand("Left",new Vector3(-.23f,.43f,.13f));
+                Vector3 shoulder=this["RightArm"].position;
+                Hand("Right",Vector3.Lerp(new Vector3(.17f,.43f,.10f),new Vector3(shoulder.x/H,.075f,shoulder.z/H),weight));
             }
             public void Landing(float p)
             {

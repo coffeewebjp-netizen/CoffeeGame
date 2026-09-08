@@ -46,6 +46,30 @@ namespace CoffeeGame.Tests
             Assert.That(Bone("Hips").position.y,Is.GreaterThan(standing-.08f));
         }
 
+        [Test] public void SprintCarriesChestAheadOfPelvisAndTrailingFootThroughoutStride()
+        {
+            for(int i=0;i<12;i++)
+            {
+                Sample("Run",i*.54f/12);
+                Vector3 hip=Bone("Hips").position, head=Bone("Head").position;
+                float trailing=Mathf.Min(Bone("LeftFoot").position.z,Bone("RightFoot").position.z);
+                Assert.That(head.z-hip.z,Is.GreaterThan(.18f),"forward torso at phase "+i);
+                Assert.That(hip.z-trailing,Is.GreaterThan(.12f),"trailing push-off leg at phase "+i);
+            }
+        }
+
+        [Test] public void EarthDropDrivesRightHandVerticallyBelowShoulder()
+        {
+            Sample("Plunge",0); float start=Bone("RightHand").position.y;
+            foreach(float t in new[]{.18f,.24f,.31f})
+            {
+                Sample("Plunge",t);
+                Vector3 arm=Bone("RightHand").position-Bone("RightArm").position;
+                Assert.That(Vector3.Dot(arm.normalized,Vector3.down),Is.GreaterThan(.9f),"vertical strike at "+t);
+                Assert.That(start-Bone("RightHand").position.y,Is.GreaterThan(.25f));
+            }
+        }
+
         [Test] public void AirWindSweepsTheArmAndKeepsLegsFolded()
         {
             Sample("AirSlash",0); Vector3 hand=Bone("RightHand").position;

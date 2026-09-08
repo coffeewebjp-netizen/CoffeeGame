@@ -13,7 +13,9 @@ namespace CoffeeGame.Editor
         private const string Sources = "Assets/CoffeeGame/Editor/MotionSources/CatV18";
         private const float Fps = 60;
         private static string Leaf(string name) => name.Split('|').Last();
-        public static void Configure()
+        public static void Configure() => Configure(false);
+        public static void ConfigureSprintOnly() => Configure(true);
+        private static void Configure(bool sprintOnly)
         {
             var target = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(SilverCatAssetSetup.ModelPath));
             foreach (var a in target.GetComponentsInChildren<Animator>()) a.enabled = false;
@@ -31,6 +33,7 @@ namespace CoffeeGame.Editor
                     sprint.Sample(.12f,true);
                     airArms=target.GetComponentsInChildren<Transform>().Where(t=>IsArm(t.name)).ToDictionary(t=>t.name,t=>t.localRotation);
                 }
+                if (sprintOnly) { AssetDatabase.SaveAssets(); return; }
                 using (var jump = new Transfer(target,Sources+"/MeshyJump.fbx","MeshyJump",airArms))
                 {
                     // Source frames 29-50: push-off to folded apex. The motor owns height.
@@ -96,7 +99,14 @@ namespace CoffeeGame.Editor
                 // Remove source root travel. Preserve sprint bob; physics controls the jump arc.
                 targets[hipIndex].position=hipRest+new Vector3(0,running?delta.y:0,0);
                 var waist=targets.First(t=>t.name=="Spine02");
-                waist.rotation=Quaternion.AngleAxis(running?20:18,Vector3.right)*waist.rotation;
+                if (running)
+                {
+                    // Pitch the entire native stride about the pelvis: the support and
+                    // push-off legs trail the forward chest instead of staying vertical.
+                    targets[hipIndex].rotation=Quaternion.AngleAxis(28,Vector3.right)*targets[hipIndex].rotation;
+                    targets[hipIndex].position+=Vector3.forward*.09f;
+                }
+                waist.rotation=Quaternion.AngleAxis(running?10:18,Vector3.right)*waist.rotation;
                 if(running)
                 {
                     float floor=targets.Where(t=>t.name=="LeftFoot"||t.name=="RightFoot").Min(t=>t.position.y);
@@ -112,7 +122,7 @@ namespace CoffeeGame.Editor
             }
             public void Dispose()=>UnityEngine.Object.DestroyImmediate(donor);
         }
-        private static void Author(GameObject model,string name,float seconds,bool loop,Action<float> sample)
+        internal static void Author(GameObject model,string name,float seconds,bool loop,Action<float> sample)
         {
             var bones=model.GetComponentsInChildren<Transform>().Where(t=>t!=model.transform&&t.GetComponent<Renderer>()==null).ToArray();
             string[] props={"m_LocalPosition.x","m_LocalPosition.y","m_LocalPosition.z","m_LocalRotation.x","m_LocalRotation.y","m_LocalRotation.z","m_LocalRotation.w"};
