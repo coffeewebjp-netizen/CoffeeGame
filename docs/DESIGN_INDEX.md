@@ -1,5 +1,7 @@
 # Design Index
 
+猫の最新動作と時間停止の修正：[cat-motion-v18.md](cat-motion-v18.md)。音素材の別作業への依頼：[audio-sfx-v18-brief.md](audio-sfx-v18-brief.md)。
+
 CoffeeGAME の設計情報を読むための入口です。
 毎回すべての docs を読まず、触る面だけに進みます。
 

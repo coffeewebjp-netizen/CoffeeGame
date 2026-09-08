@@ -68,8 +68,7 @@ namespace CoffeeGame.Combat
             if (Target == null || worldCamera == null || !Target.IsAlive) return;
             Vector3 point = worldCamera.WorldToScreenPoint(Target.transform.position + Vector3.up * .8f);
             if (point.z <= 0f) return;
-            bool inverted = TimeStopController.Instance != null && TimeStopController.Instance.IsActive;
-            float x = point.x, y = inverted ? point.y : Screen.height - point.y;
+            float x = point.x, y = Screen.height - point.y;
             float size = Mathf.Clamp(Screen.height * .035f, 18f, 38f);
             Color previous = GUI.color;
             GUI.color = new Color(1f, .87f, .34f, .95f);

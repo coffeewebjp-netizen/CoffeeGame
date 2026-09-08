@@ -203,7 +203,6 @@ namespace CoffeeGame.Run
         private ActorCommandFrame HumanCommands()
         {
             Vector2 move = input.Move;
-            if (TimeStopped) move.y = -move.y;
             return new ActorCommandFrame { Move = move, Jump = input.JumpPressed, Dodge = input.DodgePressed,
                 Sword = input.SwordPressed, Magic = input.MagicPressed, Special = input.SpecialPressed,
                 GuardHeld = input.GuardHeld, GuardPressed = input.GuardPressed };

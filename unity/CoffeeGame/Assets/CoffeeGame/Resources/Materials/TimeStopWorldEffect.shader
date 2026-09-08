@@ -58,10 +58,9 @@ Shader "CoffeeGame/TimeStopWorldEffect"
                 float inside = step(0, flipped.y) * step(flipped.y, 1);
                 half3 background = lerp(underneath, turned, inside);
                 half4 actor = SAMPLE_TEXTURE2D(_ActorTex, sampler_ActorTex, input.uv);
-                half4 source = half4(background * (1 - actor.a) + actor.rgb, 1);
-                half luminance = dot(source.rgb, half3(0.2126h, 0.7152h, 0.0722h));
-                half3 gray = lerp(source.rgb, luminance.xxx, .92h * p);
-                return half4(gray, 1.0h);
+                half luminance = dot(background, half3(0.2126h, 0.7152h, 0.0722h));
+                half3 grayBackground = lerp(background, luminance.xxx, p);
+                return half4(grayBackground * (1 - actor.a) + actor.rgb, 1.0h);
             }
             ENDHLSL
         }

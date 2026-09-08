@@ -181,6 +181,26 @@ namespace CoffeeGame.Presentation
             var worldEffect = Camera.main.GetComponent<TimeStopWorldEffect>();
             Check(worldEffect.BackgroundVerticalScale < -.99f && head.position.y > hips.position.y, "background completes flip while cat remains upright");
             Vector3 frozenHero = hero.transform.position;
+            var reader=FindAnyObjectByType<GameInputReader>();
+            var touchOverlays=FindObjectsByType<CoffeeGame.UI.OnScreenTouchControls>().Where(t=>t.enabled).ToArray();
+            foreach(var overlay in touchOverlays) overlay.enabled=false;
+            reader.BeginInputModeSelection();
+            Check(reader.TrySelectInputMode(InputMode.TouchOnScreen,out _),"time stop test enables real touch input route");
+            reader.EnableBattle();reader.SetTouchMove(Vector2.zero);reader.RefreshContextSwitchReleaseGate();party.enabled=true;
+            yield return null;
+            foreach(var direction in new[]{Vector2.up,Vector2.down,Vector2.left,Vector2.right})
+            {
+                reader.SetTouchMove(direction);yield return null;yield return null;
+                Check(Vector2.Distance(cat.Motor.Commands.Move,direction)<.001f && Vector2.Distance(cat.Combat.Commands.Move,direction)<.001f,"time stop preserves human direction "+direction);
+            }
+            reader.SetTouchMove(Vector2.up);yield return null;
+            Vector3 beforeInput=cat.transform.position;
+            Vector3 expected=Vector3.ProjectOnPlane(Camera.main.transform.forward,Vector3.up).normalized;
+            yield return new WaitForSeconds(.15f);
+            Check(Vector3.Dot(cat.transform.position-beforeInput,expected)>.015f,"up input moves camera-forward during full background flip");
+            reader.SetTouchMove(Vector2.zero);party.enabled=false;
+            reader.BeginInputModeSelection();reader.TrySelectInputMode(InputMode.KeyboardMouse,out _);reader.EnableBattle();
+            foreach(var overlay in touchOverlays) overlay.enabled=true;
             cat.Motor.Commands = new ActorCommandFrame { Move = Vector2.right, WorldSpace = true };
             yield return new WaitForSeconds(.3f); cat.Motor.Commands = default;
             Check(hero.transform.position == frozenHero && !stop.IsFrozen(cat.gameObject), "only caster moves in stopped world");

@@ -133,6 +133,34 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(member.Resources.HitPoints, Is.EqualTo(recoveredHp).Within(0.00001));
         }
 
+        [TestCase(0,1)] [TestCase(0,-1)] [TestCase(1,0)] [TestCase(-1,0)]
+        [TestCase(1,1)] [TestCase(-1,-1)]
+        public void HumanMovementKeepsDirectionThroughoutTimeStop(float x,float y)
+        {
+            var cat=party.Actors[PartyMemberIds.CatMage];
+            Assert.That(party.RequestSwitch(cat.MemberId),Is.True);
+            input.BeginInputModeSelection();
+            Assert.That(input.TrySelectInputMode(InputMode.TouchOnScreen,out string message),Is.True,message);
+            input.EnableBattle();
+            input.SetTouchMove(Vector2.zero);input.RefreshContextSwitchReleaseGate();
+            var stop=TimeStopController.EnsureExists();
+            try
+            {
+                var direction=new Vector2(x,y).normalized;
+                for(int phase=0;phase<3;phase++)
+                {
+                    if(phase==1)Assert.That(stop.TryBegin(cat.gameObject,10),Is.True);
+                    if(phase==2)stop.Cancel();
+                    input.SetTouchMove(direction);
+                    typeof(PartyRuntime).GetMethod("Update",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(party,null);
+                    Assert.That(cat.Motor.Commands.Move,Is.EqualTo(direction),"Motor phase "+phase);
+                    Assert.That(cat.Combat.Commands.Move,Is.EqualTo(direction),"Attack/down-input phase "+phase);
+                    Assert.That(cat.Motor.Commands.WorldSpace,Is.False);
+                }
+            }
+            finally {Object.DestroyImmediate(stop.gameObject);}
+        }
+
         private sealed class FakeVisual : ICharacterVisual
         {
             public void ResetState(Vector3 _) { } public void SetFacing(Vector3 _) { }

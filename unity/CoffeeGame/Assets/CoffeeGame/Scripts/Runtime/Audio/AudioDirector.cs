@@ -61,6 +61,7 @@ namespace CoffeeGame.Audio
         private AudioClip landClip;
         private readonly Dictionary<GameObject, AudioSource> actorSources = new Dictionary<GameObject, AudioSource>();
         private readonly Dictionary<CombatSound, AudioClip> proceduralClips = new Dictionary<CombatSound, AudioClip>();
+        private readonly Dictionary<CombatSound, AudioClip> authoredClips = new Dictionary<CombatSound, AudioClip>();
         private float effectsVolume = 0.72f;
 
         public void Initialize()
@@ -81,6 +82,12 @@ namespace CoffeeGame.Audio
             jumpClip = Resources.Load<AudioClip>("Audio/Actions/jump_01_light");
             landClip = Resources.Load<AudioClip>("Audio/Actions/land_01_soft");
             CreateDefenseClips();
+            authoredClips.Clear();
+            foreach (CombatSound sound in Enum.GetValues(typeof(CombatSound)))
+            {
+                var authored = Resources.Load<AudioClip>("Audio/Combat/" + sound);
+                if (authored != null) authoredClips.Add(sound, authored);
+            }
         }
 
         public void StartMusic()
@@ -98,7 +105,8 @@ namespace CoffeeGame.Audio
                 return;
             }
 
-            AudioClip clip = proceduralClips.TryGetValue(sound, out AudioClip procedural) ? procedural
+            bool hasAuthored = authoredClips.TryGetValue(sound, out AudioClip authored);
+            AudioClip clip = hasAuthored ? authored : proceduralClips.TryGetValue(sound, out AudioClip procedural) ? procedural
                 : sound == CombatSound.SwordSwing ? swordSwingClip
                 : sound == CombatSound.Jump ? jumpClip
                 : sound == CombatSound.Land ? landClip
@@ -121,7 +129,7 @@ namespace CoffeeGame.Audio
                     actorSources[owner] = source;
                 }
             }
-            source.pitch = pitchBySound.TryGetValue(sound, out float pitch) ? pitch : 1f;
+            source.pitch = hasAuthored ? 1f : pitchBySound.TryGetValue(sound, out float pitch) ? pitch : 1f;
             source.PlayOneShot(clip, Mathf.Clamp01(volume));
         }
 

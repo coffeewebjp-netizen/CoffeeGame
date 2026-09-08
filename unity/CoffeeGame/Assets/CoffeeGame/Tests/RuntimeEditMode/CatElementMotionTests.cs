@@ -101,6 +101,30 @@ namespace CoffeeGame.Tests
             finally {Object.DestroyImmediate(actor);Object.DestroyImmediate(spell);Object.DestroyImmediate(environment);}
         }
 
+        [Test] public void FullStopGraysAndFlipsOnlyBackgroundPixels()
+        {
+            var material=new Material(Shader.Find("CoffeeGame/TimeStopWorldEffect"));
+            var world=new Texture2D(2,2,TextureFormat.RGBA32,false,true){filterMode=FilterMode.Point};
+            var actors=new Texture2D(2,2,TextureFormat.RGBA32,false,true){filterMode=FilterMode.Point};
+            var output=new RenderTexture(16,16,0,RenderTextureFormat.ARGB32,RenderTextureReadWrite.Linear);
+            var read=new Texture2D(16,16,TextureFormat.RGBA32,false,true);
+            var previous=RenderTexture.active;
+            try
+            {
+                world.SetPixels(new[]{Color.red,Color.red,Color.blue,Color.blue});world.Apply();
+                actors.SetPixels(new[]{Color.green,Color.clear,Color.clear,Color.clear});actors.Apply();
+                material.SetTexture("_ActorTex",actors);material.SetFloat("_Progress",1);
+                Graphics.Blit(world,output,material);RenderTexture.active=output;
+                read.ReadPixels(new Rect(0,0,16,16),0,0);read.Apply();
+                Color actor=read.GetPixel(3,3), lower=read.GetPixel(12,3), upper=read.GetPixel(12,12);
+                Assert.That(actor.g,Is.GreaterThan(.95f));Assert.That(actor.r,Is.LessThan(.02f));Assert.That(actor.b,Is.LessThan(.02f));
+                Assert.That(lower.r,Is.EqualTo(lower.g).Within(.01f));Assert.That(lower.g,Is.EqualTo(lower.b).Within(.01f));
+                Assert.That(upper.r,Is.EqualTo(upper.g).Within(.01f));Assert.That(upper.g,Is.EqualTo(upper.b).Within(.01f));
+                Assert.That(upper.r,Is.GreaterThan(lower.r+.1f),"Red background moves from bottom to top; actor remains bottom left");
+            }
+            finally {RenderTexture.active=previous;Object.DestroyImmediate(material);Object.DestroyImmediate(world);Object.DestroyImmediate(actors);Object.DestroyImmediate(output);Object.DestroyImmediate(read);}
+        }
+
         [Test] public void InterruptDuringTurnRestoresCameraAndAllowsAnotherStop()
         {
             var host=new GameObject("camera"); var camera=host.AddComponent<Camera>();

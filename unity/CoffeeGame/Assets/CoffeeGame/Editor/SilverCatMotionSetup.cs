@@ -144,6 +144,7 @@ namespace CoffeeGame.Editor
                     sourceClips = source.Select(c => Leaf(c.name) + ": " + c.length.ToString("F3") + "s").ToArray(),
                     boneNames = rig.Bones.Select(b => b.name).ToArray(), authored = report.ToArray()
                 }, true));
+                if (elements) CatMeshyLocomotionSetup.Configure();
                 Validate(controllerPath); Debug.Log(elements ? "Cat Elements V17 authored: 18 clips; original V14 preserved." : "Cat Motion V14 authored: 15 clips / 22 states; originals preserved.");
             }
             finally { UnityEngine.Object.DestroyImmediate(model); }
