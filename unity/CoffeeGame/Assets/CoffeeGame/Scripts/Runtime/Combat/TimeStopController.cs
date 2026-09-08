@@ -321,7 +321,8 @@ namespace CoffeeGame.Combat
             IsActive = false;
             remaining = 0f;
             caster = null;
-            worldEffect?.SetActive(false);
+            if (reason == TimeStopEndReason.Completed) worldEffect?.SetActive(false);
+            else worldEffect?.StopImmediately();
             UpdateShaderClock();
             finishing = false;
             Ended?.Invoke(this, reason);

@@ -91,6 +91,18 @@ namespace CoffeeGame.Editor
 
         public static void BuildAndroidMobileV16NoSetup() => BuildAndroidMobileNoSetup("MobileV16");
 
+        public static void BuildCatElementsV17NoSetup()
+        {
+            SilverCatMotionSetup.ValidateElements();
+            BuildDiagnosticNoSetup("Windows-CatElementsV17", "CoffeeGAME-CatElementsV17.exe");
+        }
+
+        public static void BuildAndroidCatElementsV17NoSetup()
+        {
+            SilverCatMotionSetup.ValidateElements();
+            BuildAndroidMobileNoSetup("CatElementsV17");
+        }
+
         // Build the accepted scene/assets without regenerating any character.
         // Temporary development settings are restored even after a build failure.
         public static void BuildAndroidMobileV15NoSetup() => BuildAndroidMobileNoSetup("MobileV15");

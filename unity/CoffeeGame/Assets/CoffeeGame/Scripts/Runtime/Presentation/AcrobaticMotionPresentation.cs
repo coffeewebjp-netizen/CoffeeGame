@@ -69,7 +69,7 @@ namespace CoffeeGame.Presentation
         public bool UseRunningSpinFallback => clockOwner != null &&
             clockOwner.TryGetComponent<PlayerCombatController>(out var combat) && combat.IsCatMage &&
             (animator == null || animator.runtimeAnimatorController == null ||
-             animator.runtimeAnimatorController.name != "SilverCatMotionV14");
+             (animator.runtimeAnimatorController.name != "SilverCatMotionV14" && animator.runtimeAnimatorController.name != "SilverCatElementsV17"));
 
         public void Initialize(Transform characterVisualRoot, GameObject owner)
         {

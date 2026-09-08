@@ -29,7 +29,10 @@ namespace CoffeeGame.UI
             switch (action)
             {
                 case GameInputSemantic.Sword:
-                    if (cat) { Star(mesh, Vector2.zero, .31f); Star(mesh, new Vector2(-.29f, .24f), .11f); Star(mesh, new Vector2(.3f, -.22f), .1f); }
+                    if (cat) {
+                        Polygon(mesh,new Vector2(0,.4f),new Vector2(.08f,.13f),new Vector2(.26f,.22f),new Vector2(.29f,-.13f),new Vector2(.14f,-.33f),new Vector2(-.12f,-.34f),new Vector2(-.3f,-.1f),new Vector2(-.2f,.18f));
+                        Line(mesh,-.06f,-.2f,.02f,.03f,.045f);
+                    }
                     else {
                         Polygon(mesh, new Vector2(-.16f,-.07f), new Vector2(.24f,.35f), new Vector2(.37f,.39f), new Vector2(.31f,.24f), new Vector2(-.08f,-.16f));
                         Line(mesh, -.25f, -.04f, .02f, -.3f, .07f); Line(mesh, -.14f, -.2f, -.3f, -.36f, .085f);
@@ -45,7 +48,7 @@ namespace CoffeeGame.UI
                     Path(mesh,.065f,new Vector2(.05f,.25f),new Vector2(.33f,0),new Vector2(.05f,-.25f));
                     Line(mesh,-.37f,.12f,-.21f,.12f,.035f); Line(mesh,-.4f,-.1f,-.25f,-.1f,.035f); break;
                 case GameInputSemantic.Magic:
-                    if (cat) { Arc(mesh,.34f,0,360,.025f); Star(mesh,Vector2.zero,.28f); }
+                    if (cat) { Arc(mesh,.35f,0,360,.025f); Polygon(mesh,new Vector2(.04f,.32f),new Vector2(-.2f,-.02f),new Vector2(-.02f,-.02f),new Vector2(-.08f,-.33f),new Vector2(.23f,.07f),new Vector2(.05f,.07f)); }
                     else for (int i=0;i<6;i++) {
                         float angle=i*Mathf.PI/3; Vector2 tip=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*.34f;
                         Segment(mesh,Vector2.zero,tip,.037f);

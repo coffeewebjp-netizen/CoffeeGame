@@ -105,6 +105,7 @@ namespace CoffeeGame.UI
                 icons[button.Action].color = Color.Lerp(new Color(.95f,.96f,.94f, special && !ready ? .5f : .96f),accent,held || ready ? 1 : 0);
                 rings[button.Action].color = held || ready ? accent : new Color(.91f,.94f,.93f,primary ? .72f : .32f);
                 var label = buttonLabels[button.Action]; label.text = Label(button.Action, cat, locked);
+                if (cat && button.Action == GameInputSemantic.Sword && !run.Party.Active.Motor.IsGrounded) label.text = "風刃";
                 label.fontSize = Mathf.Max(10, Mathf.RoundToInt(11 * layout.Scale));
                 label.color = held || ready ? accent : new Color(.92f,.94f,.95f,.78f);
                 if(special) {
@@ -128,10 +129,10 @@ namespace CoffeeGame.UI
             switch (action)
             {
                 case GameInputSemantic.Jump: return "跳ぶ";
-                case GameInputSemantic.Sword: return cat ? "連弾" : "斬る";
+                case GameInputSemantic.Sword: return cat ? "炎弾" : "斬る";
                 case GameInputSemantic.Dodge: return "回避";
                 case GameInputSemantic.Guard: return "防御";
-                case GameInputSemantic.Magic: return cat ? "大魔法" : "魔法";
+                case GameInputSemantic.Magic: return cat ? "落雷" : "魔法";
                 case GameInputSemantic.Special: return cat ? "時止め" : "必殺";
                 case GameInputSemantic.LockOn: return locked ? "解除" : "固定";
                 case GameInputSemantic.SwitchCharacter: return "切替";

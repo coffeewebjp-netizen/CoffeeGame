@@ -24,7 +24,7 @@ namespace CoffeeGame.Presentation
         {
             var capture = host.AddComponent<CatMotionEvidenceCapture>(); capture.run = run; capture.output = output;
             Application.runInBackground = true; Directory.CreateDirectory(output);
-            capture.deadline = Time.realtimeSinceStartup + 100;
+            capture.deadline = Time.realtimeSinceStartup + 160;
             capture.StartCoroutine(capture.Guard(capture.Run()));
         }
         private void Check(bool value, string label) { if (!value) throw new InvalidOperationException(label); checks.Add(label); }
@@ -53,12 +53,24 @@ namespace CoffeeGame.Presentation
             Vector3 view = side ? Vector3.Cross(Vector3.up, cat.Motor.Facing) : cat.Motor.Facing;
             camera.transform.position = center + view * 2.7f + Vector3.up * .28f;
             camera.transform.LookAt(center); camera.fieldOfView = 34; camera.orthographicSize = .92f;
+            if (name.Contains("thunder") || name == "20-earth-wave")
+            {
+                camera.transform.position = center + view * 7 + Vector3.up * 5;
+                camera.transform.LookAt(center); camera.orthographicSize = 4;
+            }
+            else if (name.StartsWith("15-time"))
+            {
+                camera.transform.position = center + view * 6 + Vector3.up * .5f;
+                camera.transform.LookAt(center); camera.orthographicSize = 2.2f;
+            }
             camera.rect = new Rect(0, 0, 1, 1); camera.aspect = 1;
             var target = new RenderTexture(900, 900, 24); target.Create(); var previous = RenderTexture.active;
             var pixels = new Texture2D(900, 900, TextureFormat.RGB24, false);
             try
             {
-                RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
+                var effect = camera.GetComponent<TimeStopWorldEffect>();
+                if (effect != null && effect.IsCompositing) effect.CaptureComposite(target);
+                else RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
                 RenderTexture.active = target; pixels.ReadPixels(new Rect(0, 0, 900, 900), 0, 0); pixels.Apply();
                 File.WriteAllBytes(Path.Combine(output, name + ".png"), pixels.EncodeToPNG());
             }
@@ -75,8 +87,8 @@ namespace CoffeeGame.Presentation
             cat = party.Actors[PartyMemberIds.CatMage]; var hero = party.Actors[PartyMemberIds.Hero];
             while (party.Active != cat) yield return null;
             visual = cat.GetComponentInChildren<ModelCharacterVisual>();
-            Check(visual.Animator.runtimeAnimatorController.name == "SilverCatMotionV14", "live factory uses V14 cat controller");
-            Check(!cat.Motor.CanPlunge && cat.Combat.IsCatMage, "cat identity and abilities preserved");
+            Check(visual.Animator.runtimeAnimatorController.name == "SilverCatElementsV17", "live factory uses V17 cat controller");
+            Check(cat.Motor.CanPlunge && cat.Combat.IsCatMage, "cat identity and earth plunge enabled");
             foreach (var enemy in FindObjectsByType<Health>(FindObjectsInactive.Exclude).Where(h => h.Team == DamageTeam.Enemy))
             {
                 if (enemy.TryGetComponent<GoblinController>(out var goblin)) goblin.enabled = false;
@@ -125,6 +137,7 @@ namespace CoffeeGame.Presentation
                 cat.Combat.Commands = new ActorCommandFrame { Sword = true }; yield return null; yield return null; cat.Combat.Commands = default;
                 yield return new WaitForSeconds(.06f); Capture("07-volley-" + stage);
                 Check(State("CatVolley" + stage), "normal magic stage " + stage + " uses distinct hand gesture");
+                Check(FindObjectsByType<CatElementProjectile>().Any(p => p.Element == CatProjectileElement.Fire), "volley " + stage + " creates fire projectiles");
                 yield return new WaitForSeconds(.72f);
             }
             Check(cat.Resources.MagicPoints == mp, "normal magic still costs no MP");
@@ -157,19 +170,34 @@ namespace CoffeeGame.Presentation
                 while (cat.Motor.IsGuardJumping) yield return null;
             }
             yield return new WaitForSeconds(.4f);
+            yield return Guard(ElementSequence(hero));
             cat.Resources.GainStamina(cat.Resources.MaxStamina);
             cat.Combat.Commands = new ActorCommandFrame { Special = true }; yield return null; yield return null; cat.Combat.Commands = default;
-            yield return new WaitForSeconds(.3f); Capture("15-time-stop");
+            yield return new WaitForSeconds(.06f); Capture("15-time-turn-start");
+            yield return new WaitForSeconds(.24f); Capture("15-time-turn-middle");
             var stop = TimeStopController.Instance;
             Check(stop.IsActive && stop.Remaining > 9 && State("CatTimeStop") && !stop.IsFrozen(cat.gameObject) && stop.IsFrozen(hero.gameObject), "ten second stop uses dedicated gesture and selective freeze");
-            stop.Cancel();
+            yield return new WaitForSeconds(.4f); Capture("15-time-stop");
+            var worldEffect = Camera.main.GetComponent<TimeStopWorldEffect>();
+            Check(worldEffect.BackgroundVerticalScale < -.99f && head.position.y > hips.position.y, "background completes flip while cat remains upright");
+            Vector3 frozenHero = hero.transform.position;
+            cat.Motor.Commands = new ActorCommandFrame { Move = Vector2.right, WorldSpace = true };
+            yield return new WaitForSeconds(.3f); cat.Motor.Commands = default;
+            Check(hero.transform.position == frozenHero && !stop.IsFrozen(cat.gameObject), "only caster moves in stopped world");
+            stop.Advance(10);
+            yield return new WaitForSeconds(.28f); Capture("15-time-return-middle");
+            yield return new WaitForSeconds(.5f);
+            Check(!worldEffect.IsCompositing && Camera.main.targetTexture == null, "animated completion restores normal camera target");
+            worldEffect.SetActive(true); worldEffect.Advance(.2f); worldEffect.enabled = false;
+            Check(!worldEffect.IsCompositing && Camera.main.targetTexture == null, "actual player OnDisable restores interrupted compositor");
+            worldEffect.enabled = true;
             cat.Motor.enabled = false; visual.PlayAction(CharacterAction.MagicCharge, 1.2f); yield return new WaitForSeconds(.2f);
             run.Pause(); yield return null; Quaternion pose = head.rotation;
             yield return new WaitForSecondsRealtime(.25f); Check(Quaternion.Angle(pose, head.rotation) < .01f, "pause freezes presentation"); run.Resume();
             visual.ResetState(Vector3.back); cat.Motor.enabled = true; cat.Combat.ResetCombat(); yield return new WaitForSeconds(.4f);
             Check(party.RequestSwitch(PartyMemberIds.Hero), "switch back to heroine after cat actions");
             party.enabled = true; yield return new WaitForSeconds(.8f);
-            Check(party.Active == hero && visual.Animator.runtimeAnimatorController.name == "SilverCatMotionV14" && !cat.Combat.IsManual, "AI cat uses same motion controller");
+            Check(party.Active == hero && visual.Animator.runtimeAnimatorController.name == "SilverCatElementsV17" && !cat.Combat.IsManual, "AI cat uses same motion controller");
             party.enabled = false; cat.Motor.Commands = cat.Combat.Commands = default;
             cat.Motor.enabled = false; visual.ResetState(Vector3.back); visual.PlayAction(CharacterAction.Defeated, .6f);
             yield return new WaitForSeconds(.95f); Capture("16-defeated", true); Check(State("Defeated"), "defeat settles into separate kneeling pose");
@@ -178,6 +206,55 @@ namespace CoffeeGame.Presentation
             Report(); Application.Quit(0);
         }
         [Serializable] private sealed class Result { public string[] passed; }
+
+        private IEnumerator ElementSequence(PartyActor hero)
+        {
+            cat.Combat.ResetCombat(); cat.Motor.ResetMotor(new Vector3(0, .05f, 0));
+            yield return new WaitForSeconds(.4f);
+            cat.Motor.Commands = new ActorCommandFrame { Jump = true };
+            yield return null; yield return null; cat.Motor.Commands = default;
+            yield return new WaitForSeconds(.15f);
+            cat.Combat.Commands = new ActorCommandFrame { Sword = true };
+            yield return null; yield return null; cat.Combat.Commands = default;
+            yield return new WaitForSeconds(.09f); Capture("18-air-wind", true);
+            Check(!cat.Motor.IsGrounded && State("AirSlash"), "air attack uses airborne wind casting pose");
+            Check(FindObjectsByType<CatElementProjectile>().Any(p => p.Element == CatProjectileElement.Wind), "air attack releases piercing wind instead of fire");
+            while (!cat.Motor.IsGrounded) yield return null;
+            yield return new WaitForSeconds(.6f);
+            cat.Combat.ResetCombat(); cat.Motor.ResetMotor(new Vector3(0, .05f, 0));
+            var enemies = FindObjectsByType<Health>(FindObjectsInactive.Exclude).Where(h => h.Team == DamageTeam.Enemy).Take(2).ToArray();
+            Check(enemies.Length == 2, "two enemies available for radial element damage");
+            for (int i = 0; i < enemies.Length; i++) { enemies[i].Initialize(500); enemies[i].transform.position = new Vector3(i == 0 ? -2 : 2, .05f, 0); }
+            Physics.SyncTransforms(); yield return new WaitForSeconds(.3f);
+            cat.Motor.Commands = new ActorCommandFrame { Jump = true };
+            yield return null; yield return null; cat.Motor.Commands = default;
+            yield return new WaitForSeconds(.2f);
+            cat.Motor.Commands = new ActorCommandFrame { Move = Vector2.down, WorldSpace = true };
+            yield return null; yield return null;
+            Check(cat.Motor.IsPlunging, "jump plus down starts cat earth drop");
+            Capture("19-earth-drop", true); cat.Motor.Commands = default;
+            while (!cat.Motor.IsGrounded) yield return null;
+            yield return new WaitForSeconds(.14f); Capture("20-earth-crouch", true);
+            Check(State("CatEarthLand") && !cat.Motor.CanAct, "earth impact uses deep crouch and recovery lock");
+            Check(enemies.All(e => e.Current < 500), "earth ripple damages enemies on both sides");
+            Check(FindObjectsByType<CatElementVfx>().Any(f => f.Kind == CatElementEffect.EarthWave && f.Radius == 2.6f), "earth wave contains expanding rock fragments");
+            yield return new WaitForSeconds(.15f); Capture("20-earth-wave");
+            yield return new WaitForSeconds(1.1f);
+            Check(cat.Motor.CanAct, "earth recovery releases after one second");
+            cat.Combat.ResetCombat(); cat.Motor.ResetMotor(new Vector3(0, .05f, 0));
+            for (int i = 0; i < enemies.Length; i++) { enemies[i].Initialize(500); enemies[i].transform.position = new Vector3(0,.05f,i == 0 ? -2.5f : 2.5f); }
+            hero.Motor.ResetMotor(new Vector3(1.5f,.05f,0)); int heroHealth = hero.Health.Current;
+            Physics.SyncTransforms(); yield return new WaitForSeconds(.3f);
+            cat.Resources.SetCurrentAndMaximum(cat.Resources.MaxMagicPoints, cat.Resources.Stamina,cat.Resources.MaxMagicPoints, cat.Resources.MaxStamina, cat.Resources.MagicRegenPerSecond);
+            cat.Combat.Commands = new ActorCommandFrame { Magic = true };
+            yield return null; yield return null; cat.Combat.Commands = default;
+            yield return new WaitForSeconds(1.31f); Capture("21-thunder-surround");
+            yield return new WaitForSeconds(.2f);
+            Check(enemies.All(e => e.Current < 500) && hero.Health.Current == heroHealth, "thunder strikes front and rear enemies without friendly fire");
+            foreach (var enemy in enemies) enemy.transform.position = new Vector3(10,.05f,10);
+            hero.Motor.ResetMotor(new Vector3(-1.2f,.05f,0));
+            yield return new WaitForSeconds(.7f);
+        }
     }
 }
 #endif

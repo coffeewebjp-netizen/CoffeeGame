@@ -416,8 +416,20 @@ namespace CoffeeGame.Presentation
             finally { stateNames[CharacterAction.MagicRelease] = previous; }
         }
 
+        public void PlayCatEarthLanding(float duration)
+        {
+            if(modelStyle != CharacterModelStyle.SilverCat) return;
+            string previous=ResolveStateName(CharacterAction.Land);
+            stateNames[CharacterAction.Land]="CatEarthLand";
+            try { PlayAction(CharacterAction.Land,duration); }
+            finally { stateNames[CharacterAction.Land]=previous; }
+        }
+
         public void PlayAction(CharacterAction action, float duration)
         {
+            // Keep the aerial wind follow-through until touchdown; gravity still advances normally.
+            if (modelStyle == CharacterModelStyle.SilverCat && actionPlaying &&
+                currentState == CharacterAction.AirSlash && action == CharacterAction.Fall) return;
             if (defeated && action != CharacterAction.Defeated)
             {
                 return;

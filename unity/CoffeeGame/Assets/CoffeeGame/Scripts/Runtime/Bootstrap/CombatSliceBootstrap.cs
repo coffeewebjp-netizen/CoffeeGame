@@ -790,13 +790,15 @@ namespace CoffeeGame.Bootstrap
             slot.transform.SetParent(root.transform, false);
             var model = Instantiate(prefab, slot.transform);
             var visual = slot.AddComponent<ModelCharacterVisual>();
-            visual.Initialize(model.transform, Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCatV14/SilverCatMotionV14"),
+            var catController = Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCatV17/SilverCatElementsV17")
+                ?? Resources.Load<RuntimeAnimatorController>("Animations/Characters/SilverCatV14/SilverCatMotionV14");
+            visual.Initialize(model.transform, catController,
                 CharacterModelStyle.SilverCat, sceneCamera, 1f, 0f);
             var motor = root.AddComponent<PlayerMotor3D>();
             motor.Initialize(input, tuning, sceneCamera, visual);
             var combat = root.AddComponent<PlayerCombatController>();
             combat.IsCatMage = true;
-            motor.CanPlunge = false;
+            motor.CanPlunge = true;
             combat.Initialize(input, tuning, motor, resources, health, visual, audioDirector);
             var actor = root.AddComponent<PartyActor>();
             actor.Initialize(PartyMemberIds.CatMage);

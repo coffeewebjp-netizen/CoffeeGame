@@ -22,6 +22,8 @@ namespace CoffeeGame.Combat
 
         private readonly HashSet<Health> uniqueTargets = new HashSet<Health>();
         private readonly List<IceProjectile> activeProjectiles = new List<IceProjectile>();
+        private readonly List<CatElementProjectile> catProjectiles = new List<CatElementProjectile>();
+        private Coroutine catMagicRoutine;
         private GameInputReader input;
         private CombatTuning tuning;
         private PlayerMotor3D motor;
@@ -61,7 +63,7 @@ namespace CoffeeGame.Combat
         public float SpecialMeterNormalized => tuning != null && resources != null
             ? Mathf.Clamp01(resources.Stamina / Mathf.Max(1, tuning.SpecialStaminaCost)) : 0f;
         public float ChargeNormalized { get; private set; }
-        public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? (IsCatMage ? "星環の大魔法" : "氷魔法") : string.Empty;
+        public string ChargeLabel => chargeKind == ChargeKind.Special ? "居合斬り" : chargeKind == ChargeKind.Magic ? (IsCatMage ? "天雷の環" : "氷魔法") : string.Empty;
 
         public void Initialize(
             GameInputReader inputReader,
@@ -109,6 +111,9 @@ namespace CoffeeGame.Combat
 
         public void CancelPendingActions()
         {
+            if(catMagicRoutine!=null){StopCoroutine(catMagicRoutine);catMagicRoutine=null;}
+            for(int i=catProjectiles.Count-1;i>=0;i--)if(catProjectiles[i]!=null){catProjectiles[i].Destroyed-=HandleCatProjectileDestroyed;Destroy(catProjectiles[i].gameObject);}
+            catProjectiles.Clear();
             defense?.CancelGuard();
             voice?.Stop();
             specialVoice?.Stop();
@@ -194,7 +199,11 @@ namespace CoffeeGame.Combat
         {
             if (IsCatMage)
             {
-                ReleaseCatVolley();
+                if(!motor.IsGrounded) {
+                    if(airSlashUsed)return;
+                    airSlashUsed=true;ReleaseCatWind();
+                }
+                else ReleaseCatVolley();
                 return;
             }
             if (!motor.IsGrounded)
@@ -242,7 +251,7 @@ namespace CoffeeGame.Combat
                     specialVoice?.Play();
                     if (visual is ModelCharacterVisual catVisual) catVisual.PlayCatGesture(0, true);
                     else visual?.PlayAction(CharacterAction.MagicRelease, 0.35f);
-                    CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing, gameObject);
+                    CatElementVfx.Spawn(CatElementEffect.TimeSigil,transform.position,motor.Facing,1.3f,.7f,gameObject);
                 }
                 return;
             }
@@ -276,7 +285,11 @@ namespace CoffeeGame.Combat
             motor.FaceLockedTargetForAction(activeChargeDuration);
             visual?.PlayAction(CharacterAction.MagicCharge, activeChargeDuration);
             audioDirector?.Play(CombatSound.MagicCharge, 0.6f, gameObject);
-            activeMagicChargeEffect = CombatVfxFactory.SpawnMagicCharge(transform, activeChargeDuration);
+            if(IsCatMage) {
+                activeMagicChargeEffect=CatElementVfx.Spawn(CatElementEffect.ThunderCharge,transform.position,motor.Facing,.85f,activeChargeDuration+.1f,gameObject).gameObject;
+                activeMagicChargeEffect.transform.SetParent(transform,true);
+            }
+            else activeMagicChargeEffect = CombatVfxFactory.SpawnMagicCharge(transform, activeChargeDuration);
         }
 
         private void TickCharge(float deltaTime)
@@ -435,7 +448,14 @@ namespace CoffeeGame.Combat
             }
 
             plungeWasActive = false;
-            int hitCount = DamageTargets(tuning.PlungeRadius, CalculateDamage(tuning.PlungeDamage), true, false);
+            float impactRadius = IsCatMage ? 2.6f : tuning.PlungeRadius;
+            int hitCount = DamageTargets(impactRadius, CalculateDamage(tuning.PlungeDamage), true, false);
+            if(IsCatMage) {
+                if(visual is ModelCharacterVisual catVisual)catVisual.PlayCatEarthLanding(Mathf.Max(.18f,tuning.LandingLag));
+                CatElementVfx.Spawn(CatElementEffect.EarthWave,position,Vector3.forward,impactRadius,.85f,gameObject);
+                audioDirector?.Play(CombatSound.PlungeImpact,.92f,gameObject);
+                return;
+            }
             audioDirector?.Play(hitCount > 0 ? CombatSound.SwordHit : CombatSound.Impact, hitCount > 0 ? 1f : 0.7f, gameObject);
             defense?.ShowPlunge(position, tuning.PlungeRadius);
         }
@@ -481,39 +501,69 @@ namespace CoffeeGame.Combat
             for (int i = 0; i < count; i++)
             {
                 Vector3 direction = Quaternion.AngleAxis((i - (count - 1) * 0.5f) * 13f, Vector3.up) * motor.Facing;
-                var root = new GameObject("Cat star bolt");
+                var root = new GameObject("Cat fire bolt");
                 root.transform.position = transform.position + Vector3.up * 0.72f + direction * 0.42f;
-                var bolt = root.AddComponent<IceProjectile>();
-                bolt.Initialize(direction, CalculateDamage(Mathf.Max(1, tuning.SwordDamage)), tuning.MagicProjectileSpeed, gameObject);
-                bolt.Destroyed += HandleProjectileDestroyed;
+                var bolt = root.AddComponent<CatElementProjectile>();
+                bolt.Initialize(CatProjectileElement.Fire,direction, CalculateDamage(Mathf.Max(1, tuning.SwordDamage)), tuning.MagicProjectileSpeed, gameObject);
+                bolt.Destroyed += HandleCatProjectileDestroyed;
                 bolt.Hit += _ => resources.GainStamina(tuning.StaminaPerHit);
-                activeProjectiles.Add(bolt);
+                catProjectiles.Add(bolt);
             }
             attackCooldown = volleyStage == 3 ? 0.62f : 0.38f;
-            audioDirector?.Play(CombatSound.IceRelease, 0.38f, gameObject);
+            audioDirector?.Play(CombatSound.FireRelease, 0.55f, gameObject);
+        }
+
+        private void HandleCatProjectileDestroyed(CatElementProjectile projectile)=>catProjectiles.Remove(projectile);
+
+        private void ReleaseCatWind()
+        {
+            motor.FaceLockedTargetForAction(.5f);
+            visual?.PlayAction(CharacterAction.AirSlash,.7f);
+            Vector3 origin=transform.position+Vector3.up*.8f+motor.Facing*.4f;
+            Vector3 direction=(motor.Facing+Vector3.down*.3f).normalized;
+            Health enemy=motor.HasLockedTarget?motor.LockedTarget:PartyTargeting.NearestEnemy(transform.position);
+            if(enemy!=null) {
+                Vector3 delta=enemy.transform.position+Vector3.up*.6f-origin;
+                if(delta.magnitude<=8f&&Vector3.Dot(Vector3.ProjectOnPlane(delta,Vector3.up).normalized,motor.Facing)>.25f)direction=delta.normalized;
+            }
+            var root=new GameObject("Cat airborne wind crescent");root.transform.position=origin;
+            var bolt=root.AddComponent<CatElementProjectile>();
+            bolt.Initialize(CatProjectileElement.Wind,direction,CalculateDamage(tuning.AirSlashDamage),tuning.MagicProjectileSpeed*.85f,gameObject);
+            bolt.Destroyed+=HandleCatProjectileDestroyed;bolt.Hit+=_=>resources.GainStamina(tuning.StaminaPerHit);catProjectiles.Add(bolt);
+            CatElementVfx.Spawn(CatElementEffect.WindImpact,origin,motor.Facing,.75f,.35f,gameObject);
+            attackCooldown=.7f;audioDirector?.Play(CombatSound.WindRelease,.72f,gameObject);
         }
 
         private void ReleaseCatMajorMagic()
         {
-            Vector3 center = transform.position + motor.Facing * 2.8f;
-            var target = PartyTargeting.NearestEnemy(transform.position);
-            if (target != null && Vector3.Distance(target.transform.position, transform.position) <= 7f) center = target.transform.position;
+            const float radius=4f;
+            Vector3 center = transform.position;
             visual?.PlayAction(CharacterAction.MagicRelease, 0.48f);
-            CombatVfxFactory.SpawnMagicRelease(transform.position, motor.Facing, gameObject);
-            CombatVfxFactory.SpawnRing(center, 2.5f, new Color(0.76f, 0.65f, 1f), 0.6f, gameObject);
-            CombatVfxFactory.SpawnRing(center, 1.7f, new Color(1f, 0.9f, 0.65f), 0.45f, gameObject);
-            CombatVfxFactory.SpawnIceBurst(center + Vector3.up * 0.3f, Vector3.up, 2.2f, 0.65f, gameObject);
+            var positions=new List<Vector3>();
             uniqueTargets.Clear();
-            foreach (var collider in Physics.OverlapSphere(center + Vector3.up * 0.4f, 2.5f))
+            foreach (var collider in Physics.OverlapSphere(center + Vector3.up * 0.4f, radius))
             {
                 var enemy = collider.GetComponentInParent<Health>();
                 if (enemy == null || !enemy.IsAlive || !DamageFaction.CanDamage(gameObject, enemy) || !uniqueTargets.Add(enemy)) continue;
-                if (enemy.ApplyDamage(new DamageInfo(CalculateDamage(tuning.MagicDamage * 2), gameObject, enemy.transform.position, motor.Facing * 0.8f)))
-                    resources.GainStamina(tuning.StaminaPerHit);
+                positions.Add(enemy.transform.position);
             }
+            CatElementVfx.Spawn(CatElementEffect.ThunderStrike,center,Vector3.forward,radius,.7f,gameObject,positions.ToArray());
+            catMagicRoutine=StartCoroutine(ResolveCatThunder(center,radius));
             majorMagicCooldown = 6f;
             attackCooldown = 0.48f;
-            audioDirector?.Play(CombatSound.IceRelease, 1f, gameObject);
+            audioDirector?.Play(CombatSound.ThunderRelease, 1f, gameObject);
+        }
+        private IEnumerator ResolveCatThunder(Vector3 center,float radius)
+        {
+            yield return WaitForActor(.12f);
+            uniqueTargets.Clear();
+            foreach(var collider in Physics.OverlapSphere(center+Vector3.up*.4f,radius)) {
+                var enemy=collider.GetComponentInParent<Health>();
+                if(enemy==null||!enemy.IsAlive||!DamageFaction.CanDamage(gameObject,enemy)||!uniqueTargets.Add(enemy))continue;
+                Vector3 knockback=Vector3.ProjectOnPlane(enemy.transform.position-center,Vector3.up).normalized*.8f;
+                if(enemy.ApplyDamage(new DamageInfo(CalculateDamage(tuning.MagicDamage*2),gameObject,enemy.transform.position,knockback)))resources.GainStamina(tuning.StaminaPerHit);
+            }
+            catMagicRoutine=null;
         }
     }
 }

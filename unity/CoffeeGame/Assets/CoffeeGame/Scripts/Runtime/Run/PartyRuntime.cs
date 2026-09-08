@@ -226,7 +226,7 @@ namespace CoffeeGame.Run
             {
                 actor.Motor.FaceTowards(enemy.transform.position);
                 result.Sword = true;
-                result.Magic = actor.Combat.CanCastMajorMagic;
+                result.Magic = actor.Combat.CanCastMajorMagic && (!actor.IsCat || distance <= 3.6f);
                 if (result.Magic) result.Sword = false;
             }
             var goblin = enemy.GetComponent<GoblinController>();

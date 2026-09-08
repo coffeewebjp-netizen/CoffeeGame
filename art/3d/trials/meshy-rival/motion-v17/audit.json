@@ -1,0 +1,187 @@
+{
+    "source": "Assets/CoffeeGame/Resources/Models/Characters/SilverCat/silver-cat-girl.fbx",
+    "sourceClips": [
+        "Defeated: 1.958s",
+        "Dodge: 1.417s",
+        "Hurt: 0.875s",
+        "Idle: 1.958s",
+        "Jump: 0.875s",
+        "MagicCharge: 2.250s",
+        "MagicRelease: 2.250s",
+        "Run: 0.625s",
+        "Walk: 1.292s"
+    ],
+    "boneNames": [
+        "Armature",
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand"
+    ],
+    "authored": [
+        {
+            "name": "Idle",
+            "seconds": 3.200000047683716,
+            "loop": true,
+            "minimumFootY": 0.10591909289360047,
+            "headY": 1.0817201137542725,
+            "handTravel": 0.004294397309422493
+        },
+        {
+            "name": "Walk",
+            "seconds": 0.800000011920929,
+            "loop": true,
+            "minimumFootY": 0.10591914504766464,
+            "headY": 1.0699822902679444,
+            "handTravel": 0.14793090522289277
+        },
+        {
+            "name": "Run",
+            "seconds": 0.5400000214576721,
+            "loop": true,
+            "minimumFootY": 0.1059190183877945,
+            "headY": 1.0131378173828126,
+            "handTravel": 0.42513638734817507
+        },
+        {
+            "name": "Jump",
+            "seconds": 0.3400000035762787,
+            "loop": false,
+            "minimumFootY": 0.11111922562122345,
+            "headY": 1.080475091934204,
+            "handTravel": 0.0
+        },
+        {
+            "name": "Fall",
+            "seconds": 0.3199999928474426,
+            "loop": false,
+            "minimumFootY": 0.1137193888425827,
+            "headY": 1.0810579061508179,
+            "handTravel": 0.0
+        },
+        {
+            "name": "Land",
+            "seconds": 0.30000001192092898,
+            "loop": false,
+            "minimumFootY": 0.10591913759708405,
+            "headY": 1.074405550956726,
+            "handTravel": 0.07910086214542389
+        },
+        {
+            "name": "MagicCharge",
+            "seconds": 1.2000000476837159,
+            "loop": false,
+            "minimumFootY": 0.10591898113489151,
+            "headY": 1.074405550956726,
+            "handTravel": 0.3422800898551941
+        },
+        {
+            "name": "MagicRelease",
+            "seconds": 0.47999998927116396,
+            "loop": false,
+            "minimumFootY": 0.10591911524534226,
+            "headY": 1.048405408859253,
+            "handTravel": 0.40343132615089419
+        },
+        {
+            "name": "CatVolley1",
+            "seconds": 0.3799999952316284,
+            "loop": false,
+            "minimumFootY": 0.10591913759708405,
+            "headY": 1.0703232288360596,
+            "handTravel": 0.29253914952278139
+        },
+        {
+            "name": "CatVolley2",
+            "seconds": 0.3799999952316284,
+            "loop": false,
+            "minimumFootY": 0.10591915994882584,
+            "headY": 1.07032310962677,
+            "handTravel": 0.034086525440216067
+        },
+        {
+            "name": "CatVolley3",
+            "seconds": 0.6200000047683716,
+            "loop": false,
+            "minimumFootY": 0.10591909289360047,
+            "headY": 1.0703232288360596,
+            "handTravel": 0.27114197611808779
+        },
+        {
+            "name": "CatTimeStop",
+            "seconds": 0.6499999761581421,
+            "loop": false,
+            "minimumFootY": 0.10591913759708405,
+            "headY": 1.074405550956726,
+            "handTravel": 0.43630608916282656
+        },
+        {
+            "name": "Dodge",
+            "seconds": 0.8140000104904175,
+            "loop": false,
+            "minimumFootY": 0.09694549441337586,
+            "headY": 1.0531315803527833,
+            "handTravel": 0.29369086027145388
+        },
+        {
+            "name": "Hurt",
+            "seconds": 0.3400000035762787,
+            "loop": false,
+            "minimumFootY": 0.10591909289360047,
+            "headY": 1.074405550956726,
+            "handTravel": 0.03872502222657204
+        },
+        {
+            "name": "Defeated",
+            "seconds": 1.0,
+            "loop": false,
+            "minimumFootY": 0.10591908544301987,
+            "headY": 1.0614055395126343,
+            "handTravel": 0.40604519844055178
+        },
+        {
+            "name": "AirSlash",
+            "seconds": 0.699999988079071,
+            "loop": false,
+            "minimumFootY": 0.183919295668602,
+            "headY": 1.0849894285202027,
+            "handTravel": 0.3120483160018921
+        },
+        {
+            "name": "Plunge",
+            "seconds": 0.3199999928474426,
+            "loop": false,
+            "minimumFootY": 0.2749192416667938,
+            "headY": 1.0135554075241089,
+            "handTravel": 0.047377344220876697
+        },
+        {
+            "name": "CatEarthLand",
+            "seconds": 1.0,
+            "loop": false,
+            "minimumFootY": 0.10591909289360047,
+            "headY": 1.0679055452346802,
+            "handTravel": 0.4061911702156067
+        }
+    ]
+}

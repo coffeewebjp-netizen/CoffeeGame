@@ -16,12 +16,18 @@ namespace CoffeeGame.Editor
     {
         public const string Folder = "Assets/CoffeeGame/Resources/Animations/Characters/SilverCatV14";
         public const string ControllerPath = Folder + "/SilverCatMotionV14.controller";
+        public const string ElementFolder = "Assets/CoffeeGame/Resources/Animations/Characters/SilverCatV17";
+        public const string ElementControllerPath = ElementFolder + "/SilverCatElementsV17.controller";
         private const float Fps = 60f;
 
         [MenuItem("CoffeeGAME/Assets/Author Cat Motion V14", priority = 71)]
-        public static void Configure()
+        public static void Configure() => Configure(false);
+        public static void ConfigureElements() => Configure(true);
+        private static void Configure(bool elements)
         {
-            Directory.CreateDirectory(Folder); AssetDatabase.Refresh();
+            string folder = elements ? ElementFolder : Folder;
+            string controllerPath = elements ? ElementControllerPath : ControllerPath;
+            Directory.CreateDirectory(folder); AssetDatabase.Refresh();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SilverCatAssetSetup.ModelPath);
             if (prefab == null) throw new InvalidOperationException("Missing existing cat model");
             var source = AssetDatabase.LoadAllAssetsAtPath(SilverCatAssetSetup.ModelPath).OfType<AnimationClip>()
@@ -83,7 +89,7 @@ namespace CoffeeGame.Editor
                     var settings = AnimationUtility.GetAnimationClipSettings(clip);
                     settings.loopTime = loop; settings.loopBlend = loop;
                     AnimationUtility.SetAnimationClipSettings(clip, settings);
-                    string asset = Folder + "/" + name + ".anim";
+                    string asset = folder + "/" + name + ".anim";
                     var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(asset);
                     if (existing == null) AssetDatabase.CreateAsset(clip, asset);
                     else { EditorUtility.CopySerialized(clip, existing); UnityEngine.Object.DestroyImmediate(clip); clip = existing; }
@@ -93,12 +99,12 @@ namespace CoffeeGame.Editor
 
                 Author("Idle", 3.2f, true, p => rig.Idle(p));
                 Author("Walk", .80f, true, p => rig.Locomotion(p, false, null));
-                Author("Run", .60f, true, p => rig.Locomotion(p, true, nativeRun));
+                Author("Run", elements ? .54f : .60f, true, p => { if(elements) rig.ElementRun(p); else rig.Locomotion(p, true, nativeRun); });
                 Author("Jump", .34f, false, p => rig.Airborne(p, false));
                 Author("Fall", .32f, false, p => rig.Airborne(p, true));
                 Author("Land", .30f, false, p => rig.Landing(p));
                 Author("MagicCharge", 1.20f, false, p => rig.Charge(p));
-                Author("MagicRelease", .48f, false, p => rig.MajorRelease(p));
+                Author("MagicRelease", .48f, false, p => { if(elements) rig.ThunderRelease(p); else rig.MajorRelease(p); });
                 Author("CatVolley1", .38f, false, p => rig.Volley(p, 1));
                 Author("CatVolley2", .38f, false, p => rig.Volley(p, 2));
                 Author("CatVolley3", .62f, false, p => rig.Volley(p, 3));
@@ -106,10 +112,15 @@ namespace CoffeeGame.Editor
                 Author("Dodge", .814f, false, p => rig.Dodge(p));
                 Author("Hurt", .34f, false, p => rig.Hurt(p));
                 Author("Defeated", 1f, false, p => rig.Defeated(p));
+                if(elements) {
+                    Author("AirSlash", .70f, false, p => rig.WindAir(p));
+                    Author("Plunge", .32f, false, p => rig.EarthDrop(p));
+                    Author("CatEarthLand", 1f, false, p => rig.EarthLand(p));
+                }
 
-                var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath)
-                    ?? AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
-                controller.name = "SilverCatMotionV14";
+                var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath)
+                    ?? AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+                controller.name = elements ? "SilverCatElementsV17" : "SilverCatMotionV14";
                 var machine = controller.layers[0].stateMachine;
                 foreach (var old in machine.states) machine.RemoveState(old.state);
                 foreach (CharacterAction action in Enum.GetValues(typeof(CharacterAction)))
@@ -124,24 +135,29 @@ namespace CoffeeGame.Editor
                 }
                 foreach (string name in new[] { "CatVolley1", "CatVolley2", "CatVolley3", "CatTimeStop" })
                 { var state = machine.AddState(name); state.motion = clips[name]; state.writeDefaultValues = true; }
+                if(elements) { var state=machine.AddState("CatEarthLand"); state.motion=clips["CatEarthLand"]; state.writeDefaultValues=true; }
                 EditorUtility.SetDirty(controller); EditorUtility.SetDirty(machine); AssetDatabase.SaveAssets();
-                string reportPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../../../art/3d/trials/meshy-rival/motion-v14/audit.json"));
+                string reportPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../../../art/3d/trials/meshy-rival/" + (elements ? "motion-v17" : "motion-v14") + "/audit.json"));
                 Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
                 File.WriteAllText(reportPath, JsonUtility.ToJson(new Audit {
                     source = SilverCatAssetSetup.ModelPath,
                     sourceClips = source.Select(c => Leaf(c.name) + ": " + c.length.ToString("F3") + "s").ToArray(),
                     boneNames = rig.Bones.Select(b => b.name).ToArray(), authored = report.ToArray()
                 }, true));
-                Validate(); Debug.Log("Cat Motion V14 authored: 15 clips / 22 states; originals preserved.");
+                Validate(controllerPath); Debug.Log(elements ? "Cat Elements V17 authored: 18 clips; original V14 preserved." : "Cat Motion V14 authored: 15 clips / 22 states; originals preserved.");
             }
             finally { UnityEngine.Object.DestroyImmediate(model); }
         }
 
-        public static void Validate()
+        public static void Validate() => Validate(ControllerPath);
+        public static void ValidateElements() => Validate(ElementControllerPath);
+        private static void Validate(string path)
         {
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             if (controller == null) throw new InvalidOperationException("Cat Motion V14 controller missing");
-            foreach (string stateName in new[] { "Idle", "Walk", "Run", "Jump", "Fall", "Land", "Dodge", "MagicCharge", "MagicRelease", "CatVolley1", "CatVolley2", "CatVolley3", "CatTimeStop", "Hurt", "Defeated" })
+            var required = new[] { "Idle", "Walk", "Run", "Jump", "Fall", "Land", "Dodge", "MagicCharge", "MagicRelease", "CatVolley1", "CatVolley2", "CatVolley3", "CatTimeStop", "Hurt", "Defeated" };
+            if (path == ElementControllerPath) required = required.Concat(new[] { "AirSlash", "Plunge", "CatEarthLand" }).ToArray();
+            foreach (string stateName in required)
             {
                 var state = controller.layers[0].stateMachine.states.Single(s => s.state.name == stateName).state;
                 if (!(state.motion is AnimationClip clip) || clip.length < .1f || AnimationUtility.GetCurveBindings(clip).Length < 100)
@@ -289,6 +305,43 @@ namespace CoffeeGame.Editor
                 Legs(.11f, -.015f, fold, fold * .4f, .10f);
                 Hand("Left", new Vector3(-.27f, falling ? .58f : .60f, .13f));
                 Hand("Right", new Vector3(.27f, falling ? .58f : .67f, .12f));
+            }
+            public void ElementRun(float p)
+            {
+                float phase=p*Mathf.PI*2;
+                Body(.07f+.012f*Mathf.Cos(phase*2),30,9*Mathf.Sin(phase));
+                this["Hips"].position += Vector3.forward*.075f*H;
+                FootPhase("Left",Mathf.Repeat(p,1),true); FootPhase("Right",Mathf.Repeat(p+.5f,1),true);
+                Hand("Left",new Vector3(-.17f,.53f+.06f*Mathf.Cos(phase),.12f-.21f*Mathf.Cos(phase)));
+                Hand("Right",new Vector3(.17f,.53f-.06f*Mathf.Cos(phase),.12f+.21f*Mathf.Cos(phase)));
+            }
+            public void ThunderRelease(float p)
+            {
+                float strike=S(p/.28f),relax=S((p-.6f)/.4f);
+                Body(.04f+.055f*strike*(1-relax),16*strike*(1-relax)); Legs(.08f,-.08f,0,0,.13f);
+                Hand("Left",new Vector3(-.2f-.12f*strike,Mathf.Lerp(.88f,.44f,strike),.21f));
+                Hand("Right",new Vector3(.2f+.12f*strike,Mathf.Lerp(.88f,.44f,strike),.21f));
+            }
+            public void WindAir(float p)
+            {
+                float sweep=S(p/.42f),ease=S((p-.6f)/.4f);
+                Body(.015f,12-18*Mathf.Sin(p*Mathf.PI),-32+65*sweep-25*ease);
+                Legs(.14f,-.10f,.19f,.06f,.10f);
+                Hand("Left",new Vector3(Mathf.Lerp(-.42f,-.12f,sweep),.64f,.20f+.22f*sweep));
+                Hand("Right",new Vector3(Mathf.Lerp(.35f,.12f,sweep),.74f,.10f+.36f*sweep));
+            }
+            public void EarthDrop(float p)
+            {
+                float fold=S(p); Body(.06f,28,0); Legs(.06f,-.04f,.18f,.13f,.14f);
+                Hand("Left",new Vector3(-.18f,.44f-.13f*fold,.27f));
+                Hand("Right",new Vector3(.18f,.44f-.13f*fold,.27f));
+            }
+            public void EarthLand(float p)
+            {
+                float weight=1-S((p-.65f)/.35f);
+                Body(.025f+.25f*weight,48*weight); Legs(.09f,-.04f,0,0,.155f);
+                Hand("Left",new Vector3(-.22f,Mathf.Lerp(.43f,.12f,weight),.27f));
+                Hand("Right",new Vector3(.22f,Mathf.Lerp(.43f,.12f,weight),.27f));
             }
             public void Landing(float p)
             {

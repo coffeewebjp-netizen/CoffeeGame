@@ -23,7 +23,10 @@ namespace CoffeeGame.Audio
         Parry,
         PerfectDodge,
         Counter,
-        PlungeImpact
+        PlungeImpact,
+        FireRelease,
+        ThunderRelease,
+        WindRelease
     }
 
     [DisallowMultipleComponent]
@@ -158,6 +161,9 @@ namespace CoffeeGame.Audio
             proceduralClips[CombatSound.PerfectDodge] = CreateProceduralClip(CombatSound.PerfectDodge, 0.5f);
             proceduralClips[CombatSound.Counter] = CreateProceduralClip(CombatSound.Counter, 0.22f);
             proceduralClips[CombatSound.PlungeImpact] = CreateProceduralClip(CombatSound.PlungeImpact, 0.56f);
+            proceduralClips[CombatSound.FireRelease] = CreateProceduralClip(CombatSound.FireRelease, 0.36f);
+            proceduralClips[CombatSound.ThunderRelease] = CreateProceduralClip(CombatSound.ThunderRelease, 0.85f);
+            proceduralClips[CombatSound.WindRelease] = CreateProceduralClip(CombatSound.WindRelease, 0.55f);
         }
 
         private static AudioClip CreateProceduralClip(CombatSound sound, float duration)
@@ -191,6 +197,13 @@ namespace CoffeeGame.Audio
         {
             switch (sound)
             {
+                case CombatSound.FireRelease:
+                    return noise * .38f * Mathf.Exp(-time * 7f) + Mathf.Sin(6.283185f * (180f * time - 120f * time * time)) * .45f;
+                case CombatSound.ThunderRelease:
+                    return noise * (.65f * Mathf.Exp(-time * 25f) + .18f) +
+                           Mathf.Sin(6.283185f * (65f * time - 14f * time * time)) * .6f;
+                case CombatSound.WindRelease:
+                    return noise * .24f + Mathf.Sin(6.283185f * (460f * time - 280f * time * time)) * .28f * Mathf.Sin(normalized * Mathf.PI);
                 case CombatSound.BladeBlock:
                 {
                     float strike = Mathf.Exp(-time * 35f);

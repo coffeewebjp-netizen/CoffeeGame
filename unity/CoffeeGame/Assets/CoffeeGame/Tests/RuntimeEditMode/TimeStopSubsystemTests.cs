@@ -211,6 +211,7 @@ namespace CoffeeGame.Combat.Tests
         {
             var cameraObject = new GameObject("world-render-test");
             var camera = cameraObject.AddComponent<Camera>();
+            camera.enabled = false;
             var original = new RenderTexture(32, 32, 16);
             camera.targetTexture = original;
             try
@@ -218,7 +219,14 @@ namespace CoffeeGame.Combat.Tests
                 controller.InitializeWorldVisual(camera);
                 controller.TryBegin(caster, 10f);
                 Assert.That(camera.targetTexture, Is.Not.SameAs(original));
+                var effect = camera.GetComponent<CoffeeGame.Presentation.TimeStopWorldEffect>();
+                effect.Advance(.325f);
+                Assert.That(effect.BackgroundVerticalScale, Is.EqualTo(0).Within(.001f));
+                effect.Advance(.325f);
+                Assert.That(effect.BackgroundVerticalScale, Is.EqualTo(-1).Within(.001f));
                 controller.Advance(10f);
+                Assert.That(effect.IsCompositing, Is.True, "completed stop returns through an animated exit");
+                effect.Advance(.65f);
                 Assert.That(camera.targetTexture, Is.SameAs(original));
             }
             finally { Object.DestroyImmediate(cameraObject); Object.DestroyImmediate(original); }

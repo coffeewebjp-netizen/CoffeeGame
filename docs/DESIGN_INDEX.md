@@ -15,6 +15,7 @@ The live game is `unity/CoffeeGame`.
 
 | 作業 | 先に読む文書 | 主な実装入口 |
 | --- | --- | --- |
+| 猫の炎・雷・風・岩と背景だけの時間停止反転 | `docs/cat-elements-v17.md` | `CatElementProjectile`, `CatElementVfx`, `TimeStopWorldEffect`, `SilverCatMotionSetup` |
 | 猫少女の専用モーションと遷移 | `docs/cat-motion-v14.md` | `SilverCatMotionSetup`, `ModelCharacterVisual`, `CatMotionEvidenceCapture` |
 | いまの実装範囲 | `docs/current-status.md` | `unity/CoffeeGame/Assets/CoffeeGame/Scripts/` |
 | Unity 起動と入力 | `unity/CoffeeGame/README.md` | `Scripts/Input/GameInputReader.cs` と `GameInputReader.{Keyboard,Gamepad,SteamDesktop,Touch}.cs` |

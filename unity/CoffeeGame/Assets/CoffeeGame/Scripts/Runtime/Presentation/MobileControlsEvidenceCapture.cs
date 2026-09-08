@@ -82,7 +82,10 @@ namespace CoffeeGame.Presentation
         {
             yield return null;
             input = FindAnyObjectByType<GameInputReader>(); overlay = FindAnyObjectByType<OnScreenTouchControls>();
-            screen = InputSystem.AddDevice<Touchscreen>();
+            // Only this synthetic device must accept queued evidence events while
+            // the Windows capture player is hidden. Real-device focus policy stays intact.
+            InputSystem.RegisterLayout(@"{""name"":""CoffeeGameEvidenceTouchscreen"",""extend"":""Touchscreen"",""canRunInBackground"":true}");
+            screen = (Touchscreen)InputSystem.AddDevice("CoffeeGameEvidenceTouchscreen");
             Check(run.TrySelectInputMode(InputMode.TouchOnScreen, out _), "touch selected in actual player");
             run.Party.ToggleParticipation(PartyMemberIds.Hero); run.Party.ToggleParticipation(PartyMemberIds.CatMage);
             run.StartNewRun(); yield return new WaitForSecondsRealtime(.5f);
@@ -104,7 +107,9 @@ namespace CoffeeGame.Presentation
             Touch(13, cameraPoint, Phase.Began); yield return null; yield return null;
             Touch(13, cameraPoint + Vector2.right * 160 * overlay.Layout.Scale, Phase.Moved);
             yield return new WaitForSecondsRealtime(.2f);
-            Check(Mathf.Abs(Mathf.DeltaAngle(yawBefore, Camera.main.transform.eulerAngles.y)) > 10f, "camera swipe reaches actual orbit driver");
+            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(yawBefore, Camera.main.transform.eulerAngles.y));
+            Debug.Log($"Touch orbit evidence: delta={yawDelta:F3}, target={FindAnyObjectByType<FixedCameraRig>().OrbitYawDegrees:F3}, deviceEnabled={screen.enabled}, touch={input.UsesTouchOverlay}, visible={overlay.IsVisible}, context={input.Context}, timeScale={Time.timeScale:F3}, focus={Application.isFocused}, viewport={Screen.width}x{Screen.height}");
+            Check(yawDelta > 10f, "camera swipe reaches actual orbit driver");
             Touch(13, cameraPoint, Phase.Ended); yield return new WaitForSecondsRealtime(.1f);
             Vector2 stick = overlay.Layout.StickCenter;
             Touch(1, stick, Phase.Began); yield return null; yield return null;
@@ -137,7 +142,7 @@ namespace CoffeeGame.Presentation
             Touch(6, Point(GameInputSemantic.LockOn), Phase.Ended); yield return new WaitForSecondsRealtime(.1f);
             Touch(7, Point(GameInputSemantic.SwitchCharacter), Phase.Began); yield return new WaitForSecondsRealtime(.2f);
             Check(run.Party.Active.IsCat, "touch switch controls the cat");
-            Check(OnScreenTouchControls.Label(GameInputSemantic.Sword, true) == "連弾" && OnScreenTouchControls.Label(GameInputSemantic.Special, true) == "時止め", "cat-specific touch labels");
+            Check(OnScreenTouchControls.Label(GameInputSemantic.Sword, true) == "炎弾" && OnScreenTouchControls.Label(GameInputSemantic.Magic, true) == "落雷" && OnScreenTouchControls.Label(GameInputSemantic.Special, true) == "時止め", "cat-specific touch labels");
             Touch(7, Point(GameInputSemantic.SwitchCharacter), Phase.Ended);
             yield return new WaitForEndOfFrame(); Capture("02-phone-cat");
             Touch(8, stick, Phase.Began); yield return null; yield return null;
