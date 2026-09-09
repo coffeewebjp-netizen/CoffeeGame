@@ -12,6 +12,7 @@ namespace CoffeeGame.Presentation
     [ExecuteAlways]
     public sealed class ForestArenaVisuals : MonoBehaviour
     {
+        public const string GroundTextureResource = "Art/Environment/ForestV20/forest-soil-albedo";
         public const string ShaderResource = "Materials/ForestSurface";
         private static readonly int FocusId = Shader.PropertyToID("_ForestFocus");
         private readonly List<Object> owned = new List<Object>();
@@ -57,7 +58,7 @@ namespace CoffeeGame.Presentation
             var material = Own(new Material(shader) { name = "Forest bark, moss and foliage" });
             GroundMaterial = Own(new Material(shader) { name = "Forest clearing soil and moss" });
             GroundMaterial.SetFloat("_Ground", 1f);
-            GroundMaterial.SetTexture("_BaseMap", Resources.Load<Texture2D>(GrasslandArenaVisuals.GroundTextureResource));
+            GroundMaterial.SetTexture("_BaseMap", Resources.Load<Texture2D>(GroundTextureResource));
             // Extend only the visible floor beyond the unchanged arena collider.
             // The edge camera must not reveal floating trees over the clear color.
             var skirt = new Geometry();
@@ -196,7 +197,7 @@ namespace CoffeeGame.Presentation
             {
                 float t=(segment+1)/5f;
                 upper=p+Vector3.up*(height*t)+lean*t*t;
-                g.Tube(lower,upper,Mathf.Lerp(0.26f,0.07f,(t-0.2f))*height/5f,Mathf.Lerp(0.26f,0.04f,t)*height/5f,9,Bark,random);
+                g.Tube(lower,upper,Mathf.Lerp(0.26f,0.04f,(t-0.2f))*height/5f,Mathf.Lerp(0.26f,0.04f,t)*height/5f,9,Bark,random);
                 lower=upper;
             }
             for (int root=0;root<7;root++)
@@ -230,8 +231,8 @@ namespace CoffeeGame.Presentation
                 float a=Range(random,0,Mathf.PI*2f),y=Range(random,-1,1),r=Mathf.Sqrt(1-y*y);
                 Vector3 p=center+Vector3.Scale(new Vector3(Mathf.Cos(a)*r,y,Mathf.Sin(a)*r),radius)*Range(random,0.25f,1f);
                 Vector3 axis=new Vector3(Mathf.Cos(a),Range(random,-0.35f,0.6f),Mathf.Sin(a)).normalized;
-                float size=Range(random,0.21f,0.39f);
-                g.Leaf(p,axis*size,Vector3.Cross(axis,Vector3.up).normalized*size*0.62f,size*0.14f,
+                float size=Range(random,0.18f,0.32f);
+                g.Leaf(p,axis*size,Vector3.Cross(axis,Vector3.up).normalized*size*0.48f,size*0.075f,
                     Color.Lerp(LeafDark,LeafLight,Mathf.Clamp01(y*0.3f+Range(random,0.2f,0.7f))),1f);
             }
         }
@@ -244,7 +245,9 @@ namespace CoffeeGame.Presentation
                 Vector3 side=new Vector3(Mathf.Cos(a),0,Mathf.Sin(a));
                 Vector3 b=p+side*Range(random,0,0.12f),tip=b+Vector3.up*size+side*size*0.48f;
                 Color color=Color.Lerp(LeafDark,LeafLight,Range(random,0.1f,0.9f));
-                g.Triangle(b-side*0.019f,b+side*0.019f,tip,color,0.75f);
+                Vector3 middle=b+Vector3.up*size*0.57f+side*size*0.16f;
+                g.Quad(b-side*0.014f,b+side*0.014f,middle+side*0.01f,middle-side*0.01f,color*0.88f,0.75f);
+                g.Triangle(middle-side*0.01f,middle+side*0.01f,tip,color,0.75f);
             }
         }
 
@@ -281,9 +284,9 @@ namespace CoffeeGame.Presentation
                 for(int i=0;i<sides;i++)
                 {
                     int j=(i+1)%sides;
-                    Color color=Color.Lerp(new Color(0.32f,0.35f,0.31f),new Color(0.48f,0.5f,0.38f),Range(random,0,1));
-                    if(ring>=2&&random.NextDouble()>0.25)color=Color.Lerp(new Color(0.24f,0.34f,0.13f),new Color(0.43f,0.48f,0.2f),Range(random,0,1));
-                    g.Quad(points[ring*sides+i],points[(ring+1)*sides+i],points[(ring+1)*sides+j],points[ring*sides+j],color,0);
+                    Color color=Color.Lerp(new Color(0.35f,0.38f,0.32f),new Color(0.39f,0.42f,0.35f),Range(random,0,1));
+                    if(ring>=2&&random.NextDouble()>0.25)color=Color.Lerp(new Color(0.31f,0.39f,0.2f),new Color(0.35f,0.42f,0.22f),Range(random,0,1));
+                    g.RoundedRockQuad(points[ring*sides+i],points[(ring+1)*sides+i],points[(ring+1)*sides+j],points[ring*sides+j],p+Vector3.up*size*0.46f,color);
                 }
         }
 
@@ -324,8 +327,15 @@ namespace CoffeeGame.Presentation
             }
             public void Quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color,float wind)
             { Triangle(a,b,c,color,wind);Triangle(a,c,d,color,wind); }
+            public void RoundedRockQuad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Vector3 center,Color color)
+            {
+                Quad(a,b,c,d,color,0);
+                for(int i=vertices.Count-6;i<vertices.Count;i++)
+                    normals[i]=Vector3.Scale(vertices[i]-center,new Vector3(1f,1.6f,1.69f)).normalized;
+            }
             public void Leaf(Vector3 start,Vector3 axis,Vector3 side,float fold,Color color,float wind)
             {
+                int first=vertices.Count;
                 Vector3 center=start+axis*0.52f+Vector3.up*fold;
                 Vector3 a=start+axis*0.28f+side*0.74f,b=start+axis*0.68f+side*0.68f;
                 Vector3 c=start+axis*0.68f-side*0.68f,d=start+axis*0.28f-side*0.74f;
@@ -336,6 +346,13 @@ namespace CoffeeGame.Presentation
                 Triangle(start+axis,c,center,shade,wind);
                 Triangle(c,d,center,shade,wind);
                 Triangle(d,start,center,color,wind);
+                // A gently curved surface, not six independently lit flat facets.
+                Vector3 normal=Vector3.Cross(side,axis).normalized;
+                for(int i=first;i<vertices.Count;i++)
+                {
+                    float edge=Vector3.Dot(vertices[i]-start,side.normalized)/Mathf.Max(side.magnitude,0.001f);
+                    normals[i]=(normal+side.normalized*edge*0.22f).normalized;
+                }
             }
             public void Tube(Vector3 a,Vector3 b,float r0,float r1,int sides,Color color,System.Random random)
             {
@@ -346,7 +363,7 @@ namespace CoffeeGame.Presentation
                 {
                     float angle=i*Mathf.PI*2f/sides,next=(i+1)*Mathf.PI*2f/sides;
                     Vector3 n=u*Mathf.Cos(angle)+v*Mathf.Sin(angle),m=u*Mathf.Cos(next)+v*Mathf.Sin(next);
-                    Color shade=color*Range(random,0.72f,1.2f);shade.a=1;
+                    Color shade=color*Range(random,0.94f,1.06f);shade.a=1;
                     Quad(a+n*r0,a+m*r0,b+m*r1,b+n*r1,shade,0);
                     int q=normals.Count-6;
                     normals[q]=n;normals[q+1]=m;normals[q+2]=m;

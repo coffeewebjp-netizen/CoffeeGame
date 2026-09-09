@@ -25,11 +25,18 @@ namespace CoffeeGame.Tests
                 Assert.That(forest.FernCount, Is.GreaterThan(80));
                 Assert.That(forest.TriangleCount, Is.LessThan(500000));
                 Assert.That(forest.BatchCount, Is.LessThanOrEqualTo(64));
+                Texture2D ground = forest.GroundMaterial.GetTexture("_BaseMap") as Texture2D;
+                Assert.That(ground, Is.Not.Null, "Ground albedo must be included in player Resources.");
+                Assert.That(ground.mipmapCount, Is.GreaterThan(1), "Distant ground needs mipmaps to avoid shimmer.");
+                Assert.That(ground.filterMode, Is.EqualTo(FilterMode.Trilinear));
+                Assert.That(ground.wrapMode, Is.EqualTo(TextureWrapMode.Repeat));
                 foreach (MeshFilter filter in parent.GetComponentsInChildren<MeshFilter>())
                 {
                     Assert.That(filter.sharedMesh.bounds.size.sqrMagnitude, Is.GreaterThan(0));
                     foreach (Vector3 p in filter.sharedMesh.vertices)
                         Assert.That(float.IsNaN(p.sqrMagnitude) || float.IsInfinity(p.sqrMagnitude), Is.False);
+                    foreach (Vector3 n in filter.sharedMesh.normals)
+                        Assert.That(float.IsNaN(n.sqrMagnitude) || float.IsInfinity(n.sqrMagnitude), Is.False);
                 }
             }
             finally { Object.DestroyImmediate(parent); Random.state = saved; }

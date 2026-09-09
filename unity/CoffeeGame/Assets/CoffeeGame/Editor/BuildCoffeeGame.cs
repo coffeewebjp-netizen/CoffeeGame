@@ -102,6 +102,9 @@ namespace CoffeeGame.Editor
             SilverCatMotionSetup.ValidateElements();
             BuildDiagnosticNoSetup("Windows-CatMotionV18", "CoffeeGAME-CatMotionV18.exe");
         }
+        public static void BuildForestV20NoSetup() => BuildDiagnosticNoSetup("Windows-ForestV20", "CoffeeGAME-ForestV20.exe");
+        public static void BuildAndroidForestV20NoSetup() => BuildAndroidMobileNoSetup("ForestV20");
+
         public static void BuildCatMotionV19NoSetup()
         {
             SilverCatMotionSetup.ValidateElements();

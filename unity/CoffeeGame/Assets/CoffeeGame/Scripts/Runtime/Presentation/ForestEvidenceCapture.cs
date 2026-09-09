@@ -42,6 +42,7 @@ namespace CoffeeGame.Presentation
             yield return new WaitForSecondsRealtime(2f);
             var records = new ViewRecord[6];
             var benchmarkTarget = new RenderTexture(1280,720,24,RenderTextureFormat.ARGB32);
+            benchmarkTarget.antiAliasing = 2;
             benchmarkTarget.Create();
             var fence = new Texture2D(1,1,TextureFormat.RGB24,false);
             for (int view = 0; view < records.Length; view++)
@@ -97,6 +98,7 @@ namespace CoffeeGame.Presentation
             Texture2D image = null;
             try
             {
+                target.antiAliasing = 2;
                 target.Create();
                 RenderPipeline.SubmitRenderRequest(sceneCamera,new RenderPipeline.StandardRequest { destination = target });
                 RenderTexture.active = target;

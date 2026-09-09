@@ -82,7 +82,8 @@ Shader "CoffeeGame/ForestSurface"
                 if(_Ground<0.5 && input.color.a<0.01)
                 {
                     float ridges=Noise(float2((world.x+world.z)*32,world.y*1.7));
-                    albedo*=0.82+ridges*0.34;
+                    float grain=Noise(world.xz*19+world.y*3);
+                    albedo*=0.88+ridges*0.17+grain*0.08;
                 }
                 if(_Ground>0.5)
                 {
@@ -91,16 +92,20 @@ Shader "CoffeeGame/ForestSurface"
                     float path=abs(world.x+1.6-sin(world.z*0.27)*0.85);
                     float dirt=max(1-smoothstep(0.7,1.3,clearing+(broad-0.5)*0.35),1-smoothstep(0.75,1.65,path+(broad-0.5)*0.7));
                     half3 moss=lerp(half3(0.047,0.09,0.022),half3(0.13,0.17,0.052),broad);
-                    half3 soil=lerp(half3(0.15,0.115,0.064),half3(0.24,0.19,0.107),grain*0.55+broad*0.45);
-                    half textureDetail=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,world.xz*0.26).g;
-                    albedo=lerp(moss*(0.78+textureDetail*0.8),soil,dirt*0.92);
+                    // Two rotated scales break up repetition without a new mesh or material batch.
+                    half3 detail=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,world.xz*0.42).rgb;
+                    half3 alternate=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,float2(-world.z,world.x)*0.29+0.37).rgb;
+                    half3 soil=lerp(detail,alternate,smoothstep(0.25,0.8,broad)*0.38)*1.35;
+                    half textureDetail=dot(detail,half3(0.2126,0.7152,0.0722));
+                    albedo=lerp(moss*(0.65+textureDetail*3.2),soil,dirt*0.93);
+                    albedo*=lerp(0.93,1.07,broad);
                     normal=normalize(normal+half3((grain-0.5)*0.12,0,(Noise(world.xz*7.1)-0.5)*0.12));
                 }
                 Light sun=GetMainLight(TransformWorldToShadowCoord(world));
                 half ndl=saturate(dot(normal,sun.direction));
                 half leaf=input.color.a*(1-_Ground);
                 half back=saturate(dot(-normal,sun.direction))*leaf*0.28;
-                half shade=lerp(0.48,1,sun.shadowAttenuation);
+                half shade=lerp(0.56,1,sun.shadowAttenuation);
                 half3 color=albedo*(half3(0.38,0.43,0.32)+sun.color*(ndl*0.82+back)*shade);
                 color=MixFog(color,input.fog);
                 return half4(color,1);
