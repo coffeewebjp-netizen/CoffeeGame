@@ -1,0 +1,5 @@
+tools/inspect/
+tools/*.zip
+exports/bridge.pid
+exports/bridge-stdout.log
+exports/bridge-stderr.log

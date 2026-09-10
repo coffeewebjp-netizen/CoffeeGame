@@ -1,0 +1,48 @@
+{
+  "character": "SplitInkDragonGirl",
+  "createdAtJst": "2026-09-11",
+  "visibility": "private",
+  "identity": {
+    "eyes": "spiral irises",
+    "characterLeft": "white",
+    "characterRight": "black",
+    "outfit": "symmetric Japanese combat kimono with mirrored dragon embroidery",
+    "proportions": "6.5 to 7 heads"
+  },
+  "meshy": {
+    "model": "Meshy 7 Flagship",
+    "detail": "high",
+    "textureResolution": "2K",
+    "pose": "A-pose",
+    "imageEnhancement": false,
+    "creditsConsumed": 35,
+    "taskChain": {
+      "multiView": "01a08c80-6652-73a8-8643-7de0b5e982c3",
+      "texture": "01a08c81-92f3-71ca-ad3c-2e1c23418d68",
+      "remesh": "01a08c88-7912-7059-a645-ab0d86e1c243",
+      "rig": "01a08c8c-fc88-775c-9662-96274d9d93eb"
+    },
+    "sourceMesh": {
+      "triangles": 3049860,
+      "vertices": 1633889
+    },
+    "remesh": {
+      "topology": "quad",
+      "faces": 80793,
+      "vertices": 86368
+    },
+    "rig": {
+      "template": "MeshyRig",
+      "heightMeters": 1.7,
+      "faces": 80793,
+      "vertices": 86577,
+      "validationMotion": "待機",
+      "manualWeightCleanupRequired": [
+        "long sleeves",
+        "divided skirt and leg intersections"
+      ]
+    }
+  },
+  "liveGameAssetChanged": false,
+  "next": "Transfer rigged model from Meshy and complete Blender weight, eye, normal, and Unity import validation."
+}
