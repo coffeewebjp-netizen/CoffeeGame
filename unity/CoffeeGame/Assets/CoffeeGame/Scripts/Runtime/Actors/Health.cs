@@ -25,6 +25,12 @@ namespace CoffeeGame.Actors
         public bool IsAlive => Current > 0;
         public float Normalized => maxHealth <= 0 ? 0f : (float)Current / maxHealth;
         public float IncomingDamageMultiplier { get; set; } = 1f;
+        public float AbilityDefenseMultiplier { get; set; } = 1f;
+
+        public void Heal(int amount)
+        {
+            if (IsAlive && amount > 0) Current = Mathf.Min(maxHealth, Current + amount);
+        }
         public float EvasionChance { get; set; }
 
         public void Initialize(int maximum, float invulnerability = 0f)
@@ -86,6 +92,7 @@ namespace CoffeeGame.Actors
             }
 
             TimeStopController timeStop = TimeStopController.Instance;
+            if (damage.Source != null && DragonGateCaptivity.IsCaptured(damage.Source)) return false;
             if (timeStop != null && timeStop.IsActive && damage.Source != null && timeStop.IsFrozen(damage.Source)) return false;
             bool deferredHit = timeStop != null && timeStop.IsActive && timeStop.IsFrozen(gameObject);
             if (deferredHit)
@@ -118,7 +125,7 @@ namespace CoffeeGame.Actors
                 damage.Source != null && damage.Source.GetComponentInParent<Health>()?.Team == DamageTeam.Party;
             int adjustedAmount = Mathf.Max(
                 1,
-                Mathf.RoundToInt(damage.Amount * (counter ? 2f : 1f) * Mathf.Clamp(IncomingDamageMultiplier, 0.05f, 10f)));
+                Mathf.RoundToInt(damage.Amount * (counter ? 2f : 1f) * Mathf.Clamp(IncomingDamageMultiplier, 0.05f, 10f) / Mathf.Max(1f, AbilityDefenseMultiplier)));
             var appliedDamage = new DamageInfo(
                 adjustedAmount,
                 damage.Source,

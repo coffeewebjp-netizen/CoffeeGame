@@ -101,10 +101,16 @@ namespace CoffeeGame.UI
                 float size = rect.width * (primary ? .93f : .82f) * (1 - press * .06f);
                 SetRect(buttonImages[button.Action].rectTransform, new Rect(rect.center-Vector2.one*size/2,Vector2.one*size));
                 buttonImages[button.Action].color = Color.Lerp(new Color(.025f,.04f,.055f,primary ? .57f : .4f), new Color(accent.r*.24f,accent.g*.24f,accent.b*.24f,.84f),press);
-                icons[button.Action].Icon(button.Action,cat);
+                icons[button.Action].Icon(button.Action,cat,run?.Party?.Active?.IsDragon == true);
                 icons[button.Action].color = Color.Lerp(new Color(.95f,.96f,.94f, special && !ready ? .5f : .96f),accent,held || ready ? 1 : 0);
                 rings[button.Action].color = held || ready ? accent : new Color(.91f,.94f,.93f,primary ? .72f : .32f);
                 var label = buttonLabels[button.Action]; label.text = Label(button.Action, cat, locked);
+                if (run?.Party?.Active?.IsDragon == true)
+                {
+                    if (button.Action == GameInputSemantic.Sword) label.text = "龍爪";
+                    if (button.Action == GameInputSemantic.Magic) label.text = run.Party.Active.Combat.DragonActionLabel;
+                    if (button.Action == GameInputSemantic.Special) label.text = "龍の呼吸";
+                }
                 if (cat && button.Action == GameInputSemantic.Sword && !run.Party.Active.Motor.IsGrounded) label.text = "風刃";
                 label.fontSize = Mathf.Max(10, Mathf.RoundToInt(11 * layout.Scale));
                 label.color = held || ready ? accent : new Color(.92f,.94f,.95f,.78f);

@@ -7,6 +7,7 @@ namespace CoffeeGame.Domain
     {
         public const string Hero = "hero-swordsman-001";
         public const string CatMage = RivalCharacterIds.WeaknessChallenger;
+        public const string DragonGirl = RivalCharacterIds.SplitInk;
     }
 
     public enum PartyRecoveryState
@@ -623,17 +624,23 @@ namespace CoffeeGame.Domain
         }
 
         internal bool EnsureCatMemberFrom(PartyMember hero)
+            => EnsureCompanionFrom(hero, PartyMemberIds.CatMage, "cat-mage", "銀の猫魔導士");
+
+        internal bool EnsureDragonMemberFrom(PartyMember hero)
+            => EnsureCompanionFrom(hero, PartyMemberIds.DragonGirl, "dragon-martial", "白黒の龍少女");
+
+        private bool EnsureCompanionFrom(PartyMember hero, string id, string job, string title)
         {
-            if (Find(PartyMemberIds.CatMage) != null)
+            if (Find(id) != null)
             {
                 return false;
             }
 
             AddMember(new PartyMember(
-                PartyMemberIds.CatMage,
+                id,
                 hero.Level,
                 hero.Experience,
-                new PlayerStatus("cat-mage", "銀の猫魔導士", hero.Status.TalentId, hero.Status.Talent,
+                new PlayerStatus(job, title, hero.Status.TalentId, hero.Status.Talent,
                     hero.Status.Attributes.CreateSnapshot(), hero.Status.CreateGrowthRemainderSnapshot()),
                 hero.Resources.MaximumHitPoints,
                 hero.Resources.MaximumHitPoints,

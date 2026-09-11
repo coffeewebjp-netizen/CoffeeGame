@@ -12,6 +12,20 @@ namespace CoffeeGame.Persistence.Tests
         private string temporaryDirectory;
         private string profilePath;
 
+        [Test] public void DragonPartySurvivesSaveWithoutDuplicatingExistingMembers()
+        {
+            var p=new PlayerProgression(1,0,0,0,previouslyRecruitedRivalIds:new[]{RivalCharacterIds.WeaknessChallenger,RivalCharacterIds.SplitInk});
+            var member=p.Party.Find(PartyMemberIds.DragonGirl);
+            member.SetMaximumResources(24,20,100,DateTime.UtcNow);
+            member.SetResources(7,3,12,DateTime.UtcNow);
+            var store=new PlayerProfileStore(profilePath);
+            Assert.That(store.TrySave(p,out string message),Is.True,message);
+            var restored=store.LoadOrCreate(out _);
+            Assert.That(restored.Party.Members.Count,Is.EqualTo(3));
+            Assert.That(restored.Party.Find(PartyMemberIds.DragonGirl).Resources.HitPoints,Is.EqualTo(7).Within(.01));
+            Assert.That(restored.Party.Find(PartyMemberIds.DragonGirl).Resources.MagicPoints,Is.EqualTo(3).Within(.01));
+        }
+
         [SetUp]
         public void SetUp()
         {

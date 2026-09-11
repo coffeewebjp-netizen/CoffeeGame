@@ -1,0 +1,30 @@
+{
+  "vertices": 125869,
+  "triangles": 101463,
+  "clips": {
+    "Idle": 60,
+    "Walk": 27,
+    "Run": 20,
+    "Jump": 15,
+    "Fall": 21,
+    "Land": 18,
+    "Dodge": 21,
+    "Hurt": 9,
+    "Defeated": 30,
+    "Sword": 13,
+    "AirSlash": 18,
+    "Plunge": 18,
+    "SpinCharge": 21,
+    "SpinRelease": 26,
+    "MagicCharge": 22,
+    "MagicRelease": 22,
+    "ClawRight": 13,
+    "ClawLeft": 13,
+    "ClawHeavy": 26,
+    "DragonGate": 22,
+    "DragonChop": 44,
+    "DragonBreath": 21,
+    "AirClaw": 18,
+    "StompLand": 18
+  }
+}

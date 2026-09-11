@@ -18,6 +18,7 @@ namespace CoffeeGame.UI
         private readonly Dictionary<string, Button> partyMenuButtons = new Dictionary<string, Button>();
         private CombatRunController renderedPartyRun;
         private RawImage activeCatPortrait;
+        private Texture2D dragonPartyPortrait, catPartyPortrait;
         private int selectedPartyMember;
 
         public void NavigateParty(int direction, bool confirm)
@@ -89,13 +90,24 @@ namespace CoffeeGame.UI
                 SetTopLeft(partyNotice.rectTransform,new Vector2(28,-188-index*74),new Vector2(520,65));
                 partyNotice.fontSize = 18;
             }
-            else { SetTopLeft(partyNotice.rectTransform,new Vector2(28,-434),new Vector2(620,65)); partyNotice.fontSize=21; }
-            if (activeCatPortrait != null) activeCatPortrait.gameObject.SetActive(run.Party.Active != null && run.Party.Active.IsCat);
+            else { SetTopLeft(partyNotice.rectTransform,new Vector2(28,-250-index*92),new Vector2(620,65)); partyNotice.fontSize=21; }
+            if (activeCatPortrait != null)
+            {
+                if (catPartyPortrait == null) catPartyPortrait = Resources.Load<Texture2D>(RivalPortraitResource);
+                if (dragonPartyPortrait == null) dragonPartyPortrait = Resources.Load<Texture2D>(RivalPortraitCatalog.SplitInkResource);
+                activeCatPortrait.texture = run.Party.Active?.IsDragon == true ? dragonPartyPortrait : catPartyPortrait;
+                activeCatPortrait.gameObject.SetActive(run.Party.Active != null && (run.Party.Active.IsCat || run.Party.Active.IsDragon));
+            }
+            if (run.Party.Active?.IsDragon == true)
+            {
+                var combat = run.Party.Active.Combat;
+                partyNotice.text = $"魔法：{combat.DragonActionLabel}" + (combat.DragonBreathRemaining > 0f ? $"　龍の呼吸 {combat.DragonBreathRemaining:0}秒" : "");
+            }
         }
 
         private string MemberSummary(PartyMember member, bool active)
         {
-            string name = member.Id == PartyMemberIds.Hero ? "主人公" : "猫少女";
+            string name = member.Id == PartyMemberIds.Hero ? "主人公" : member.Id == PartyMemberIds.DragonGirl ? "龍少女" : "猫少女";
             string state = member.RecoveryState == PartyRecoveryState.KnockedOut
                 ? $"戦闘不能 {FormatRecovery(member.KnockoutRemainingSeconds(renderedPartyRun.Party.UtcNow))}"
                 : member.RecoveryState == PartyRecoveryState.Resting ? "休息中" : active ? "操作中" : "自動戦闘";

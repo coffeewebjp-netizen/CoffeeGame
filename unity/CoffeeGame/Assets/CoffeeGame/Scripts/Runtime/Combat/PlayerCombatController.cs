@@ -11,7 +11,7 @@ using UnityEngine;
 namespace CoffeeGame.Combat
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerCombatController : MonoBehaviour
+    public sealed partial class PlayerCombatController : MonoBehaviour
     {
         private enum ChargeKind
         {
@@ -47,11 +47,12 @@ namespace CoffeeGame.Combat
         private SpecialCombatVoice specialVoice;
 
         public bool IsCatMage { get; set; }
+        public bool IsDragonGirl { get; set; }
         public bool IsManual { get; set; } = true;
         public bool UseCommands { get; set; }
         public ActorCommandFrame Commands { get; set; }
         public bool CanSwitch => !IsCharging && attackCooldown <= 0f && motor != null && motor.CanAct;
-        public bool CanCastMajorMagic => IsCatMage && majorMagicCooldown <= 0f && resources != null && resources.MagicPoints >= resources.MaxMagicPoints * 0.25f;
+        public bool CanCastMajorMagic => (IsCatMage || IsDragonGirl) && majorMagicCooldown <= 0f && resources != null && resources.MagicPoints >= resources.MaxMagicPoints * (IsDragonGirl ? .15f : .25f);
         public bool CanBeginGuard => attackCooldown <= 0f && !IsCharging;
         public bool IsGuarding => defense != null && defense.IsGuarding;
 
@@ -111,6 +112,7 @@ namespace CoffeeGame.Combat
 
         public void CancelPendingActions()
         {
+            CancelDragonActions();
             if(catMagicRoutine!=null){StopCoroutine(catMagicRoutine);catMagicRoutine=null;}
             for(int i=catProjectiles.Count-1;i>=0;i--)if(catProjectiles[i]!=null){catProjectiles[i].Destroyed-=HandleCatProjectileDestroyed;Destroy(catProjectiles[i].gameObject);}
             catProjectiles.Clear();
@@ -162,9 +164,13 @@ namespace CoffeeGame.Combat
             float deltaTime = CombatClock.DeltaTime(gameObject);
             if (deltaTime <= 0f || !motor.CanMove) return;
             resources.Tick(deltaTime);
+            if (IsDragonGirl) TickDragon(deltaTime);
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             majorMagicCooldown = Mathf.Max(0f, majorMagicCooldown - deltaTime);
             if (IsGuarding) return;
+
+            if (IsDragonGirl && IsManual && attackCooldown > 0f && dragonClawActive && (UseCommands ? Commands.Sword : input.SwordPressed))
+                dragonBufferedClaws = Mathf.Min(3 - dragonCombo, dragonBufferedClaws + 1);
 
             if (chargeKind != ChargeKind.None)
             {
@@ -177,7 +183,7 @@ namespace CoffeeGame.Combat
                 return;
             }
 
-            if (UseCommands ? Commands.Sword : input.SwordPressed)
+            if ((IsDragonGirl && dragonBufferedClaws > 0) || (UseCommands ? Commands.Sword : input.SwordPressed))
             {
                 TrySwordAttack();
                 return;
@@ -197,6 +203,7 @@ namespace CoffeeGame.Combat
 
         private void TrySwordAttack()
         {
+            if (IsDragonGirl) { TryDragonClaw(); return; }
             if (IsCatMage)
             {
                 if(!motor.IsGrounded) {
@@ -241,6 +248,7 @@ namespace CoffeeGame.Combat
 
         private void TryStartSpecial()
         {
+            if (IsDragonGirl) { TryDragonBreath(); return; }
             if (IsCatMage)
             {
                 var stop = TimeStopController.Instance;
@@ -272,6 +280,7 @@ namespace CoffeeGame.Combat
 
         private void TryStartMagic()
         {
+            if (IsDragonGirl) { TryDragonGate(); return; }
             if (!motor.IsGrounded || (IsCatMage && majorMagicCooldown > 0f) || !resources.TrySpendMagic(IsCatMage ? resources.MaxMagicPoints * 0.25f : tuning.MagicCost))
             {
                 return;
@@ -372,7 +381,7 @@ namespace CoffeeGame.Combat
             attackCooldown = 0.32f;
         }
 
-        private int DamageTargets(float range, int damage, bool fullCircle, bool frontArc)
+        private int DamageTargets(float range, int damage, bool fullCircle, bool frontArc, bool wideClaw = false)
         {
             uniqueTargets.Clear();
             Collider[] overlaps = Physics.OverlapSphere(transform.position + Vector3.up * 0.48f, range, ~0, QueryTriggerInteraction.Collide);
@@ -387,7 +396,7 @@ namespace CoffeeGame.Combat
                 }
 
                 Vector3 direction = Vector3.ProjectOnPlane(target.transform.position - transform.position, Vector3.up);
-                if (!fullCircle && frontArc && !CombatArcPolicy.Contains(motor.Facing, direction))
+                if (!fullCircle && frontArc && !(wideClaw ? Vector3.Dot(motor.Facing, direction) >= -.001f : CombatArcPolicy.Contains(motor.Facing, direction)))
                 {
                     continue;
                 }
@@ -406,7 +415,7 @@ namespace CoffeeGame.Combat
         {
             int damage = Mathf.Max(
                 1,
-                Mathf.RoundToInt((baseDamage + AttackBonus) * Mathf.Clamp(AttackMultiplier, 0.2f, 10f)));
+                Mathf.RoundToInt((baseDamage + AttackBonus) * Mathf.Clamp(AttackMultiplier, 0.2f, 10f) * (DragonBreathRemaining > 0f ? 2f : 1f)));
             if (CriticalChance > 0f && UnityEngine.Random.value < Mathf.Clamp01(CriticalChance))
             {
                 damage = Mathf.Max(1, Mathf.RoundToInt(damage * 1.5f));
@@ -448,6 +457,7 @@ namespace CoffeeGame.Combat
             }
 
             plungeWasActive = false;
+            if (IsDragonGirl) { ReleaseDragonStomp(position); return; }
             float impactRadius = IsCatMage ? 2.6f : tuning.PlungeRadius;
             int hitCount = DamageTargets(impactRadius, CalculateDamage(tuning.PlungeDamage), true, false);
             if(IsCatMage) {

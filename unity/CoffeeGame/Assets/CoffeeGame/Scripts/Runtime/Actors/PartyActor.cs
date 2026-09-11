@@ -13,6 +13,7 @@ namespace CoffeeGame.Actors
         public PlayerCombatController Combat { get; private set; }
         public double HitPointFraction { get; set; }
         public bool IsCat => MemberId == PartyMemberIds.CatMage;
+        public bool IsDragon => MemberId == PartyMemberIds.DragonGirl;
         public bool Targetable => gameObject.activeInHierarchy && Health != null && Health.IsAlive;
 
         public void Initialize(string id)
@@ -26,6 +27,7 @@ namespace CoffeeGame.Actors
             Motor.UseCommands = true;
             Combat.UseCommands = true;
             Combat.IsCatMage = IsCat;
+            Combat.IsDragonGirl = IsDragon;
         }
         private void OnEnable() => PartyTargeting.Register(this);
         private void OnDisable() => PartyTargeting.Unregister(this);

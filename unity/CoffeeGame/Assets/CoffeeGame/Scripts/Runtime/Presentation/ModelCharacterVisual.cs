@@ -121,7 +121,8 @@ namespace CoffeeGame.Presentation
             Camera camera,
             float scale = 1f,
             float yawOffset = 0f,
-            float maximumAngleFromCamera = 180f)
+            float maximumAngleFromCamera = 180f,
+            bool applyTrialTextures = true)
         {
             modelRoot = instantiatedModel != null ? instantiatedModel : transform;
             propertyBlock = new MaterialPropertyBlock();
@@ -153,7 +154,7 @@ namespace CoffeeGame.Presentation
 
             BuildStateNameLookup();
             ApplyReferenceMaterials();
-            ApplyImportedTexturesIfMissing(
+            if (applyTrialTextures) ApplyImportedTexturesIfMissing(
                 modelRoot,
                 TrialAlbedoResource,
                 TrialNormalResource,

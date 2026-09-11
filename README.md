@@ -1,5 +1,7 @@
 # CoffeeGAME
 
+2026-09-11 龍少女 V21：三人目の操作切替、ツメ三連撃、三段階の龍門、龍の呼吸、空中ツメと踏みつけを追加しました。確認用起動は `tools/launch-dragon-girl-trial.cmd`。既存セーブを変更せず三人加入済みで試せます。Steamの通常起動先とは別です。[技・制作・確認記録](docs/dragon-girl-playable-v21.md)。
+
 2026-09-09 猫の動作・時間停止 V18：Meshyスプリント／ジャンプの転送と、必殺技中の入力反転・人物の色の修正。最新の検証・反映先は[猫の動作V18](docs/cat-motion-v18.md)。効果音制作は[依頼仕様](docs/audio-sfx-v18-brief.md)。
 
 CoffeeLearningでの学習を、少女剣士の成長と結び付けるアクションRPGです。最終対象はWindowsとAndroidで、Googleアカウントを介した継続プレイとCoffeeLearningとの双方向連携を目指します。

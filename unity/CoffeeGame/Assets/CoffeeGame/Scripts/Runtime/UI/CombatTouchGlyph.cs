@@ -9,12 +9,13 @@ namespace CoffeeGame.UI
     {
         private GameInputSemantic action;
         private bool cat;
+        private bool dragon;
         private bool ring;
         private float fraction = 1f, thickness = .035f;
-        public void Icon(GameInputSemantic value, bool isCat)
+        public void Icon(GameInputSemantic value, bool isCat, bool isDragon = false)
         {
-            if (!ring && action == value && cat == isCat) return;
-            ring = false; action = value; cat = isCat; SetVerticesDirty();
+            if (!ring && action == value && cat == isCat && dragon == isDragon) return;
+            ring = false; action = value; cat = isCat; dragon = isDragon; SetVerticesDirty();
         }
         public void Ring(float value = 1f, float width = .035f)
         {
@@ -26,6 +27,18 @@ namespace CoffeeGame.UI
         {
             mesh.Clear();
             if (ring) { Arc(mesh, .47f, 90, -360 * fraction, thickness); return; }
+            if (dragon && action == GameInputSemantic.Sword)
+            {
+                for(int i=0;i<3;i++) { float x=(i-1)*.18f; Path(mesh,.05f,new Vector2(x-.12f,-.33f),new Vector2(x+.04f,0),new Vector2(x+.08f,.34f)); }
+                return;
+            }
+            if (dragon && (action == GameInputSemantic.Magic || action == GameInputSemantic.Special))
+            {
+                Arc(mesh,.32f,20,320,.065f); Arc(mesh,.21f,0,360,.022f);
+                Path(mesh,.06f,new Vector2(.28f,.11f),new Vector2(.34f,.3f),new Vector2(.11f,.34f));
+                if(action==GameInputSemantic.Special) Star(mesh,Vector2.zero,.17f);
+                return;
+            }
             switch (action)
             {
                 case GameInputSemantic.Sword:

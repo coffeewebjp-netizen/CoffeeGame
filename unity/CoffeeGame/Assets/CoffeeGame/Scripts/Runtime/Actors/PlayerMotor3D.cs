@@ -56,6 +56,7 @@ namespace CoffeeGame.Actors
         public bool CanMove { get; set; } = true;
         public float MovementScale { get; set; } = 1f;
         public float SpeedMultiplier { get; set; } = 1f;
+        public float AbilitySpeedMultiplier { get; set; } = 1f;
         public float VerticalSpeed => verticalSpeed;
         public bool CanAct => CanMove && landingLockRemaining <= 0f && !IsPlunging && !IsDodging && !IsGuardJumping;
         public bool UseCommands { get; set; }
@@ -221,7 +222,7 @@ namespace CoffeeGame.Actors
             float airMultiplier = IsGrounded ? 1f : tuning.AirControl;
             float effectiveScale = CanMove && landingLockRemaining <= 0f && !IsDodging && !IsGuardJumping ? Mathf.Clamp01(MovementScale) : 0f;
             if (IsGuarding) effectiveScale *= 0.28f;
-            float effectiveMoveSpeed = moveSpeed * Mathf.Clamp(SpeedMultiplier, 0.2f, 10f);
+            float effectiveMoveSpeed = moveSpeed * Mathf.Clamp(SpeedMultiplier, 0.2f, 10f) * AbilitySpeedMultiplier;
             if (!IsDodging && !IsGuardJumping)
             {
                 Vector3 desiredPlanarVelocity = desiredDirection * (effectiveMoveSpeed * inputMagnitude * airMultiplier * effectiveScale);

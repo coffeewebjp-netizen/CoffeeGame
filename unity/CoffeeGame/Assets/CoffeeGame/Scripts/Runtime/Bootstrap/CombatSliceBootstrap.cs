@@ -264,6 +264,8 @@ namespace CoffeeGame.Bootstrap
 
             BuildCombatSlice();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (IsDragonPreview) DragonEvidenceCapture.Begin(gameObject, runController,
+                TryGetCommandLineValue("-captureDragon", out string dragonPath) ? dragonPath : null);
             if (TryGetCommandLineValue("-captureMobileControls", out string mobileControlsPath))
                 MobileControlsEvidenceCapture.Begin(gameObject, runController, mobileControlsPath);
             if (TryGetCommandLineValue("-captureCatMotion", out string catMotionPath))
@@ -410,7 +412,7 @@ namespace CoffeeGame.Bootstrap
                 UseGoogleDriveSave,
                 UseFolderSave,
                 UseLocalSave);
-            if (!HasCommandLineFlag("-captureForest") && !HasCommandLineFlag("-captureMobileControls") && !HasCommandLineFlag("-captureCatMotion") && !HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
+            if (!IsDragonPreview && !HasCommandLineFlag("-captureForest") && !HasCommandLineFlag("-captureMobileControls") && !HasCommandLineFlag("-captureCatMotion") && !HasCommandLineFlag("-captureCombatPolish") && !HasCommandLineFlag("-captureParty") && !HasCommandLineFlag("-captureDefense") && !(HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock"))) _ = coffeeLearningConnection.RefreshAccountIdentityAsync();
 
             FixedCameraRig cameraRig = sceneCamera.gameObject.AddComponent<FixedCameraRig>();
             cameraRig.Initialize(player.Root.transform);
@@ -427,13 +429,19 @@ namespace CoffeeGame.Bootstrap
             heroActor.Initialize(PartyMemberIds.Hero);
             var party = gameObject.AddComponent<PartyRuntime>();
             party.Initialize(runController, tuning, input, heroActor, () => CreateCat(input, audioDirector),
-                SavePlayerProfile, actor => { cameraRig.Follow(actor); forestVisuals?.SetFocus(actor); });
+                SavePlayerProfile, actor => { cameraRig.Follow(actor); forestVisuals?.SetFocus(actor); }, () => CreateDragon(input, audioDirector));
             if (runController.Mode == CombatRunMode.Playing) party.TryStartRun();
         }
 
         private void EnsurePlayerProfileLoaded()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (IsDragonPreview)
+            {
+                sessionProgression = new PlayerProgression(1, 0, 0, 0, previouslyRecruitedRivalIds: new[] { RivalCharacterIds.WeaknessChallenger, RivalCharacterIds.SplitInk });
+                Debug.Log("Dragon preview uses memory-only progression; no profile writes.");
+                return;
+            }
             if (HasCommandLineFlag("-captureCombatPolish"))
             {
                 sessionProgression = new PlayerProgression();
@@ -491,6 +499,7 @@ namespace CoffeeGame.Bootstrap
         private bool TrySavePlayerProfile(out string message)
         {
             runController?.Party?.Snapshot();
+            if (IsDragonPreview) { message = "龍少女の確認モード：進行は保存しません"; return true; }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (HasCommandLineFlag("-captureForest") || HasCommandLineFlag("-captureMobileControls") || HasCommandLineFlag("-captureCatMotion") || HasCommandLineFlag("-captureCombatPolish") || HasCommandLineFlag("-captureGoblin") || HasCommandLineFlag("-captureParty") || HasCommandLineFlag("-captureDefense") || (HasCommandLineFlag("-captureAcrobatics") || HasCommandLineFlag("-captureTargetLock")))
             {
@@ -769,6 +778,42 @@ namespace CoffeeGame.Bootstrap
                 "West jump boundary",
                 new Vector3(StageLayout.MinX, 1.5f, 0f),
                 new Vector3(0.22f, 3f, StageLayout.Depth));
+        }
+
+        private static bool IsDragonPreview
+        {
+            get
+            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                return HasCommandLineFlag("-dragonTrial") || HasCommandLineFlag("-captureDragon");
+#else
+                return false;
+#endif
+            }
+        }
+
+        private PartyActor CreateDragon(GameInputReader input, AudioDirector audioDirector)
+        {
+            var prefab = Resources.Load<GameObject>("Models/Characters/DragonGirl/dragon-girl");
+            var animation = Resources.Load<RuntimeAnimatorController>("Animations/Characters/DragonGirl/DragonGirlRuntime");
+            if (prefab == null || animation == null) throw new InvalidOperationException("Dragon girl model/controller missing.");
+            var root = new GameObject("Split Ink Dragon Girl"); root.transform.SetParent(runtimeRoot, false);
+            root.transform.position = new Vector3(.8f, .05f, 0f);
+            var controller = root.AddComponent<CharacterController>(); controller.radius=.25f;controller.height=1.35f;
+            controller.center=new Vector3(0,.675f,0);controller.stepOffset=.14f;controller.skinWidth=.035f;
+            var health=root.AddComponent<Health>();health.Initialize(tuning.PlayerMaxHealth,.68f);
+            var resources=root.AddComponent<PlayerResources>();resources.Initialize(tuning.MaxStamina,tuning.PlayerMaxMp,tuning.MagicMpRegenPerSecond);
+            var slot=new GameObject("Dragon Visual");slot.transform.SetParent(root.transform,false);
+            var model=Instantiate(prefab,slot.transform);
+            foreach(var collider in model.GetComponentsInChildren<Collider>())collider.enabled=false;
+            var visual=slot.AddComponent<ModelCharacterVisual>();visual.Initialize(model.transform,animation,CharacterModelStyle.Imported,sceneCamera,.85f,0f,180f,applyTrialTextures:false);
+            slot.AddComponent<DragonCharacterMotion>().Initialize(visual.Animator);
+            var motor=root.AddComponent<PlayerMotor3D>();motor.Initialize(input,tuning,sceneCamera,visual);motor.CanPlunge=true;
+            var combat=root.AddComponent<PlayerCombatController>();combat.IsDragonGirl=true;
+            combat.Initialize(input,tuning,motor,resources,health,visual,audioDirector);
+            var actor=root.AddComponent<PartyActor>();actor.Initialize(PartyMemberIds.DragonGirl);
+            health.Damaged+=(_,hit)=>{if(!hit.IsGuarded)visual.PlayAction(CharacterAction.Hurt,.3f);};
+            return actor;
         }
 
         private PartyActor CreateCat(GameInputReader input, AudioDirector audioDirector)

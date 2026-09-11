@@ -169,6 +169,10 @@ namespace CoffeeGame.Domain
             {
                 Party.EnsureCatMemberFrom(hero);
             }
+            if (GetRivalAffinity(RivalCharacterIds.SplitInk) >= LearningRewardPolicyV1.RecruitmentThreshold)
+                recruitedRivalIds.Add(RivalCharacterIds.SplitInk);
+            if (recruitedRivalIds.Contains(RivalCharacterIds.SplitInk))
+                Party.EnsureDragonMemberFrom(hero);
         }
 
         public PlayerParty Party { get; }
@@ -247,6 +251,8 @@ namespace CoffeeGame.Domain
                 recruitedRivalIds.Add(rivalId);
                 if (rivalId == RivalCharacterIds.WeaknessChallenger)
                     Party.EnsureCatMemberFrom(Party.Find(PartyMemberIds.Hero));
+                if (rivalId == RivalCharacterIds.SplitInk)
+                    Party.EnsureDragonMemberFrom(Party.Find(PartyMemberIds.Hero));
             }
             // Lowering the debug value never deletes an existing party member,
             // her equipment, recovery state or learning reward claims.
@@ -368,6 +374,8 @@ namespace CoffeeGame.Domain
                 {
                     Party.EnsureCatMemberFrom(Party.Find(PartyMemberIds.Hero));
                 }
+                if (id == RivalCharacterIds.SplitInk)
+                    Party.EnsureDragonMemberFrom(Party.Find(PartyMemberIds.Hero));
             }
 
             Party.AddExperienceToAll(reward.Experience);

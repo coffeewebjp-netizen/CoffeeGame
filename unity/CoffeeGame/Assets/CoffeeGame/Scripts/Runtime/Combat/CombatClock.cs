@@ -34,6 +34,7 @@ namespace CoffeeGame.Combat
 
         private static bool IsFrozen(GameObject owner)
         {
+            if (owner != null && DragonGateCaptivity.IsCaptured(owner)) return true;
             TimeStopController controller = TimeStopController.Instance;
             return controller != null && controller.IsActive && controller.IsFrozen(owner);
         }

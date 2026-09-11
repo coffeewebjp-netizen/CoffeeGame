@@ -18,6 +18,7 @@ namespace CoffeeGame.Run
         private CombatTuning tuning;
         private GameInputReader input;
         private Func<PartyActor> catFactory;
+        private Func<PartyActor> dragonFactory;
         private Action checkpoint;
         private Action<Transform> follow;
         private DateTime clockAnchor;
@@ -51,9 +52,10 @@ namespace CoffeeGame.Run
         }
 
         public void Initialize(CombatRunController controller, CombatTuning combatTuning, GameInputReader reader,
-            PartyActor hero, Func<PartyActor> createCat, Action save, Action<Transform> followActor)
+            PartyActor hero, Func<PartyActor> createCat, Action save, Action<Transform> followActor, Func<PartyActor> createDragon = null)
         {
             run = controller; tuning = combatTuning; input = reader; catFactory = createCat;
+            dragonFactory = createDragon;
             checkpoint = save; follow = followActor;
             clockAnchor = DateTime.UtcNow; realAnchor = Time.realtimeSinceStartupAsDouble;
             AddActor(hero);
@@ -85,6 +87,7 @@ namespace CoffeeGame.Run
             try
             {
                 if (State.Find(PartyMemberIds.CatMage) != null && !actors.ContainsKey(PartyMemberIds.CatMage)) AddActor(catFactory());
+                if (dragonFactory != null && State.Find(PartyMemberIds.DragonGirl) != null && !actors.ContainsKey(PartyMemberIds.DragonGirl)) AddActor(dragonFactory());
                 foreach (var member in State.Members)
                 {
                     if (!actors.TryGetValue(member.Id, out var actor)) continue;
@@ -243,8 +246,13 @@ namespace CoffeeGame.Run
         public bool RequestSwitch(string id = null)
         {
             if (run.Mode != CombatRunMode.Playing || TimeStopped || retreating != null) return false;
-            foreach (var actor in actors.Values)
+            var ordered = State.Members;
+            int activeIndex = -1;
+            for (int i = 0; i < ordered.Count; i++) if (Active != null && ordered[i].Id == Active.MemberId) activeIndex = i;
+            for (int offset = 1; offset <= ordered.Count; offset++)
             {
+                string candidate = ordered[(activeIndex + offset + ordered.Count) % ordered.Count].Id;
+                if (!actors.TryGetValue(candidate, out var actor)) continue;
                 if (actor == Active || !actor.Targetable || (id != null && actor.MemberId != id)) continue;
                 if (Active != null && !Active.Combat.CanSwitch) { queuedSwitch = actor.MemberId; return true; }
                 SetActive(actor); return true;
@@ -259,7 +267,7 @@ namespace CoffeeGame.Run
             Active = actor;
             State.TrySetPreferredControlledMember(actor.MemberId);
             follow?.Invoke(actor.transform);
-            Notice = actor.IsCat ? "猫少女を操作中" : "主人公を操作中";
+            Notice = actor.IsDragon ? "龍少女を操作中" : actor.IsCat ? "猫少女を操作中" : "主人公を操作中";
             Changed?.Invoke();
         }
 

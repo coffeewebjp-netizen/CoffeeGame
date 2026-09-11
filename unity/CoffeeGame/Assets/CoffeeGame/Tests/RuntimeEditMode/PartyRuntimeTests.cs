@@ -48,7 +48,7 @@ namespace CoffeeGame.Presentation.Tests
                     return combatEnemy;
                 }, () => { });
             party = host.AddComponent<PartyRuntime>();
-            party.Initialize(run, tuning, input, hero, () => CreateActor(PartyMemberIds.CatMage), () => { }, _ => { });
+            party.Initialize(run, tuning, input, hero, () => CreateActor(PartyMemberIds.CatMage), () => { }, _ => { }, () => CreateActor(PartyMemberIds.DragonGirl));
             run.TrySelectInputMode(InputMode.KeyboardMouse, out _);
             if (progress.Party.Find(PartyMemberIds.Hero).RecoveryState == PartyRecoveryState.Resting) party.ToggleParticipation(PartyMemberIds.Hero);
             if (progress.Party.Find(PartyMemberIds.CatMage).RecoveryState == PartyRecoveryState.Resting) party.ToggleParticipation(PartyMemberIds.CatMage);
@@ -72,6 +72,24 @@ namespace CoffeeGame.Presentation.Tests
             if (hadPreference) PlayerPrefs.SetInt(GameInputReader.InputModePlayerPrefsKey, preference);
             else PlayerPrefs.DeleteKey(GameInputReader.InputModePlayerPrefsKey);
             Time.timeScale = 1;
+        }
+
+        [Test] public void ThreeMemberSwitchCyclesAndSkipsKnockedOutDragon()
+        {
+            progress.SetDebugRivalAffinity(RivalCharacterIds.SplitInk, 100);
+            party.RefreshMembers();
+            if (progress.Party.Find(PartyMemberIds.DragonGirl).RecoveryState == PartyRecoveryState.Resting)
+                party.ToggleParticipation(PartyMemberIds.DragonGirl);
+            Assert.That(party.RequestSwitch(), Is.True);
+            Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.CatMage));
+            Assert.That(party.RequestSwitch(), Is.True);
+            Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.DragonGirl));
+            party.Active.Health.ApplyDamage(new DamageInfo(99999, attacker, Vector3.zero, Vector3.zero));
+            Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.Hero));
+            Assert.That(party.RequestSwitch(), Is.True);
+            Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.CatMage));
+            Assert.That(party.RequestSwitch(), Is.True);
+            Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.Hero));
         }
 
         [Test] public void SwitchingKeepsBothPositionsAndVitals()
