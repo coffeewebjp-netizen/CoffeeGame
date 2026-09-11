@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CoffeeGame.Actors;
 using CoffeeGame.Domain;
 using CoffeeGame.Run;
 using UnityEngine;
@@ -42,7 +43,12 @@ namespace CoffeeGame.UI
             if (partyPanel == null || run.Party == null) return;
             partyPanel.gameObject.SetActive(!pauseMenuOpen && run.Mode != CombatRunMode.RivalEncounter);
             int index = 0;
+            var orderedMembers = new List<PartyMember>();
+            PartyMember activeMember = run.Party.Active != null ? run.Party.State.Find(run.Party.Active.MemberId) : null;
+            if (activeMember != null) orderedMembers.Add(activeMember);
             foreach (var member in run.Party.State.Members)
+                if (member != activeMember) orderedMembers.Add(member);
+            foreach (var member in orderedMembers)
             {
                 if (!partyLabels.TryGetValue(member.Id, out var label))
                 {
@@ -66,7 +72,9 @@ namespace CoffeeGame.UI
                 SetTopLeft(memberPanel, new Vector2(28, touchHud ? -188-index*74 : -236-index*92),new Vector2(560,84));
                 memberPanel.GetComponent<Image>().color = touchHud ? new Color(.025f,.043f,.066f,.48f) : Panel;
                 bool available = member.RecoveryState != PartyRecoveryState.KnockedOut && !run.Party.TimeStopped;
-                partySwitches[member.Id].interactable = available && member.RecoveryState == PartyRecoveryState.Deployed && run.Mode == CombatRunMode.Playing;
+                bool active = run.Party.Active != null && run.Party.Active.MemberId == member.Id;
+                partySwitches[member.Id].interactable = available && !active && member.RecoveryState == PartyRecoveryState.Deployed && run.Mode == CombatRunMode.Playing;
+                partySwitches[member.Id].GetComponentInChildren<Text>().text = active ? "操作中" : "切替";
                 var rest = partyRestButtons[member.Id];
                 rest.interactable = available;
                 rest.GetComponentInChildren<Text>().text = member.RecoveryState == PartyRecoveryState.Resting ? "出撃" : "休息";
@@ -91,17 +99,32 @@ namespace CoffeeGame.UI
                 partyNotice.fontSize = 18;
             }
             else { SetTopLeft(partyNotice.rectTransform,new Vector2(28,-250-index*92),new Vector2(620,65)); partyNotice.fontSize=21; }
-            if (activeCatPortrait != null)
-            {
-                if (catPartyPortrait == null) catPartyPortrait = Resources.Load<Texture2D>(RivalPortraitResource);
-                if (dragonPartyPortrait == null) dragonPartyPortrait = Resources.Load<Texture2D>(RivalPortraitCatalog.SplitInkResource);
-                activeCatPortrait.texture = run.Party.Active?.IsDragon == true ? dragonPartyPortrait : catPartyPortrait;
-                activeCatPortrait.gameObject.SetActive(run.Party.Active != null && (run.Party.Active.IsCat || run.Party.Active.IsDragon));
-            }
+            RefreshActiveArtwork(run.Party.Active);
             if (run.Party.Active?.IsDragon == true)
             {
                 var combat = run.Party.Active.Combat;
                 partyNotice.text = $"魔法：{combat.DragonActionLabel}" + (combat.DragonBreathRemaining > 0f ? $"　龍の呼吸 {combat.DragonBreathRemaining:0}秒" : "");
+            }
+        }
+
+        private void RefreshActiveArtwork(PartyActor active)
+        {
+            if (catPartyPortrait == null) catPartyPortrait = Resources.Load<Texture2D>(RivalPortraitResource);
+            if (dragonPartyPortrait == null) dragonPartyPortrait = Resources.Load<Texture2D>(RivalPortraitCatalog.SplitInkResource);
+            bool companion = active != null && (active.IsCat || active.IsDragon);
+            Texture2D texture = active?.IsDragon == true ? dragonPartyPortrait : catPartyPortrait;
+            if (activeCatPortrait != null)
+            {
+                activeCatPortrait.texture = texture;
+                activeCatPortrait.gameObject.SetActive(companion);
+            }
+            if (fullBodyImage != null) fullBodyImage.color = companion ? new Color(1f, 1f, 1f, 0f) : Color.white;
+            if (statusCompanionPortrait != null)
+            {
+                statusCompanionPortrait.texture = texture;
+                statusCompanionPortrait.gameObject.SetActive(companion);
+                if (statusCompanionPortraitFitter != null && texture != null && texture.height > 0)
+                    statusCompanionPortraitFitter.aspectRatio = (float)texture.width / texture.height;
             }
         }
 

@@ -103,6 +103,7 @@ namespace CoffeeGame.Editor
             BuildDiagnosticNoSetup("Windows-CatMotionV18", "CoffeeGAME-CatMotionV18.exe");
         }
         public static void BuildForestV20NoSetup() => BuildDiagnosticNoSetup("Windows-ForestV20", "CoffeeGAME-ForestV20.exe");
+        public static void BuildSteamPartyV22NoSetup() => BuildDiagnosticNoSetup("Windows-SteamPartyV22-Ready", "CoffeeGAME.exe");
         public static void BuildAndroidForestV20NoSetup() => BuildAndroidMobileNoSetup("ForestV20");
 
         public static void BuildCatMotionV19NoSetup()

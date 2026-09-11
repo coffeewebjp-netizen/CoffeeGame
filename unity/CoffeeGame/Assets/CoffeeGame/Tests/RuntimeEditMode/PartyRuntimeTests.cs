@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using CoffeeGame.Actors;
 using CoffeeGame.Audio;
 using CoffeeGame.Combat;
@@ -7,8 +8,11 @@ using CoffeeGame.Enemies;
 using CoffeeGame.Input;
 using CoffeeGame.Presentation;
 using CoffeeGame.Run;
+using CoffeeGame.UI;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace CoffeeGame.Presentation.Tests
@@ -90,6 +94,53 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.CatMage));
             Assert.That(party.RequestSwitch(), Is.True);
             Assert.That(party.Active.MemberId, Is.EqualTo(PartyMemberIds.Hero));
+        }
+
+        [Test] public void ActiveDragonMovesToTopAndOwnsStatusArtwork()
+        {
+            EventSystem originalEventSystem = EventSystem.current;
+            try
+            {
+                progress.SetDebugRivalAffinity(RivalCharacterIds.SplitInk, 100);
+                party.RefreshMembers();
+                var dragonMember = progress.Party.Find(PartyMemberIds.DragonGirl);
+                if (dragonMember.RecoveryState == PartyRecoveryState.Resting)
+                    party.ToggleParticipation(PartyMemberIds.DragonGirl);
+                Assert.That(party.RequestSwitch(PartyMemberIds.DragonGirl), Is.True);
+
+                var viewObject = new GameObject("party-hud-test");
+                viewObject.transform.SetParent(host.transform);
+                var view = viewObject.AddComponent<CombatGameHudView>();
+                view.Initialize(input);
+                view.Refresh(run, false);
+
+                RectTransform dragonPanel = host.GetComponentsInChildren<RectTransform>(true)
+                    .Single(item => item.name == "Party " + PartyMemberIds.DragonGirl);
+                RectTransform heroPanel = host.GetComponentsInChildren<RectTransform>(true)
+                    .Single(item => item.name == "Party " + PartyMemberIds.Hero);
+                Assert.That(dragonPanel.anchoredPosition.y, Is.GreaterThan(heroPanel.anchoredPosition.y));
+                Button activeButton = dragonPanel.GetComponentsInChildren<Button>(true)
+                    .Single(button => button.name == "Switch");
+                Assert.That(activeButton.interactable, Is.False);
+                Assert.That(activeButton.GetComponentInChildren<Text>().text, Is.EqualTo("操作中"));
+
+                run.Pause();
+                view.SetSelectedTab(CharacterMenuTab.Status);
+                view.RebuildMenuContent(run);
+                view.Refresh(run, true);
+                Text status = viewObject.GetComponentsInChildren<Text>(true)
+                    .Single(text => text.name == "Content");
+                RawImage artwork = viewObject.GetComponentsInChildren<RawImage>(true)
+                    .Single(image => image.name == "Active Companion Full Body");
+                Assert.That(status.text, Does.Contain("龍少女のステータス"));
+                Assert.That(artwork.gameObject.activeSelf, Is.True);
+                Assert.That(artwork.texture.name, Is.EqualTo("rival_split_ink_v1"));
+            }
+            finally
+            {
+                if (originalEventSystem == null && EventSystem.current != null)
+                    Object.DestroyImmediate(EventSystem.current.gameObject);
+            }
         }
 
         [Test] public void SwitchingKeepsBothPositionsAndVitals()

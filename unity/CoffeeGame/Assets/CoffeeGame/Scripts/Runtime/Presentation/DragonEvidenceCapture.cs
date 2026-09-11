@@ -10,8 +10,10 @@ using CoffeeGame.Domain;
 using CoffeeGame.Enemies;
 using CoffeeGame.Input;
 using CoffeeGame.Run;
+using CoffeeGame.UI;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UI;
 
 namespace CoffeeGame.Presentation
 {
@@ -130,8 +132,25 @@ namespace CoffeeGame.Presentation
             yield return new WaitForSeconds(.12f);Capture("08-wind-stomp");yield return new WaitForSeconds(.38f);
             Check(enemy.Current<previous,"expanding stomp damages enemy");
             dragon.Combat.ResetCombat();Check(dragon.Combat.DragonBreathRemaining==0&&dragon.Motor.AbilitySpeedMultiplier==1&&dragon.Health.AbilityDefenseMultiplier==1,"reset clears breath multipliers");
+            var hud=FindAnyObjectByType<CombatGameHudView>();
+            hud.Refresh(run,false);yield return null;
+            var dragonPanel=hud.GetComponentsInChildren<RectTransform>(true).First(t=>t.name=="Party "+PartyMemberIds.DragonGirl);
+            var heroPanel=hud.GetComponentsInChildren<RectTransform>(true).First(t=>t.name=="Party "+PartyMemberIds.Hero);
+            Check(dragonPanel.anchoredPosition.y>heroPanel.anchoredPosition.y,"controlled member is first in party HUD");
+            Check(dragonPanel.GetComponentsInChildren<Button>(true).First(b=>b.name=="Switch").GetComponentInChildren<Text>().text=="操作中","active switch button is explicit");
+            Capture("09-active-party-order");
+            run.Pause();hud.SetSelectedTab(CharacterMenuTab.Status);hud.RebuildMenuContent(run);hud.Refresh(run,true);yield return null;
+            Check(hud.GetComponentsInChildren<Text>(true).First(t=>t.name=="Content").text.Contains("龍少女のステータス"),"status follows controlled member");
+            Check(hud.GetComponentsInChildren<RawImage>(true).First(i=>i.name=="Active Companion Full Body").gameObject.activeSelf,"status uses dragon artwork");
+            Capture("10-dragon-status");
+            hud.SetSelectedTab(CharacterMenuTab.System);hud.RebuildMenuContent(run);hud.Refresh(run,true);yield return null;
+            Check(hud.GetComponentsInChildren<Button>(true).Any(b=>b.name=="Rival Interval Increase"),"rival interval settings available");
+            Check(hud.GetComponentsInChildren<Button>(true).Any(b=>b.name=="Debug Affinity 4"&&b.GetComponentInChildren<Text>().text.Contains("龍少女")),"dragon affinity debug controls available");
+            Canvas.ForceUpdateCanvases();
+            var scroll=hud.GetComponentsInChildren<ScrollRect>(true).First();scroll.verticalNormalizedPosition=0f;Canvas.ForceUpdateCanvases();
+            Capture("11-progression-settings");
             File.WriteAllText(Path.Combine(directory,"report.json"),JsonUtility.ToJson(new Report{passed=checks.ToArray(),device=SystemInfo.graphicsDeviceName},true));
-            yield return new WaitForSeconds(.5f);Application.Quit(0);
+            yield return new WaitForSecondsRealtime(.5f);Application.Quit(0);
         }
         [Serializable]private sealed class Report{public string[] passed;public string device;}
     }

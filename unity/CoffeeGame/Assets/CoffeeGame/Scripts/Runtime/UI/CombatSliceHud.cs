@@ -152,6 +152,7 @@ namespace CoffeeGame.UI
             modernView.InputModeSelectionRequested += BeginInputModeSelectionFromPause;
             modernView.PerformancePresetRequested += HandlePerformancePreset;
             modernView.FrameStatsToggleRequested += HandleFrameStatsToggle;
+            modernView.RivalIntervalRequested += HandleRivalIntervalChange;
             modernView.SaveRequested += HandleManualSave;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             modernView.DebugAffinityRequested += HandleDebugAffinity;
@@ -991,6 +992,7 @@ namespace CoffeeGame.UI
                 modernView.InputModeSelectionRequested -= BeginInputModeSelectionFromPause;
                 modernView.PerformancePresetRequested -= HandlePerformancePreset;
                 modernView.FrameStatsToggleRequested -= HandleFrameStatsToggle;
+                modernView.RivalIntervalRequested -= HandleRivalIntervalChange;
                 modernView.SaveRequested -= HandleManualSave;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 modernView.DebugAffinityRequested -= HandleDebugAffinity;

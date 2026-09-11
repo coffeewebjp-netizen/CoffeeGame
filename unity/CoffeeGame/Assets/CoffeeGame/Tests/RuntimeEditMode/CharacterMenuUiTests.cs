@@ -207,9 +207,9 @@ namespace CoffeeGame.Presentation.Tests
                     .Single(text => text.name == "Frame Stats");
                 Assert.That(frameStats.text, Does.StartWith("FPS"));
                 Assert.That(commands.Any(command => command.StartsWith("ジャンプ")), Is.True);
-                Assert.That(commands.Any(command => command.StartsWith("刀攻撃")), Is.True);
-                Assert.That(commands.Any(command => command.StartsWith("居合斬り")), Is.True);
-                Assert.That(commands.Any(command => command.StartsWith("氷魔法")), Is.True);
+                Assert.That(commands.Any(command => command.StartsWith("通常攻撃")), Is.True);
+                Assert.That(commands.Any(command => command.StartsWith("必殺技")), Is.True);
+                Assert.That(commands.Any(command => command.StartsWith("魔法")), Is.True);
                 Assert.That(commands.Any(command => command.StartsWith("入力方式を選び直す")), Is.True);
                 Assert.That(commands, Does.Contain("セーブする"));
                 Assert.That(commands, Does.Contain("初期配置へ戻す"));
@@ -267,6 +267,59 @@ namespace CoffeeGame.Presentation.Tests
             Assert.That(balanced.TargetFrameRate, Is.EqualTo(60));
             Assert.That(smooth.TargetFrameRate, Is.EqualTo(120));
             Assert.That(quality.QualityName, Is.EqualTo("Ultra"));
+        }
+
+        [Test]
+        public void RivalEncounterInterval_PersistsAndClampsWithoutChangingDefault()
+        {
+            bool hadValue = PlayerPrefs.HasKey(RivalEncounterSettings.PreferenceKey);
+            int previous = PlayerPrefs.GetInt(RivalEncounterSettings.PreferenceKey);
+            try
+            {
+                PlayerPrefs.DeleteKey(RivalEncounterSettings.PreferenceKey);
+                Assert.That(RivalEncounterSettings.Get(5), Is.EqualTo(5));
+                Assert.That(RivalEncounterSettings.Set(12), Is.EqualTo(12));
+                Assert.That(RivalEncounterSettings.Get(5), Is.EqualTo(12));
+                Assert.That(RivalEncounterSettings.Set(0), Is.EqualTo(RivalEncounterSettings.Minimum));
+                Assert.That(RivalEncounterSettings.Set(99), Is.EqualTo(RivalEncounterSettings.Maximum));
+            }
+            finally
+            {
+                if (hadValue) PlayerPrefs.SetInt(RivalEncounterSettings.PreferenceKey, previous);
+                else PlayerPrefs.DeleteKey(RivalEncounterSettings.PreferenceKey);
+                PlayerPrefs.Save();
+            }
+        }
+
+        [Test]
+        public void SystemTab_ExposesRivalEncounterIntervalControls()
+        {
+            EventSystem originalEventSystem = EventSystem.current;
+            var root = new GameObject("Rival Interval Settings Test");
+            try
+            {
+                CombatGameHudView view = root.AddComponent<CombatGameHudView>();
+                view.Initialize(root.AddComponent<GameInputReader>());
+                view.SetSelectedTab(CharacterMenuTab.System);
+                view.RebuildMenuContent(root.AddComponent<CombatRunController>());
+                int requested = 99;
+                view.RivalIntervalRequested += delta => requested = delta;
+                Button decrease = root.GetComponentsInChildren<Button>(true)
+                    .Single(button => button.name == "Rival Interval Decrease");
+                Button increase = root.GetComponentsInChildren<Button>(true)
+                    .Single(button => button.name == "Rival Interval Increase");
+                Button reset = root.GetComponentsInChildren<Button>(true)
+                    .Single(button => button.name == "Rival Interval Reset");
+                decrease.onClick.Invoke(); Assert.That(requested, Is.EqualTo(-1));
+                increase.onClick.Invoke(); Assert.That(requested, Is.EqualTo(1));
+                reset.onClick.Invoke(); Assert.That(requested, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                if (originalEventSystem == null && EventSystem.current != null)
+                    Object.DestroyImmediate(EventSystem.current.gameObject);
+            }
         }
 
         private static void AssertPngHasTransparentCorner(string fileName)

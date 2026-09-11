@@ -19,6 +19,7 @@ namespace CoffeeGame.UI
         private PlayerProgression debugProgression;
         public event Action<int> DebugAffinityRequested;
 #endif
+        public event Action<int> RivalIntervalRequested;
 
         private void BuildControlsContent()
         {
@@ -32,9 +33,9 @@ namespace CoffeeGame.UI
             statusLayout.flexibleWidth = 1f;
 
             AddControlButton(menuScrollContent, GameInputSemantic.Jump, "ジャンプ");
-            AddControlButton(menuScrollContent, GameInputSemantic.Sword, "刀攻撃");
-            AddControlButton(menuScrollContent, GameInputSemantic.Special, "居合斬り");
-            AddControlButton(menuScrollContent, GameInputSemantic.Magic, "氷魔法");
+            AddControlButton(menuScrollContent, GameInputSemantic.Sword, "通常攻撃");
+            AddControlButton(menuScrollContent, GameInputSemantic.Special, "必殺技");
+            AddControlButton(menuScrollContent, GameInputSemantic.Magic, "魔法");
             AddControlButton(menuScrollContent, GameInputSemantic.Dodge, "回避");
             AddCommandButton(menuScrollContent, "入力方式を選び直す", () => InputModeSelectionRequested?.Invoke());
             AddSectionHeading(menuScrollContent, "セーブ", 27, Accent, 42f);
@@ -73,6 +74,10 @@ namespace CoffeeGame.UI
             AddControlButton(menuScrollContent, GameInputSemantic.SwitchCharacter, "操作切替");
             AddControlButton(menuScrollContent, GameInputSemantic.Guard, "防御");
             AddControlButton(menuScrollContent, GameInputSemantic.LockOn, "ターゲット固定");
+            AddSectionHeading(menuScrollContent, "進行設定", 27, Accent, 42f);
+            AddCommandButton(menuScrollContent, "Rival Interval Decrease", () => RivalIntervalRequested?.Invoke(-1));
+            AddCommandButton(menuScrollContent, "Rival Interval Increase", () => RivalIntervalRequested?.Invoke(1));
+            AddCommandButton(menuScrollContent, "Rival Interval Reset", () => RivalIntervalRequested?.Invoke(0));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             AddSectionHeading(menuScrollContent, "デバッグ：ライバル親密度", 27, Accent, 42f);
             AddSectionHeading(menuScrollContent, "100%で加入。数値を下げても加入済みの仲間は残ります。", 20, MutedInk, 42f);
@@ -144,7 +149,7 @@ namespace CoffeeGame.UI
                 GameInputSemantic.Dodge,
                 GameInputSemantic.Guard
             };
-            string[] labels = { "ジャンプ", "刀攻撃", "居合斬り", "氷魔法", "回避", "防御" };
+            string[] labels = { "ジャンプ", "通常攻撃", "必殺技", "魔法", "回避", "防御" };
             bool supportsRebind = input.SelectedInputMode == InputMode.ControllerGamepad ||
                                   input.SelectedInputMode == InputMode.SteamDesktopCompatibility;
             controlButtons[CombatHudSettingsRows.SwitchCharacter].GetComponentInChildren<Text>().text =
@@ -153,6 +158,16 @@ namespace CoffeeGame.UI
             controlButtons[CombatHudSettingsRows.LockOn].GetComponentInChildren<Text>().text =
                 "ターゲット固定　" + input.GetActiveControllerBindingDescription(GameInputSemantic.LockOn);
             controlButtons[CombatHudSettingsRows.LockOn].interactable = supportsRebind && !rebinding;
+            int rivalInterval = renderedPartyRun != null ? renderedPartyRun.RivalEncounterIntervalKills : 5;
+            controlButtons[CombatHudSettingsRows.RivalIntervalDecrease].GetComponentInChildren<Text>().text =
+                $"ライバル出現まで　{rivalInterval}体　　−1";
+            controlButtons[CombatHudSettingsRows.RivalIntervalIncrease].GetComponentInChildren<Text>().text =
+                $"ライバル出現まで　{rivalInterval}体　　＋1";
+            controlButtons[CombatHudSettingsRows.RivalIntervalReset].GetComponentInChildren<Text>().text =
+                $"標準の{(renderedPartyRun != null ? renderedPartyRun.DefaultRivalEncounterIntervalKills : 5)}体に戻す";
+            controlButtons[CombatHudSettingsRows.RivalIntervalDecrease].interactable = !rebinding && rivalInterval > RivalEncounterSettings.Minimum;
+            controlButtons[CombatHudSettingsRows.RivalIntervalIncrease].interactable = !rebinding && rivalInterval < RivalEncounterSettings.Maximum;
+            controlButtons[CombatHudSettingsRows.RivalIntervalReset].interactable = !rebinding;
             for (int index = 0; index < semantics.Length; index++)
             {
                 int row = index == semantics.Length - 1 ? CombatHudSettingsRows.Guard : index;
@@ -183,7 +198,7 @@ namespace CoffeeGame.UI
             for (int index = 0; index < 8; index++)
             {
                 string id = index < 4 ? RivalCharacterIds.WeaknessChallenger : RivalCharacterIds.SplitInk;
-                string name = index < 4 ? "猫少女" : "竜の少女";
+                string name = index < 4 ? "猫少女" : "龍少女";
                 Button button = controlButtons[CombatHudSettingsRows.DebugAffinityFirst + index];
                 button.GetComponentInChildren<Text>().text = $"{name}  {debugProgression?.GetRivalAffinity(id) ?? 0}%　　{changes[index % 4]}";
                 button.interactable = !rebinding && debugProgression != null;

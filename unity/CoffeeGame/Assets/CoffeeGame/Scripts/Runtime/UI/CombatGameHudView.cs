@@ -109,6 +109,10 @@ namespace CoffeeGame.UI
 
         private Image fullBodyImage;
 
+        private RawImage statusCompanionPortrait;
+
+        private AspectRatioFitter statusCompanionPortraitFitter;
+
         private Text menuHeadingText;
 
         private Text menuFooterText;
@@ -326,7 +330,7 @@ namespace CoffeeGame.UI
             switch (selectedTab)
             {
                 case CharacterMenuTab.Status:
-                    BuildStatusContent(run.Progression);
+                    BuildStatusContent(run);
                     break;
                 case CharacterMenuTab.Inventory:
                     BuildTextContent(
@@ -587,6 +591,15 @@ namespace CoffeeGame.UI
             Anchor(fullBodyImage.rectTransform, new Vector2(0.035f, 0.11f), new Vector2(0.335f, 0.825f));
             fullBodyImage.sprite = Resources.Load<Sprite>(FullBodyResource);
             fullBodyImage.preserveAspect = true;
+            statusCompanionPortrait = new GameObject("Active Companion Full Body", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter)).GetComponent<RawImage>();
+            statusCompanionPortrait.transform.SetParent(fullBodyImage.transform, false);
+            statusCompanionPortrait.rectTransform.anchorMin = Vector2.zero;
+            statusCompanionPortrait.rectTransform.anchorMax = Vector2.one;
+            statusCompanionPortrait.rectTransform.offsetMin = statusCompanionPortrait.rectTransform.offsetMax = Vector2.zero;
+            statusCompanionPortrait.raycastTarget = false;
+            statusCompanionPortraitFitter = statusCompanionPortrait.GetComponent<AspectRatioFitter>();
+            statusCompanionPortraitFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            statusCompanionPortrait.gameObject.SetActive(false);
 
             menuContentHost = CreateRect("Menu Content Host", panel.transform, new Vector2(0.36f, 0.195f), new Vector2(0.975f, 0.825f));
             BuildMenuScrollArea(menuContentHost);
@@ -599,17 +612,28 @@ namespace CoffeeGame.UI
         }
 
 
-        private void BuildStatusContent(PlayerProgression progression)
+        private void BuildStatusContent(CombatRunController run)
         {
+            PlayerProgression progression = run.Progression;
+            PartyMember member = run.Party?.Active != null
+                ? progression.Party.Find(run.Party.Active.MemberId)
+                : null;
+            PlayerStatus status = member?.Status ?? progression.Status;
+            int level = member?.Level ?? progression.Level;
+            int experience = member?.Experience ?? progression.Experience;
+            int required = member?.ExperienceRequiredForNextLevel ?? progression.ExperienceRequiredForNextLevel;
+            string memberName = member == null || member.Id == PartyMemberIds.Hero
+                ? "主人公"
+                : member.Id == PartyMemberIds.DragonGirl ? "龍少女" : "猫少女";
             var builder = new StringBuilder();
-            builder.Append("<size=36><b>ステータス</b></size>\n\n");
-            builder.Append($"<color=#B5C4D7>クラス</color>　{progression.Status.ClassName}\n");
-            builder.Append($"<color=#B5C4D7>才能</color>　　{progression.Status.Talent}\n");
-            builder.Append($"<color=#B5C4D7>レベル</color>　Lv.{progression.Level}\n");
-            builder.Append($"<color=#B5C4D7>経験値</color>　{progression.Experience} / {progression.ExperienceRequiredForNextLevel}\n");
+            builder.Append($"<size=36><b>{memberName}のステータス</b></size>\n\n");
+            builder.Append($"<color=#B5C4D7>クラス</color>　{status.ClassName}\n");
+            builder.Append($"<color=#B5C4D7>才能</color>　　{status.Talent}\n");
+            builder.Append($"<color=#B5C4D7>レベル</color>　Lv.{level}\n");
+            builder.Append($"<color=#B5C4D7>経験値</color>　{experience} / {required}\n");
             builder.Append($"<color=#B5C4D7>お金</color>　　{progression.Gold} Gold\n\n");
             builder.Append("<size=29><b>能力</b></size>\n");
-            foreach (PlayerAttributeValue attribute in progression.Status.Attributes.CreateSnapshot())
+            foreach (PlayerAttributeValue attribute in status.Attributes.CreateSnapshot())
             {
                 PlayerAttributeDefinition definition = PlayerAttributeCatalog.Find(attribute.Id);
                 string label = definition != null ? definition.DisplayName : attribute.Id;
@@ -617,7 +641,7 @@ namespace CoffeeGame.UI
                 builder.Append($"<b>{label,-7}</b> {attribute.Value}{effect}\n");
             }
 
-            PlayerDerivedStats derived = PlayerDerivedStatCalculator.Calculate(progression.Status);
+            PlayerDerivedStats derived = PlayerDerivedStatCalculator.Calculate(status);
             builder.Append("\n<size=29><b>現在の補正</b></size>\n");
             builder.Append($"攻撃 ×{derived.AttackMultiplier:0.00}　移動 ×{derived.MovementSpeedMultiplier:0.00}\n");
             builder.Append($"クリティカル {derived.CriticalChance * 100f:0.0}%　回避 {derived.EvasionChance * 100f:0.0}%\n");

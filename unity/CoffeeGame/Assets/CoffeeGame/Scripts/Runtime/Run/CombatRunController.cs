@@ -54,7 +54,19 @@ namespace CoffeeGame.Run
         public CombatRunMode Mode { get; private set; } = CombatRunMode.Ready;
         public PlayerProgression Progression { get; private set; } = new PlayerProgression();
         public int Kills { get; private set; }
-        public int RivalEncounterIntervalKills => tuning != null ? tuning.RivalEncounterIntervalKills : 5;
+        public int DefaultRivalEncounterIntervalKills => tuning != null ? tuning.RivalEncounterIntervalKills : 5;
+        public int RivalEncounterIntervalKills => RivalEncounterSettings.Get(DefaultRivalEncounterIntervalKills);
+
+        public int AdjustRivalEncounterIntervalKills(int delta)
+        {
+            int next = delta == 0
+                ? DefaultRivalEncounterIntervalKills
+                : RivalEncounterIntervalKills + delta;
+            int saved = RivalEncounterSettings.Set(next);
+            LastEvent = $"ライバル出現まで {saved} 体に設定";
+            StateChanged?.Invoke();
+            return saved;
+        }
         public string CurrentRivalId { get; private set; } = RivalCharacterIds.WeaknessChallenger;
         private string lastSeenRivalId;
         private readonly DeterministicRivalSelector rivalSelector =

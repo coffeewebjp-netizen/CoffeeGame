@@ -24,11 +24,14 @@ namespace CoffeeGame.UI
         public const int SwitchCharacter = 19;
         public const int Guard = 20;
         public const int LockOn = 21;
+        public const int RivalIntervalDecrease = 22;
+        public const int RivalIntervalIncrease = 23;
+        public const int RivalIntervalReset = 24;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        public const int DebugAffinityFirst = 22;
-        public const int Count = 30;
+        public const int DebugAffinityFirst = 25;
+        public const int Count = 33;
 #else
-        public const int Count = 22;
+        public const int Count = 25;
 #endif
     }
 }

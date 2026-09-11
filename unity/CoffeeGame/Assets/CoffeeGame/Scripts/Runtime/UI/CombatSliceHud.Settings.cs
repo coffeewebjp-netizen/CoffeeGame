@@ -133,6 +133,15 @@ namespace CoffeeGame.UI
                 case CombatHudSettingsRows.FrameStats:
                     HandleFrameStatsToggle();
                     break;
+                case CombatHudSettingsRows.RivalIntervalDecrease:
+                    HandleRivalIntervalChange(-1);
+                    break;
+                case CombatHudSettingsRows.RivalIntervalIncrease:
+                    HandleRivalIntervalChange(1);
+                    break;
+                case CombatHudSettingsRows.RivalIntervalReset:
+                    HandleRivalIntervalChange(0);
+                    break;
                 case CombatHudSettingsRows.CoffeeLearningPrimary:
                     HandleCoffeeLearningPrimary();
                     break;
@@ -174,9 +183,9 @@ namespace CoffeeGame.UI
             GUI.Label(new Rect(panel.x + 14f, panel.y + 36f, panel.width - 28f, 43f), status, smallStyle);
 
             DrawRebindRow(panel, 84f, CombatHudSettingsRows.Jump, "ジャンプ", GameInputSemantic.Jump);
-            DrawRebindRow(panel, 124f, CombatHudSettingsRows.Sword, "刀攻撃", GameInputSemantic.Sword);
-            DrawRebindRow(panel, 164f, CombatHudSettingsRows.Special, "居合斬り", GameInputSemantic.Special);
-            DrawRebindRow(panel, 204f, CombatHudSettingsRows.Magic, "氷魔法", GameInputSemantic.Magic);
+            DrawRebindRow(panel, 124f, CombatHudSettingsRows.Sword, "通常攻撃", GameInputSemantic.Sword);
+            DrawRebindRow(panel, 164f, CombatHudSettingsRows.Special, "必殺技", GameInputSemantic.Special);
+            DrawRebindRow(panel, 204f, CombatHudSettingsRows.Magic, "魔法", GameInputSemantic.Magic);
             DrawRebindRow(panel, 244f, CombatHudSettingsRows.Dodge, "回避", GameInputSemantic.Dodge);
             DrawRebindRow(panel, 284f, CombatHudSettingsRows.Guard, "防御", GameInputSemantic.Guard);
 
@@ -366,6 +375,15 @@ namespace CoffeeGame.UI
                 case CombatHudSettingsRows.FrameStats:
                     HandleFrameStatsToggle();
                     break;
+                case CombatHudSettingsRows.RivalIntervalDecrease:
+                    HandleRivalIntervalChange(-1);
+                    break;
+                case CombatHudSettingsRows.RivalIntervalIncrease:
+                    HandleRivalIntervalChange(1);
+                    break;
+                case CombatHudSettingsRows.RivalIntervalReset:
+                    HandleRivalIntervalChange(0);
+                    break;
                 case CombatHudSettingsRows.CoffeeLearningPrimary:
                     HandleCoffeeLearningPrimary();
                     break;
@@ -434,7 +452,17 @@ namespace CoffeeGame.UI
                    row == CombatHudSettingsRows.CloudLocal ||
                    row == CombatHudSettingsRows.Resume ||
                    row == CombatHudSettingsRows.Performance ||
-                   row == CombatHudSettingsRows.FrameStats;
+                   row == CombatHudSettingsRows.FrameStats ||
+                   row == CombatHudSettingsRows.RivalIntervalDecrease ||
+                   row == CombatHudSettingsRows.RivalIntervalIncrease ||
+                   row == CombatHudSettingsRows.RivalIntervalReset;
+        }
+
+        private void HandleRivalIntervalChange(int delta)
+        {
+            if (run == null || input.IsRebinding) return;
+            int value = run.AdjustRivalEncounterIntervalKills(delta);
+            SetSystemNotice($"ライバル登場クイズまでの討伐数を{value}体に設定しました。");
         }
 
 
@@ -448,7 +476,7 @@ namespace CoffeeGame.UI
             int value = operation == 0 ? current - 10 : operation == 1 ? current + 10 : operation == 2 ? 0 : 100;
             run.Progression.SetDebugRivalAffinity(id, value);
             // Changed uses the same live party refresh and profile save as normal recruitment.
-            SetSystemNotice($"{(index < 4 ? "猫少女" : "竜の少女")}の親密度を{run.Progression.GetRivalAffinity(id)}%に変更しました。");
+            SetSystemNotice($"{(index < 4 ? "猫少女" : "龍少女")}の親密度を{run.Progression.GetRivalAffinity(id)}%に変更しました。");
         }
 #endif
 
